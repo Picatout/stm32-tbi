@@ -66,88 +66,8 @@
 
 	.equ RX_QUEUE_SIZE,16
 
-/***************************
-  SYSTEM variables offset 
-  from UPP  
-***************************/ 
-  .equ IN,0    // low byte of in.w 
-  .equ IN_SAVED,IN+4 // set by get_token before parsing next token, used by unget_token
-  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
-  .equ BASICPTR,COUNT+4 // point to current BASIC line address.
-  .equ DATAPTR, BASICPTR+4 // point to DATA address
-  .equ DATA,DATAPTR+4 // index to next data item 
-  .equ DATALEN, DATA+4 // length of data line 
-  .equ BASE,DATALEN+4 // nemeric base used to print integer 
-  .equ TICKS,BASE+4 // milliseconds ticks counter (see Timer4UpdateHandler)
-  .equ TIMER,TICKS+4 //  milliseconds count down timer 
-  .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
-  .equ FSPTR,SEED+4 //  pointer used by file system
-  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
-  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
-  .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
-  .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
-  .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
-  .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
-  .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
-  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
-  .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
-  .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
-  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
-  .equ CELLL,4 // size of integer 
-  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
-  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
 
 
-/***********************************************
-*       MACROS
-***********************************************/
-	.macro _CALL fn /* low level routine call */ 
- 	PUSH {LR}
-	BL \fn  
-	POP {LR}
-	.endm
-	
-	.macro	_RET /* return from subroutine */
-	BX	LR
-	.endm
-
-	.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
-	MOV \REG, #\LITERAL&0xffff
-	MOVT \REG, #\LITERAL>>16
-	.endm
-
- 	.macro	_DOLIT  value /*long literals */
-	BL	DOLIT
-	.word \value 
-	.endm
-
-  .macro _FUNC label 
-  .p2align 2 
-  .type \label, %function  
-\label:
-  .endm 
-
-
-/********************************
-    dictionary structure
-------------------------------
- format:
-   link:    
-   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
-   cmd_name: 31 characters max 
-   cmd_index: 2 bytes 
-**********************************/
-	.macro _dict_entry len,name,cmd_idx 
-	.p2align 2 
-  .word LINK 
-  .word \cmd_idx 
-	.equ LINK,.
-	.byte \len 	
-	.ascii "\name"
-	.p2align 2 
-	.endm 
-
-	.equ link, 0
 
 /*************************************
 *   interrupt service vectors table 
@@ -511,6 +431,7 @@ wait_sws:
     R8 status  
     R9 UART address
 *****************************/
+  .global uart_putc 
   _FUNC uart_putc
   _MOV32 R9,UART
 1: 
@@ -520,28 +441,6 @@ wait_sws:
   strb r0,[r9,#USART_DR]
   _RET  
 
-
-/*******************************
-    UART_PUTS 
- send counted string to uart 
- input: r0 *string to send 
-  use:  
-    r0 char to send 
-    r10 counter
-    r11 *string  
-******************************/
-	_FUNC uart_puts
-  mov r11,r0 
-	ldrb r10,[r11],#1 // string length
-	ands r10,r10
-	beq 9f // len==0 
-1:
-  ldr r0,[r11],#1 
-  _CALL uart_putc   
-  subs r10,r10,#1 
-  bne 1b 
-9: 
-  _RET  
 
 /**********************************
   UART_QKEY
@@ -555,6 +454,7 @@ wait_sws:
     r8  RX_HEAD  
     r9  RX_TAIL   
 ***********************************/
+  .global uart_qkey 
   _FUNC uart_qkey
   ldr r8,[r3,#RX_HEAD]
   ldr r9,[r3,#RX_TAIL]
@@ -572,6 +472,7 @@ wait_sws:
     r8  rx_queue 
     r9  rx_head  
 **********************************/
+  .global uart_getc 
   _FUNC uart_getc
 1:
   _CALL uart_qkey 
@@ -584,6 +485,8 @@ wait_sws:
   and r9,#(RX_QUEUE_SIZE-1)
   str r9,[r3,#RX_HEAD]
   _RET  
+
+
 
 /*********************************
   cp_cstr 
@@ -707,8 +610,10 @@ ulast:
 
 // keep alphabetic order for BASIC names from Z-A
 // this sort order is for for WORDS cmd output. 	
+
+	.equ link, 0
 kword_end:
-  .word 0,0
+  .word link,0
   .equ LINK, .
   .word 0
   .p2align 2  

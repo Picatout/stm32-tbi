@@ -166,16 +166,16 @@ Disassembly of section .text:
  80001e6:	f000 f85f 	bl	80002a8 <remap>
  80001ea:	f000 f875 	bl	80002d8 <init_devices>
  80001ee:	f000 f8c3 	bl	8000378 <uart_init>
- 80001f2:	f000 f94b 	bl	800048c <cold_init>
+ 80001f2:	f000 f94d 	bl	8000490 <cold_init>
  80001f6:	f000 f811 	bl	800021c <prt_version>
  80001fa:	f000 f801 	bl	8000200 <test>
  80001fe:	e7fe      	b.n	80001fe <reset_handler+0x22>
 
 08000200 <test>:
  8000200:	4803      	ldr	r0, [pc, #12]	; (8000210 <str1>)
- 8000202:	49b0      	ldr	r1, [pc, #704]	; (80004c4 <isr_table_size+0x6>)
+ 8000202:	49b1      	ldr	r1, [pc, #708]	; (80004c8 <isr_table_size+0x6>)
  8000204:	b500      	push	{lr}
- 8000206:	f000 f925 	bl	8000454 <search_dict>
+ 8000206:	f000 f927 	bl	8000458 <search_dict>
  800020a:	f85d eb04 	ldr.w	lr, [sp], #4
  800020e:	4770      	bx	lr
 
@@ -372,82 +372,86 @@ Disassembly of section .text:
  800042a:	f8c3 904c 	str.w	r9, [r3, #76]	; 0x4c
  800042e:	4770      	bx	lr
 
-08000430 <cp_cstr>:
- 8000430:	4681      	mov	r9, r0
- 8000432:	f819 ab01 	ldrb.w	sl, [r9], #1
- 8000436:	ebb8 000a 	subs.w	r0, r8, sl
- 800043a:	d109      	bne.n	8000450 <cp_cstr+0x20>
- 800043c:	f819 ab01 	ldrb.w	sl, [r9], #1
- 8000440:	f811 bb01 	ldrb.w	fp, [r1], #1
- 8000444:	ebba 000b 	subs.w	r0, sl, fp
- 8000448:	d102      	bne.n	8000450 <cp_cstr+0x20>
- 800044a:	f1b8 0801 	subs.w	r8, r8, #1
- 800044e:	d1f5      	bne.n	800043c <cp_cstr+0xc>
- 8000450:	4770      	bx	lr
- 8000452:	bf00      	nop
+08000430 <readln>:
+ 8000430:	4770      	bx	lr
+ 8000432:	bf00      	nop
 
-08000454 <search_dict>:
- 8000454:	b403      	push	{r0, r1}
- 8000456:	f811 0b01 	ldrb.w	r0, [r1], #1
- 800045a:	4300      	orrs	r0, r0
- 800045c:	d013      	beq.n	8000486 <search_dict+0x32>
- 800045e:	f000 081f 	and.w	r8, r0, #31
- 8000462:	9800      	ldr	r0, [sp, #0]
- 8000464:	b500      	push	{lr}
- 8000466:	f7ff ffe3 	bl	8000430 <cp_cstr>
- 800046a:	f85d eb04 	ldr.w	lr, [sp], #4
- 800046e:	d004      	beq.n	800047a <search_dict+0x26>
- 8000470:	9901      	ldr	r1, [sp, #4]
- 8000472:	f851 1c08 	ldr.w	r1, [r1, #-8]
- 8000476:	9101      	str	r1, [sp, #4]
- 8000478:	e7ed      	b.n	8000456 <search_dict+0x2>
- 800047a:	9901      	ldr	r1, [sp, #4]
- 800047c:	7808      	ldrb	r0, [r1, #0]
- 800047e:	ea4f 1050 	mov.w	r0, r0, lsr #5
- 8000482:	f851 1c04 	ldr.w	r1, [r1, #-4]
- 8000486:	b002      	add	sp, #8
- 8000488:	4770      	bx	lr
- 800048a:	bf00      	nop
+08000434 <cp_cstr>:
+ 8000434:	4681      	mov	r9, r0
+ 8000436:	f819 ab01 	ldrb.w	sl, [r9], #1
+ 800043a:	ebb8 000a 	subs.w	r0, r8, sl
+ 800043e:	d109      	bne.n	8000454 <cp_cstr+0x20>
+ 8000440:	f819 ab01 	ldrb.w	sl, [r9], #1
+ 8000444:	f811 bb01 	ldrb.w	fp, [r1], #1
+ 8000448:	ebba 000b 	subs.w	r0, sl, fp
+ 800044c:	d102      	bne.n	8000454 <cp_cstr+0x20>
+ 800044e:	f1b8 0801 	subs.w	r8, r8, #1
+ 8000452:	d1f5      	bne.n	8000440 <cp_cstr+0xc>
+ 8000454:	4770      	bx	lr
+ 8000456:	bf00      	nop
 
-0800048c <cold_init>:
- 800048c:	f8df 8026 	ldr.w	r8, [pc, #38]	; 80004b6 <src_addr>
- 8000490:	f8df 9026 	ldr.w	r9, [pc, #38]	; 80004ba <dest_addr>
- 8000494:	f04f 0ad0 	mov.w	sl, #208	; 0xd0
- 8000498:	f858 bb04 	ldr.w	fp, [r8], #4
- 800049c:	f849 bb04 	str.w	fp, [r9], #4
- 80004a0:	f1ba 0a04 	subs.w	sl, sl, #4
- 80004a4:	d1f8      	bne.n	8000498 <cold_init+0xc>
- 80004a6:	f04f 0300 	mov.w	r3, #0
- 80004aa:	f2c2 0300 	movt	r3, #8192	; 0x2000
- 80004ae:	f8df 800e 	ldr.w	r8, [pc, #14]	; 80004be <isr_table_size>
- 80004b2:	4443      	add	r3, r8
- 80004b4:	4770      	bx	lr
+08000458 <search_dict>:
+ 8000458:	b403      	push	{r0, r1}
+ 800045a:	f811 0b01 	ldrb.w	r0, [r1], #1
+ 800045e:	4300      	orrs	r0, r0
+ 8000460:	d013      	beq.n	800048a <search_dict+0x32>
+ 8000462:	f000 081f 	and.w	r8, r0, #31
+ 8000466:	9800      	ldr	r0, [sp, #0]
+ 8000468:	b500      	push	{lr}
+ 800046a:	f7ff ffe3 	bl	8000434 <cp_cstr>
+ 800046e:	f85d eb04 	ldr.w	lr, [sp], #4
+ 8000472:	d004      	beq.n	800047e <search_dict+0x26>
+ 8000474:	9901      	ldr	r1, [sp, #4]
+ 8000476:	f851 1c08 	ldr.w	r1, [r1, #-8]
+ 800047a:	9101      	str	r1, [sp, #4]
+ 800047c:	e7ed      	b.n	800045a <search_dict+0x2>
+ 800047e:	9901      	ldr	r1, [sp, #4]
+ 8000480:	7808      	ldrb	r0, [r1, #0]
+ 8000482:	ea4f 1050 	mov.w	r0, r0, lsr #5
+ 8000486:	f851 1c04 	ldr.w	r1, [r1, #-4]
+ 800048a:	b002      	add	sp, #8
+ 800048c:	4770      	bx	lr
+ 800048e:	bf00      	nop
 
-080004b6 <src_addr>:
- 80004b6:	080004c8 	stmdaeq	r0, {r3, r6, r7, sl}
+08000490 <cold_init>:
+ 8000490:	f8df 8026 	ldr.w	r8, [pc, #38]	; 80004ba <src_addr>
+ 8000494:	f8df 9026 	ldr.w	r9, [pc, #38]	; 80004be <dest_addr>
+ 8000498:	f04f 0ad0 	mov.w	sl, #208	; 0xd0
+ 800049c:	f858 bb04 	ldr.w	fp, [r8], #4
+ 80004a0:	f849 bb04 	str.w	fp, [r9], #4
+ 80004a4:	f1ba 0a04 	subs.w	sl, sl, #4
+ 80004a8:	d1f8      	bne.n	800049c <cold_init+0xc>
+ 80004aa:	f04f 0300 	mov.w	r3, #0
+ 80004ae:	f2c2 0300 	movt	r3, #8192	; 0x2000
+ 80004b2:	f8df 800e 	ldr.w	r8, [pc, #14]	; 80004c2 <isr_table_size>
+ 80004b6:	4443      	add	r3, r8
+ 80004b8:	4770      	bx	lr
 
-080004ba <dest_addr>:
- 80004ba:	20000130 	andcs	r0, r0, r0, lsr r1
+080004ba <src_addr>:
+ 80004ba:	080004cc 	stmdaeq	r0, {r2, r3, r6, r7, sl}
 
-080004be <isr_table_size>:
- 80004be:	00000130 	andeq	r0, r0, r0, lsr r1
- 80004c2:	0df00000 	ldcleq	0, cr0, [r0]
- 80004c6:	Address 0x00000000080004c6 is out of bounds.
+080004be <dest_addr>:
+ 80004be:	20000130 	andcs	r0, r0, r0, lsr r1
+
+080004c2 <isr_table_size>:
+ 80004c2:	00000130 	andeq	r0, r0, r0, lsr r1
+ 80004c6:	0df00000 	ldcleq	0, cr0, [r0]
+ 80004ca:	Address 0x00000000080004ca is out of bounds.
 
 
 Disassembly of section .rodata:
 
-080004c8 <__data_start>:
+080004cc <__data_start>:
 	...
- 80004e4:	0000000a 	andeq	r0, r0, sl
+ 80004e8:	0000000a 	andeq	r0, r0, sl
 	...
- 80004f0:	aa5555aa 	bge	9555ba0 <FLASH_HIDDEN_END+0x1535ba0>
- 80004f4:	08001000 	stmdaeq	r0, {ip}
- 80004f8:	00000000 	andeq	r0, r0, r0
- 80004fc:	20000200 	andcs	r0, r0, r0, lsl #4
+ 80004f4:	aa5555aa 	bge	9555ba4 <FLASH_HIDDEN_END+0x1535ba4>
+ 80004f8:	08001000 	stmdaeq	r0, {ip}
+ 80004fc:	00000000 	andeq	r0, r0, r0
  8000500:	20000200 	andcs	r0, r0, r0, lsl #4
+ 8000504:	20000200 	andcs	r0, r0, r0, lsl #4
 	...
- 8000510:	00000004 	andeq	r0, r0, r4
+ 8000514:	00000004 	andeq	r0, r0, r4
 	...
 
 Disassembly of section .rodata.dictionary:
@@ -857,7 +861,7 @@ Disassembly of section .ARM.attributes:
 Disassembly of section .debug_line:
 
 00000000 <.debug_line>:
-   0:	00000128 	andeq	r0, r0, r8, lsr #2
+   0:	0000012b 	andeq	r0, r0, fp, lsr #2
    4:	00220003 	eoreq	r0, r2, r3
    8:	01020000 	mrseq	r0, (UNDEF: 2)
    c:	000d0efb 	strdeq	r0, [sp], -fp
@@ -870,7 +874,7 @@ Disassembly of section .debug_line:
   28:	00000000 	andeq	r0, r0, r0
   2c:	30020500 	andcc	r0, r2, r0, lsl #10
   30:	03080001 	movweq	r0, #32769	; 0x8001
-  34:	210101fe 	strdcs	r0, [r1, -lr]
+  34:	210101cc 	smlabtcs	r1, ip, r1, r0
   38:	21212f59 			; <UNDEFINED> instruction: 0x21212f59
   3c:	21d60e03 	bicscs	r0, r6, r3, lsl #28
   40:	2121212f 			; <UNDEFINED> instruction: 0x2121212f
@@ -919,19 +923,21 @@ Disassembly of section .debug_line:
   ec:	21592e0f 	cmpcs	r9, pc, lsl #28
   f0:	2f2f2f21 	svccs	0x002f2f21
   f4:	032f2f2f 			; <UNDEFINED> instruction: 0x032f2f2f
-  f8:	2f212013 	svccs	0x00212013
-  fc:	2f2f222f 	svccs	0x002f222f
- 100:	222f212f 	eorcs	r2, pc, #-1073741813	; 0xc000000b
- 104:	222e0e03 	eorcs	r0, lr, #3, 28	; 0x30
- 108:	2f21212f 	svccs	0x0021212f
- 10c:	21215921 			; <UNDEFINED> instruction: 0x21215921
- 110:	2122212f 			; <UNDEFINED> instruction: 0x2122212f
- 114:	212f2f21 			; <UNDEFINED> instruction: 0x212f2f21
- 118:	302f2f32 	eorcc	r2, pc, r2, lsr pc	; <UNPREDICTABLE>
- 11c:	222f2f2f 	eorcs	r2, pc, #47, 30	; 0xbc
- 120:	03222f4b 			; <UNDEFINED> instruction: 0x03222f4b
- 124:	02827dc3 	addeq	r7, r2, #12480	; 0x30c0
- 128:	01010002 	tsteq	r1, r2
+  f8:	14032010 	strne	r2, [r3], #-16
+  fc:	2f2f212e 	svccs	0x002f212e
+ 100:	2f2f2f22 	svccs	0x002f2f22
+ 104:	03222f21 			; <UNDEFINED> instruction: 0x03222f21
+ 108:	2f222e0e 	svccs	0x00222e0e
+ 10c:	212f2121 			; <UNDEFINED> instruction: 0x212f2121
+ 110:	2f212159 	svccs	0x00212159
+ 114:	21212221 			; <UNDEFINED> instruction: 0x21212221
+ 118:	32212f2f 	eorcc	r2, r1, #47, 30	; 0xbc
+ 11c:	2f302f2f 	svccs	0x00302f2f
+ 120:	4b222f2f 	blmi	88bde4 <FLASH_HIDDEN_SIZE+0x87bde4>
+ 124:	b203222f 	andlt	r2, r3, #-268435454	; 0xf0000002
+ 128:	0202827d 	andeq	r8, r2, #-805306361	; 0xd0000007
+ 12c:	Address 0x000000000000012c is out of bounds.
+
 
 Disassembly of section .debug_info:
 
@@ -941,7 +947,7 @@ Disassembly of section .debug_info:
    8:	01040000 	mrseq	r0, (UNDEF: 4)
    c:	00000000 	andeq	r0, r0, r0
   10:	08000130 	stmdaeq	r0, {r4, r5, r8}
-  14:	080004c8 	stmdaeq	r0, {r3, r6, r7, sl}
+  14:	080004cc 	stmdaeq	r0, {r2, r3, r6, r7, sl}
   18:	00000000 	andeq	r0, r0, r0
   1c:	0000000c 	andeq	r0, r0, ip
   20:	0000002b 	andeq	r0, r0, fp, lsr #32
@@ -965,7 +971,7 @@ Disassembly of section .debug_aranges:
    8:	00040000 	andeq	r0, r4, r0
    c:	00000000 	andeq	r0, r0, r0
   10:	08000130 	stmdaeq	r0, {r4, r5, r8}
-  14:	00000398 	muleq	r0, r8, r3
+  14:	0000039c 	muleq	r0, ip, r3
 	...
 
 Disassembly of section .debug_str:

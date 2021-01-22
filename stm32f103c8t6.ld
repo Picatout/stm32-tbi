@@ -11,7 +11,10 @@ _mstack_size = 0x100; /* main stack size used by exceptions and interrupts */
 _mstack = 0x20005000; /* main stack top */
 _tib_size = 0x50 ; /* tib buffer size */
 _tib = _mstack - _mstack_size - _tib_size ; /* transaction input buffer */
+_pad_size - 0x80 ; 
+_pad = _tib - pad_size 
 _array = _tib - 4 ;
+
 
 SECTIONS
 {

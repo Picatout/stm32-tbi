@@ -113,3 +113,90 @@
 //-------------------------------
 .equ DEBUG,0
 
+/***************************
+  SYSTEM variables offset 
+  from UPP  
+***************************/ 
+  .equ IN,0    // low byte of in.w 
+  .equ IN_SAVED,IN+4 // set by get_token before parsing next token, used by unget_token
+  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
+  .equ BASICPTR,COUNT+4 // point to current BASIC line address.
+  .equ DATAPTR, BASICPTR+4 // point to DATA address
+  .equ DATA,DATAPTR+4 // index to next data item 
+  .equ DATALEN, DATA+4 // length of data line 
+  .equ BASE,DATALEN+4 // nemeric base used to print integer 
+  .equ TICKS,BASE+4 // milliseconds ticks counter (see Timer4UpdateHandler)
+  .equ TIMER,TICKS+4 //  milliseconds count down timer 
+  .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
+  .equ FSPTR,SEED+4 //  pointer used by file system
+  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
+  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
+  .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
+  .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
+  .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
+  .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
+  .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
+  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
+  .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
+  .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
+  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
+  .equ CELLL,4 // size of integer 
+  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
+  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
+
+/***********************************************
+*       MACROS
+***********************************************/
+	.macro _CALL fn /* low level routine call */ 
+ 	PUSH {LR}
+	BL \fn  
+	POP {LR}
+	.endm
+	
+	.macro	_RET /* return from subroutine */
+	BX	LR
+	.endm
+
+	.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+	MOV \REG, #\LITERAL&0xffff
+	MOVT \REG, #\LITERAL>>16
+	.endm
+
+ 	.macro	_DOLIT  value /*long literals */
+	BL	DOLIT
+	.word \value 
+	.endm
+
+// function header 
+  .macro _FUNC label 
+  .p2align 2 
+  .type \label, %function  
+\label:
+  .endm 
+
+// global function header 
+  .macro _GBL_FUNC label 
+  .global \label 
+  _FUNC \label 
+  .endm 
+
+
+/********************************
+    dictionary structure
+------------------------------
+ format:
+   link:    
+   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
+   cmd_name: 31 characters max 
+   cmd_index: 2 bytes 
+**********************************/
+	.macro _dict_entry len,name,cmd_idx 
+	.p2align 2 
+  .word LINK 
+  .word \cmd_idx 
+	.equ LINK,.
+	.byte \len 	
+	.ascii "\name"
+	.p2align 2 
+	.endm 
+
