@@ -1,4 +1,4 @@
-NAME=tinyBasic
+NAME=stm32-tbi
 # tools
 PREFIX=arm-none-eabi-
 CC=$(PREFIX)gcc
@@ -14,7 +14,8 @@ BUILD_DIR=build/
 LD_FILE=stm32f103c8t6.ld 
 LD_FLAGS=-mmcu=stm32f103
 #sources
-SRC=stm32-tbi.s 
+SRC=$(NAME).s terminal.s tinyBasic.s 
+OBJ=$(BUILD_DIR)$(NAME).o $(BUILD_DIR)terminal.o $(BUILD_DIR)tinyBasic.o 
 # programmer
 VERSION=STLINKV2 
 STV2_DUNGLE_SN=483f6e066772574857351967
@@ -25,10 +26,12 @@ SERIAL=$(STV2_DUNGLE_SN)
 
 all: clean build dasm
 
-build:  *.inc *.s Makefile $(LD_FILE)
-	$(AS) -a=$(BUILD_DIR)$(NAME).lst $(SRC) -g -o$(BUILD_DIR)$(NAME).o
+
+build:  $(SRC) *.inc Makefile $(LD_FILE)
+	$(AS) -a=$(BUILD_DIR)$(NAME).lst $(NAME).s -g -o$(BUILD_DIR)$(NAME).o 
 	$(AS) -a=$(BUILD_DIR)terminal.lst terminal.s -g -o$(BUILD_DIR)terminal.o 
-	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o $(BUILD_DIR)terminal.o -o $(BUILD_DIR)$(NAME).elf
+	$(AS) -a=$(BUILD_DIR)tinyBasic.lst tinyBasic.s -g -o$(BUILD_DIR)tinyBasic.o 
+	$(LD) -T $(LD_FILE) -g $(OBJ) -o $(BUILD_DIR)$(NAME).elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).bin 
 #	$(OBJCOPY) -O ihex $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).hex  
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
@@ -36,9 +39,6 @@ build:  *.inc *.s Makefile $(LD_FILE)
 flash: $(BUILD_DIR)$(NAME).bin 
 	st-flash --serial=$(SERIAL) erase 
 	st-flash  --serial=$(SERIAL)  write $(BUILD_DIR)$(NAME).bin 0x8000000
-
-dasm:
-	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
 
 debug: 
 	cd $(BUILD_DIR) &&\
