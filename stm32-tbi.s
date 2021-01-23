@@ -27,7 +27,7 @@
  R5         //  FOR loop counter 
  R6         //  FOR loop limit 
  R7         //  FOR loop increment 
- R8-R11     //  temporary registers saved by caller 
+ R8-R11     //  temporary registers
 *****************************************/
 
   .syntax unified
@@ -266,15 +266,16 @@ reset_handler:
   b .  
 
     _FUNC test
-    ldr r0, str1 
-    ldr r1,=kword_dict  
-    _CALL search_dict 
+    ldr r0,tib_addr  
+    mov r1,#80
+    _CALL readln
+    _CALL uart_putsz
+    mov r0,#CR 
+    _CALL uart_putc 
+    b test   
     _RET 
-  str1:
-    .word .+4 
-    .byte 5
-    .ascii "HELLO" 
-    .p2align 2 
+  tib_addr: 
+    .word _tib
 
     _FUNC prt_version 
     ldr r0,version_msg 
@@ -431,14 +432,15 @@ wait_sws:
     R8 status  
     R9 UART address
 *****************************/
-  .global uart_putc 
-  _FUNC uart_putc
+  _GBL_FUNC uart_putc
+  push {r8,r9}
   _MOV32 R9,UART
 1: 
   ldr r8,[r9,#USART_SR]
   ands r8,#0x80
   beq 1b // UART_DR full,wait  
   strb r0,[r9,#USART_DR]
+  pop {r8,r9}
   _RET  
 
 
@@ -454,11 +456,12 @@ wait_sws:
     r8  RX_HEAD  
     r9  RX_TAIL   
 ***********************************/
-  .global uart_qkey 
-  _FUNC uart_qkey
+  _GBL_FUNC uart_qkey
+  push {r8,r9}
   ldr r8,[r3,#RX_HEAD]
   ldr r9,[r3,#RX_TAIL]
   eor r0,r8,r9 
+  pop {r8,r9}
   _RET 
 
 /**********************************
@@ -472,8 +475,8 @@ wait_sws:
     r8  rx_queue 
     r9  rx_head  
 **********************************/
-  .global uart_getc 
-  _FUNC uart_getc
+  _GBL_FUNC uart_getc
+  push {r8,r9}
 1:
   _CALL uart_qkey 
   orrs r0,r0
@@ -484,6 +487,7 @@ wait_sws:
   add r9,#1
   and r9,#(RX_QUEUE_SIZE-1)
   str r9,[r3,#RX_HEAD]
+  pop {r8,r9}
   _RET  
 
 
@@ -505,6 +509,7 @@ wait_sws:
     r11 temp    
 *********************************/
   _FUNC cp_cstr
+  push {r9,r10,r11}
   mov r9, r0 
   ldrb r10,[r9],#1 // length 
   subs r0,r8,r10 
@@ -517,6 +522,7 @@ wait_sws:
   subs r8,#1 
   bne 1b 
 2: 
+  pop {r9,r10,r11}
   _RET 
 
 //---------------------------------
@@ -531,6 +537,7 @@ wait_sws:
 //  r8   length dictionary name 
 //---------------------------------
   _FUNC search_dict
+  push {r8}
   push {r0,r1}
 1:
   ldrb r0,[r1],#1 
@@ -549,7 +556,8 @@ wait_sws:
   ldrb r0,[r1]
   lsr r0,#5    // token type 
   ldr r1,[r1,#-4]  // command index 
-9: add sp,#8  // drop pushed r0,r1 
+9: add sp,#8  // drop pushed r0,r1
+   pop {r8}
    _RET 
 
   _FUNC cold_init
@@ -566,7 +574,6 @@ wait_sws:
   _MOV32 r3,RAM_ADR
   ldr r8,isr_table_size 
   add r3,r3,r8
-
   _RET 
 src_addr:
   .word uzero

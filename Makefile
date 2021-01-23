@@ -28,7 +28,7 @@ all: clean build dasm
 build:  *.inc *.s Makefile $(LD_FILE)
 	$(AS) -a=$(BUILD_DIR)$(NAME).lst $(SRC) -g -o$(BUILD_DIR)$(NAME).o
 	$(AS) -a=$(BUILD_DIR)terminal.lst terminal.s -g -o$(BUILD_DIR)terminal.o 
-	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o -o $(BUILD_DIR)$(NAME).elf
+	$(LD) -T $(LD_FILE) -g $(BUILD_DIR)$(NAME).o $(BUILD_DIR)terminal.o -o $(BUILD_DIR)$(NAME).elf
 	$(OBJCOPY) -O binary $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).bin 
 #	$(OBJCOPY) -O ihex $(BUILD_DIR)$(NAME).elf $(BUILD_DIR)$(NAME).hex  
 	$(OBJDUMP) -D $(BUILD_DIR)$(NAME).elf > $(BUILD_DIR)$(NAME).dasm
