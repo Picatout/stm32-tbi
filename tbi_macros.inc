@@ -144,9 +144,7 @@
   .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
   .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
   .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
-  .equ FLASH_WRITE_ADR,TAB_WIDTH+4 // address of flash_write in RAM 
-  .equ WAIT_BUSY_ADR,FLASH_WRITE_ADR+4 // address wait_busy in RAM 
-  .equ RX_HEAD,WAIT_BUSY_ADR+4 // rx_queue head pointer
+  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
   .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
   .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
   .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 

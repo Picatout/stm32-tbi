@@ -1,0 +1,1583 @@
+ARM GAS  terminal.s 			page 1
+
+
+   1              	////
+   2              	// Copyright Jacques Deschênes 2021 
+   3              	// This file is part of stm32-tbi 
+   4              	//
+   5              	//     stm32-tbi is free software: you can redistribute it and/or modify
+   6              	//     it under the terms of the GNU General Public License as published by
+   7              	//     the Free Software Foundation, either version 3 of the License, or
+   8              	//     (at your option) any later version.
+   9              	//
+  10              	//     stm32-tbi is distributed in the hope that it will be useful,
+  11              	//     but WITHOUT ANY WARRANTY// without even the implied warranty of
+  12              	//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  13              	//     GNU General Public License for more details.
+  14              	//
+  15              	//     You should have received a copy of the GNU General Public License
+  16              	//     along with stm32-tbi.  If not, see <http://www.gnu.org/licenses/>.
+  17              	////
+  18              	//--------------------------------------
+  19              	//------------------------------
+  20              	// This file is for functions 
+  21              	// interfacing with VT100 terminal
+  22              	// emulator.
+  23              	// except for uart_getc and uart_putc which
+  24              	// are in stm32-tbi.s 
+  25              	// exported functions:
+  26              	//   uart_puts 
+  27              	//   readln 
+  28              	//   spaces 
+  29              	//   digit_to_char 
+  30              	//------------------------------
+  31              	
+  32              	  .syntax unified
+  33              	  .cpu cortex-m3
+  34              	  .fpu softvfp
+  35              	  .thumb
+  36              	
+  37              	  .include "stm32f103.inc"
+   1              	/*
+   2              	   STM32F103 registers
+   3              	*/
+   4              	    /* RAM */
+   5              	    .equ RAM_ADR, 0x20000000 
+   6              	    .equ RAM_SIZE, 0x5000
+   7              	    .equ RAM_END, RAM_ADR+RAM_SIZE
+   8              	
+   9              	   /* RAM bit band alias */
+  10              	      .equ RAM_BIT_ALIAS, 0x22000000
+  11              	
+  12              	    /* FLASH MEMORY */
+  13              	    /* memory reported by MCU */
+  14              	    .equ FLASH_ADR, 0x8000000 
+  15              	    .equ FLASH_SIZE, 0x10000
+  16              	    .equ FLASH_END, FLASH_ADR+FLASH_SIZE
+  17              	    /* the MCU as 64K flash not reported by MCU */
+  18              	    .equ FLASH_HIDDEN_ADR, 0x8010000
+  19              	    .equ FLASH_HIDDEN_SIZE, 0x10000
+  20              	    .equ FLASH_HIDDEN_END, FLASH_HIDDEN_ADR+FLASH_HIDDEN_SIZE
+ARM GAS  terminal.s 			page 2
+
+
+  21              	    .equ PAGE_SIZE, 1024 // erase block size 
+  22              	
+  23              	   /* system memory */
+  24              	      .equ SYS_MEM, 0x1FFFF000
+  25              	      .equ SYS_MEM_SIZE, 0x800
+  26              	
+  27              	   /* option memory */
+  28              	      .equ OPTION, 0x1FFFF800   
+  29              	      .equ OPT_SIZE, 16
+  30              	
+  31              	
+  32              	   /* peripherals base address */
+  33              	      .equ PER_BASE_ADR,  0x40000000
+  34              	   /* PERIPHERALS bit band alias */
+  35              	      .equ PER_BIT_ALIAS, 0x42000000 
+  36              	
+  37              	
+  38              	    /* RCC registers address */
+  39              	    .equ RCC_BASE_ADR, 0x40021000
+  40              	    /* RCC registers offset */
+  41              	    .equ RCC_CR, 0
+  42              	    .equ RCC_CFGR, 4
+  43              	    .equ RCC_CIR, 8
+  44              	    .equ RCC_APB2RSTR, 12
+  45              	    .equ RCC_APB1RSTR, 16
+  46              	    .equ RCC_AHBENR, 20
+  47              	    .equ RCC_APB2ENR, 24
+  48              	    .equ RCC_APB1ENR, 28
+  49              	    .equ RCC_BDCR, 32 
+  50              	    .equ RCC_CSR, 36
+  51              	
+  52              	    /* FLASH registers address */
+  53              	    .equ FLASH_BASE_ADR, 0x40022000
+  54              	    /* FLASH registers offset */
+  55              	    .equ FLASH_ACR, 0
+  56              	    .equ FLASH_KEYR, 4
+  57              	    .equ FLASH_OPTKEYR, 8
+  58              	    .equ FLASH_SR, 12
+  59              	    .equ FLASH_CR, 16
+  60              	    .equ FLASH_AR, 20
+  61              	    .equ FLASH_OBR, 28
+  62              	    .equ FLASH_WRPR,32
+  63              	    .equ RDPRT_KEY, 0x00A5
+  64              	    .equ FLASH_KEY1, 0x45670123
+  65              	    .equ FLASH_KEY2, 0xCDEF89AB
+  66              	
+  67              	    /* GPIOx base address */
+  68              	    .equ GPIOA_BASE_ADR, 0x40010800
+  69              	    .equ GPIOB_BASE_ADR, 0x40010C00
+  70              	    .equ GPIOC_BASE_ADR, 0x40011000
+  71              	    .equ GPIOD_BASE_ADR, 0x40011400
+  72              	    .equ GPIOE_BASE_ADR, 0x40011800
+  73              	    .equ GPIOF_BASE_ADR, 0x40018C00
+  74              	    .equ GPIOG_BASE_ADR, 0x40012000
+  75              	
+  76              	    /* gpiox registers offset from base address */
+  77              	    .equ GPIO_CRL, 0
+ARM GAS  terminal.s 			page 3
+
+
+  78              	    .equ GPIO_CRH, 4
+  79              	    .equ GPIO_IDR, 8
+  80              	    .equ GPIO_ODR, 12
+  81              	    .equ GPIO_BSRR, 16
+  82              	    .equ GPIO_BRR, 20
+  83              	    .equ GPIO_LOCKR, 24 
+  84              	    
+  85              	
+  86              	    /* USART1 registers */
+  87              	    .equ USART1_BASE_ADR, 0x40013800
+  88              	    /* USARTx registers offset */
+  89              	    .equ USART_SR, 0
+  90              	    .equ USART_DR,4
+  91              	    .equ USART_BRR,8
+  92              	    .equ USART_CR1,12
+  93              	    .equ USART_CR2,16
+  94              	    .equ USART_CR3,20
+  95              	    .equ USART_GTPR,24
+  96              	
+  97              	   /* systick */
+  98              	    .equ STK_BASE_ADR, 0xE000E010
+  99              	    /* registers offset */
+ 100              	    .equ STK_CTL, 0
+ 101              	    .equ STK_LOAD, 4
+ 102              	    .equ STK_VAL, 8
+ 103              	    .equ STK_CALIB, 12
+ 104              	
+ 105              	   /* system control block */
+ 106              	   .equ SCB_BASE_ADR, 0xE000ED00
+ 107              	   /* registers offset */
+ 108              	   .equ SCB_CPUID, 0
+ 109              	   .equ SCB_ICSR, 4 
+ 110              	   .equ SCB_VTOR, 8
+ 111              	   .equ SCB_AIRCR, 12
+ 112              	   .equ SCB_SCR, 16
+ 113              	   .equ SCB_CCR, 20
+ 114              	   .equ SCB_SHPR1,24
+ 115              	   .equ SCB_SHPR2,28
+ 116              	   .equ SCB_SHPR3,32
+ 117              	   .equ SCB_SHCRS,36
+ 118              	   .equ SCB_CFSR,40
+ 119              	   .equ SCB_HFSR,44
+ 120              	   .equ SCB_MMAR,52
+ 121              	   .equ SCB_BFAR,56
+ 122              	   // key to to write in SCB_AIRCR 
+ 123              	   .equ SCB_VECTKEY,0x5fa 
+ 124              	   
+ 125              	   /* NVIC block */
+ 126              	   .equ NVIC_BASE_ADR, 0xE000E100
+ 127              	   .equ NVIC_ISER0, 0
+ 128              	   .equ NVIC_ISER1, 4
+ 129              	   .equ NVIC_ISER2, 8
+ 130              	   .equ NVIC_ICER0, 0x80
+ 131              	   .equ NVIC_ICER1, 0x84 
+ 132              	   .equ NVIC_ICER2, 0x88 
+ 133              	   .equ NVIC_ISPR0, 0x100
+ 134              	   .equ NVIC_ISPR1, 0x104
+ARM GAS  terminal.s 			page 4
+
+
+ 135              	   .equ NVIC_ISPR2, 0x108 
+ 136              	   .equ NVIC_ICPR0, 0x180
+ 137              	   .equ NVIC_ICPR1, 0x184
+ 138              	   .equ NVIC_ICPR2, 0x188
+ 139              	   .equ NVIC_IABR0, 0x200
+ 140              	   .equ NVIC_IABR1, 0x204
+ 141              	   .equ NVIC_IABR2, 0x208
+ 142              	   .equ NVIC_IPR_BASE, 0x300 
+  38              	  .include "ascii.inc"
+   1              	////
+   2              	// Copyright Jacques Deschênes 2021
+   3              	// This file is part of stm32-tbi 
+   4              	//
+   5              	//     stm32-tbi is free software: you can redistribute it and/or modify
+   6              	//     it under the terms of the GNU General Public License as published by
+   7              	//     the Free Software Foundation, either version 3 of the License, or
+   8              	//     (at your option) any later version.
+   9              	//
+  10              	//     stm32-tbi is distributed in the hope that it will be useful,
+  11              	//     but WITHOUT ANY WARRANTY// without even the implied warranty of
+  12              	//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  13              	//     GNU General Public License for more details.
+  14              	//
+  15              	//     You should have received a copy of the GNU General Public License
+  16              	//     along with stm32-tbi.  If not, see <http://www.gnu.org/licenses/>.
+  17              	////
+  18              	
+  19              	//-------------------------------------------------------
+  20              	//     ASCII control  values
+  21              	//     CTRL_x   are VT100 keyboard values  
+  22              	// REF: https://en.wikipedia.org/wiki/ASCII    
+  23              	//-------------------------------------------------------
+  24              		.equ CTRL_A ,  1
+  25              		.equ SOH, CTRL_A  // start of heading 
+  26              		.equ CTRL_B ,  2
+  27              		.equ STX, CTRL_B  // start of text 
+  28              		.equ CTRL_C ,  3
+  29              		.equ ETX, CTRL_C  // end of text 
+  30              		.equ CTRL_D ,  4
+  31              		.equ EOT, CTRL_D  // end of transmission 
+  32              		.equ CTRL_E ,  5
+  33              		.equ ENQ, CTRL_E  // enquery 
+  34              		.equ CTRL_F ,  6
+  35              		.equ ACK, CTRL_F  // acknowledge
+  36              		.equ CTRL_G ,  7
+  37              		.equ BELL ,  7    // vt100 terminal generate a sound.
+  38              		.equ CTRL_H ,  8  
+  39              		.equ BS ,  8     // back space 
+  40              		.equ CTRL_I ,  9
+  41              		.equ TAB ,  9     // horizontal tabulation
+  42              		.equ CTRL_J ,  10 
+  43              		.equ LF ,  10     // line feed
+  44              		.equ CTRL_K ,  11
+  45              		.equ VT ,  11     // vertical tabulation 
+  46              		.equ CTRL_L ,  12
+  47              		.equ FF ,  12      // new page
+  48              		.equ CTRL_M ,  13
+ARM GAS  terminal.s 			page 5
+
+
+  49              		.equ CR ,  13      // carriage return 
+  50              		.equ CTRL_N ,  14
+  51              		.equ SO, CTRL_N    // shift out 
+  52              		.equ CTRL_O ,  15
+  53              		.equ SI, CTRL_O    // shift in 
+  54              		.equ CTRL_P ,  16
+  55              		.equ DLE, CTRL_P   // data link escape 
+  56              		.equ CTRL_Q ,  17
+  57              		.equ DC1, CTRL_Q   // device control 1 
+  58              		.equ XON, DC1 
+  59              		.equ CTRL_R ,  18
+  60              		.equ DC2, CTRL_R   // device control 2 
+  61              		.equ CTRL_S ,  19
+  62              		.equ DC3, CTRL_S   // device control 3
+  63              		.equ XOFF, DC3 
+  64              		.equ CTRL_T ,  20
+  65              		.equ DC4, CTRL_T   // device control 4 
+  66              		.equ CTRL_U ,  21
+  67              		.equ NAK, CTRL_U   // negative acknowledge
+  68              		.equ CTRL_V ,  22
+  69              		.equ SYN, CTRL_V   // synchronous idle 
+  70              		.equ CTRL_W ,  23
+  71              		.equ ETB, CTRL_W   // end of transmission block
+  72              		.equ CTRL_X ,  24
+  73              		.equ CAN, CTRL_X   // cancel 
+  74              		.equ CTRL_Y ,  25
+  75              		.equ EM, CTRL_Y    // end of medium
+  76              		.equ CTRL_Z ,  26
+  77              		.equ SUB, CTRL_Z   // substitute 
+  78              		.equ EOF, SUB      // end of text file in MSDOS 
+  79              		.equ ESC ,  27     // escape 
+  80              		.equ FS, 28        // file separator 
+  81              		.equ GS, 29        // group separator 
+  82              		.equ RS, 30  // record separator 
+  83              		.equ US, 31  // unit separator 
+  84              		.equ SPACE ,  32
+  85              		.equ COMMA ,  44 
+  86              		.equ SHARP ,  35
+  87              		.equ TICK ,  39
+  39              	  .include "tbi_macros.inc"
+   1              	//---------------------------------------------------------------------------
+   2              	// Copyright Jacques Deschênes 2021 
+   3              	// This file is part of stm32-tbi 
+   4              	//
+   5              	//     stm32-tbi is free software: you can redistribute it and/or modify
+   6              	//     it under the terms of the GNU General Public License as published by
+   7              	//     the Free Software Foundation, either version 3 of the License, or
+   8              	//     (at your option) any later version.
+   9              	//
+  10              	//     stm32-tbi is distributed in the hope that it will be useful,
+  11              	//     but WITHOUT ANY WARRANTY// without even the implied warranty of
+  12              	//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  13              	//     GNU General Public License for more details.
+  14              	//
+  15              	//     You should have received a copy of the GNU General Public License
+  16              	//     along with stm32-tbi.  If not, see <http://www.gnu.org/licenses/>.
+  17              	//
+ARM GAS  terminal.s 			page 6
+
+
+  18              	//---------------------------------------------------------------------------
+  19              	
+  20              	  .equ  STACK_SIZE,0x100
+  21              	  .equ  STACK_EMPTY,RAM_END
+  22              	  .equ  STACK_FULL, (RAM_END - STACK_SIZE)
+  23              	  .equ  TIB_SIZE,80 
+  24              	  .equ  PAD_SIZE,128 
+  25              	  .equ RX_QUEUE_SIZE,16
+  26              	
+  27              	.equ TAB_WIDTH,4 // default tabulation width 
+  28              	.equ EOF,0xff // end of file marker 
+  29              	// keyword types 
+  30              	  .equ F_CMD,0x20     // command keyword
+  31              	  .equ F_IFUNC,0x40 // integer function keyword
+  32              	  .equ F_CFUNC,0x80 // character function keyword
+  33              	  .equ F_CONST,0xC0 // function keyword that return a constant
+  34              	
+  35              	//--------------------------------------
+  36              	//   constantes related to Arduino 
+  37              	//   API mapping 
+  38              	//-------------------------------------
+  39              	  .equ INP,0
+  40              	  .equ OUTP,1 
+  41              	
+  42              	//--------------------------------------
+  43              	//       token attribute
+  44              	//--------------------------------------
+  45              	// bits 4:5 identify token group 
+  46              	// 0x0n -> miscelinous 
+  47              	// 0x1n -> +|- operators 
+  48              	// 0x2n -> *|/|% operators
+  49              	// 0x3n -> relational operators 
+  50              	  .equ TK_CMD,128      // BASIC command   
+  51              	  .equ TK_IFUNC,129    // BASIC integer function
+  52              	  .equ TK_CFUNC,130    // BASIC character function
+  53              	  .equ TK_CONST,131    // BASIC constant 
+  54              	  .equ TK_INTGR,132
+  55              	  .equ TK_VAR,133
+  56              	  .equ TK_NONE,0       // not a token 
+  57              	  .equ TK_COLON,1      // command separator ':' 
+  58              	  .equ TK_QSTR,2     // quoted string  
+  59              	  .equ TK_CHAR,3       // ASCII character 
+  60              	  .equ TK_ARRAY,6     // array variable '@' 
+  61              	  .equ TK_LPAREN,7     // left parenthesis '('
+  62              	  .equ TK_RPAREN,8     // right parenthesis ')'
+  63              	  .equ TK_COMMA,9     // item separator ',' 
+  64              	  .equ TK_SHARP,0xa     // print colon width '#' 
+  65              	  .equ TK_PLUS,0x10    // addition operator '+'
+  66              	  .equ TK_MINUS,0x11   // subtraction operator '-'
+  67              	  .equ TK_MULT,0x20    // multiplication operator '*'
+  68              	  .equ TK_DIV,0x21     // division operator '/'
+  69              	  .equ TK_MOD,0x22     // modulo operator '%'
+  70              	
+  71              	// don't change these token values 
+  72              	// values chosen to be used as a mask.
+  73              	// bit 7   1 for dictionary words else 0 
+  74              	// bits 6  always 0 
+ARM GAS  terminal.s 			page 7
+
+
+  75              	// bits 5:4 identify group 
+  76              	// bits 3:0 token identifier inside group  
+  77              	  .equ TK_GT,0x31      // relation operator '>'
+  78              	  .equ TK_EQUAL,0x32   // assignment or relation operator ','
+  79              	  .equ TK_GE,0x33      // relation operator '>,'
+  80              	  .equ TK_LT,0x34      // relation operator '<'
+  81              	  .equ TK_LE,0x36      // relation operator '<,'
+  82              	  .equ TK_NE,0x35      // relation operator '<>' not equal 
+  83              	// token groups 
+  84              	  .equ TK_GRP_MASK,0x30 // groups bits selector 
+  85              	  .equ TK_GRP_MISC,0x00 // miscelinous group 
+  86              	  .equ TK_GRP_ADD,0x10  // additive operators
+  87              	  .equ TK_GRP_MULT,0x20 // multiplicative operators
+  88              	  .equ TK_GRP_RELOP,0x30 //relational operators. 
+  89              	  .equ CMD_END,2 
+  90              	
+  91              	//--------------------------------------
+  92              	//   error codes 
+  93              	//--------------------------------------
+  94              	  .equ ERR_NONE,0
+  95              	  .equ ERR_MEM_FULL,1 
+  96              	  .equ ERR_SYNTAX,2
+  97              	  .equ ERR_MATH_OVF,3
+  98              	  .equ ERR_DIV0,4 
+  99              	  .equ ERR_NO_LINE,5
+ 100              	  .equ ERR_RUN_ONLY,6
+ 101              	  .equ ERR_CMD_ONLY,7
+ 102              	  .equ ERR_DUPLICATE,8
+ 103              	  .equ ERR_NOT_FILE,9
+ 104              	  .equ ERR_BAD_VALUE,10
+ 105              	  .equ ERR_NO_ACCESS,11
+ 106              	  .equ ERR_NO_DATA,12 
+ 107              	  .equ ERR_NO_PROG,13
+ 108              	  .equ ERR_NO_FSPACE,14
+ 109              	  .equ ERR_BUF_FULL,15
+ 110              	
+ 111              	//--------------------------------------
+ 112              	//   assembler flags 
+ 113              	//-------------------------------------
+ 114              	.equ MATH_OVF,0 // if 1 then stop on math overflow 
+ 115              	
+ 116              	.equ CELL_SIZE,4 
+ 117              	
+ 118              	
+ 119              	//-------------------------------
+ 120              	//  macros used to help debugging
+ 121              	//-------------------------------
+ 122              	  .equ DEBUG,0
+ 123              	
+ 124              	/***************************
+ 125              	  SYSTEM variables offset 
+ 126              	  from UPP  
+ 127              	***************************/ 
+ 128              	  .equ IN,0    // low byte of in.w 
+ 129              	  .equ IN_SAVED,IN+4 // set by get_token before parsing next token, used by unget_token
+ 130              	  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
+ 131              	  .equ BASICPTR,COUNT+4 // point to current BASIC line address.
+ARM GAS  terminal.s 			page 8
+
+
+ 132              	  .equ DATAPTR, BASICPTR+4 // point to DATA address
+ 133              	  .equ DATA,DATAPTR+4 // index to next data item 
+ 134              	  .equ DATALEN, DATA+4 // length of data line 
+ 135              	  .equ BASE,DATALEN+4 // nemeric base used to print integer 
+ 136              	  .equ TICKS,BASE+4 // milliseconds ticks counter (see Timer4UpdateHandler)
+ 137              	  .equ TIMER,TICKS+4 //  milliseconds count down timer 
+ 138              	  .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
+ 139              	  .equ FSPTR,SEED+4 //  pointer used by file system
+ 140              	  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
+ 141              	  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
+ 142              	  .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
+ 143              	  .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
+ 144              	  .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
+ 145              	  .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
+ 146              	  .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
+ 147              	  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
+ 148              	  .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
+ 149              	  .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
+ 150              	  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
+ 151              	  .equ CELLL,4 // size of integer 
+ 152              	  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
+ 153              	  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
+ 154              	
+ 155              	/***********************************************
+ 156              	*       MACROS
+ 157              	***********************************************/
+ 158              		.macro _CALL fn /* low level routine call */ 
+ 159              	 	PUSH {LR}
+ 160              		BL \fn  
+ 161              	  POP {LR}
+ 162              		.endm
+ 163              		
+ 164              		.macro	_RET /* return from subroutine */
+ 165              		BX	LR
+ 166              		.endm
+ 167              	
+ 168              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 169              		MOV \REG, #\LITERAL&0xffff
+ 170              		MOVT \REG, #\LITERAL>>16
+ 171              		.endm
+ 172              	
+ 173              	 	.macro	_DOLIT  value /*long literals */
+ 174              		BL	DOLIT
+ 175              		.word \value 
+ 176              		.endm
+ 177              	
+ 178              	// function header 
+ 179              	  .macro _FUNC label 
+ 180              	  .p2align 2 
+ 181              	  .type \label, %function  
+ 182              	\label:
+ 183              	  .endm 
+ 184              	
+ 185              	// global function header 
+ 186              	  .macro _GBL_FUNC label 
+ 187              	  .global \label 
+ 188              	  _FUNC \label 
+ARM GAS  terminal.s 			page 9
+
+
+ 189              	  .endm 
+ 190              	
+ 191              	
+ 192              	/********************************
+ 193              	    dictionary structure
+ 194              	------------------------------
+ 195              	 format:
+ 196              	   link:    
+ 197              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
+ 198              	   cmd_name: 31 characters max 
+ 199              	   cmd_index: 2 bytes 
+ 200              	**********************************/
+ 201              		.macro _dict_entry len,name,cmd_idx 
+ 202              		.p2align 2 
+ 203              	  .word LINK 
+ 204              	  .word \cmd_idx 
+ 205              		.equ LINK,.
+ 206              		.byte \len 	
+ 207              		.ascii "\name"
+ 208              		.p2align 2 
+ 209              		.endm 
+ 210              	
+  40              	
+  41              	
+  42              	    .section .text, "ax", %progbits 
+  43              	
+  44              	
+  45              	/*********************************
+  46              	// receive ANSI ESC 
+  47              	// sequence and convert it
+  48              	// to a single character code 
+  49              	// in range {128..255}
+  50              	// This is called after receiving 
+  51              	// ESC character. 
+  52              	// ignored sequence return 0 
+  53              	  input:
+  54              	    none
+  55              	  output:
+  56              	    r0    converted character 
+  57              	  use: 
+  58              	    r2
+  59              	***********************************/
+  60              	    _FUNC get_escape
+  61 0000 04B4     	    push {r2}
+  62 0002 00B5FFF7 	    _CALL uart_getc 
+  62      FEFF5DF8 
+  62      04EB
+  63 000c 5B28     	    cmp r0,#'[ // this character is expected after ESC 
+  64 000e 03D0     	    beq 1f
+  65 0010 80EA0000 	0:  eor r0,r0
+  66 0014 04BC     	    pop {r2}
+  67 0016 7047     	    _RET
+  68 0018 00B5FFF7 	1: _CALL  uart_getc 
+  68      FEFF5DF8 
+  68      04EB
+  69 0022 DFF82424 	    ldr r2,=convert_table
+  70              	2:
+ARM GAS  terminal.s 			page 10
+
+
+  71 0026 1178     	    ldrb r1,[r2]
+  72 0028 0940     	    ands r1,r1 
+  73 002a F1D0     	    beq 0b 
+  74 002c 8842     	    cmp r0,r1 
+  75 002e 02D0     	    beq 4f
+  76 0030 02F10202 	    add r2,#2
+  77 0034 F7E7     	    b 2b
+  78 0036 02F10102 	4:  add r2,#1  
+  79 003a 1078     	    ldrb r0,[r2]
+  80 003c B0F1840F 	    cmp r0,#SUP
+  81 0040 06D1     	    bne 5f
+  82 0042 01B4     	    push {r0}  
+  83 0044 00B5FFF7 	    _CALL  uart_getc
+  83      FEFF5DF8 
+  83      04EB
+  84 004e 01BC     	    pop {r0}
+  85              	5:
+  86 0050 04BC     	    pop {r2}
+  87 0052 7047     	    _RET 
+  88              	
+  89              	//-----------------------------
+  90              	//  constants replacing 
+  91              	//  ANSI sequence received 
+  92              	//  from terminal.
+  93              	//  These are the ANSI sequences
+  94              	//  accepted by function readln
+  95              	//------------------------------
+  96              	    .equ ARROW_LEFT,128
+  97              	    .equ ARROW_RIGHT,129
+  98              	    .equ HOME,130
+  99              	    .equ END,131
+ 100              	    .equ SUP,132 
+ 101              	
+ 102 0054 43814480 	convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
+ 102      48824683 
+ 102      33840000 
+ 103              	
+ 104              	/*******************************
+ 105              	    uart_puts 
+ 106              	 send counted string to uart 
+ 107              	
+ 108              	 input: 
+ 109              	    r0 *string to send 
+ 110              	 output:
+ 111              	    none 
+ 112              	 use:  
+ 113              	    r0 char to send 
+ 114              	    r10 counter
+ 115              	    r11 *string  
+ 116              	******************************/
+ 117              	    _GBL_FUNC uart_puts
+ 118 0060 2DE9000C 	    push {r10,r11}
+ 119 0064 10F801AB 	    ldrb r10,[r0],#1 
+ 120 0068 1AEA0A0A 	    ands r10,r10 
+ 121 006c 0AD0     	    beq 9f 
+ 122 006e 8346     	    mov r11,r0 
+ 123              	1:
+ARM GAS  terminal.s 			page 11
+
+
+ 124 0070 1BF8010B 	    ldrb r0,[r11],#1 
+ 125 0074 00B5FFF7 	    _CALL uart_putc   
+ 125      FEFF5DF8 
+ 125      04EB
+ 126 007e BAF1010A 	    subs r10,#1 
+ 127 0082 F5D1     	    bne 1b 
+ 128 0084 BDE8000C 	9:  pop {r10,r11}
+ 129 0088 7047     	    _RET  
+ 130              	
+ 131              	/******************************
+ 132              	    uart_putsz 
+ 133              	    print zero terminate string 
+ 134              	 
+ 135              	  input:
+ 136              	    r0  *asciz 
+ 137              	  output:
+ 138              	    none 
+ 139              	  use:
+ 140              	    r0  char to send 
+ 141              	    r8  *asciz 
+ 142              	******************************/
+ 143 008a 00BF     	    _GBL_FUNC uart_putsz 
+ 144 008c 4DF8048D 	    push {r8}
+ 145 0090 8046     	    mov r8,r0 
+ 146 0092 18F8010B 	1:  ldrb r0,[r8],#1
+ 147 0096 28B1     	    cbz r0,9f 
+ 148 0098 00B5FFF7 	    _CALL uart_putc 
+ 148      FEFF5DF8 
+ 148      04EB
+ 149 00a2 F6E7     	    b 1b 
+ 150 00a4 5DF8048B 	9:  pop {r8}
+ 151 00a8 7047     	    _RET 
+ 152              	
+ 153              	
+ 154              	/*****************************
+ 155              	    cursor_shape 
+ 156              	    change cursor shape 
+ 157              	
+ 158              	  input:
+ 159              	    r0      shape {0..6}
+ 160              	  output:
+ 161              	    none 
+ 162              	  use:
+ 163              	    r8    shape
+ 164              	*******************************/
+ 165 00aa 00BF     	    _GBL_FUNC cursor_shape
+ 166 00ac 4DF8048D 	    push {r8}
+ 167 00b0 00B500F0 	    _CALL send_escape
+ 167      3BF85DF8 
+ 167      04EB
+ 168 00ba 00B500F0 	    _CALL send_parameter 
+ 168      5CF85DF8 
+ 168      04EB
+ 169 00c4 4FF02000 	    mov r0,#SPACE 
+ 170 00c8 00B5FFF7 	    _CALL uart_putc 
+ 170      FEFF5DF8 
+ 170      04EB
+ARM GAS  terminal.s 			page 12
+
+
+ 171 00d2 4FF07100 	    mov r0,#'q' 
+ 172 00d6 00B5FFF7 	    _CALL uart_putc 
+ 172      FEFF5DF8 
+ 172      04EB
+ 173 00e0 5DF8048B 	    pop {r8}
+ 174 00e4 7047     	    _RET 
+ 175              	
+ 176              	
+ 177              	//---------------------------
+ 178              	// delete character at left 
+ 179              	// of cursor on terminal 
+ 180              	// input:
+ 181              	//   none 
+ 182              	// output:
+ 183              	//	none 
+ 184              	//---------------------------
+ 185 00e6 00BF     	    _FUNC bksp
+ 186 00e8 4FF00800 		mov r0,#BS 
+ 187 00ec 00B5FFF7 		_CALL  uart_putc 
+ 187      FEFF5DF8 
+ 187      04EB
+ 188 00f6 4FF02000 		mov r0,#SPACE 
+ 189 00fa 00B5FFF7 		_CALL  uart_putc 
+ 189      FEFF5DF8 
+ 189      04EB
+ 190 0104 4FF00800 		mov r0,#BS 
+ 191 0108 00B5FFF7 		_CALL  uart_putc 
+ 191      FEFF5DF8 
+ 191      04EB
+ 192 0112 7047     		_RET 
+ 193              	
+ 194              	//---------------------------
+ 195              	// delete n character left of cursor 
+ 196              	// at terminal.
+ 197              	// input: 
+ 198              	//   r0   number of characters to delete.
+ 199              	// output:
+ 200              	//    none
+ 201              	// use:
+ 202              	//   r2   count  
+ 203              	//--------------------------	
+ 204              	    _FUNC delete_nchar
+ 205 0114 48B1     		cbz r0,2f 
+ 206 0116 04B4     	    push {r2}
+ 207 0118 0246     	    mov r2,r0  
+ 208              	1:	
+ 209 011a 00B5FFF7 	    _CALL  bksp 
+ 209      E4FF5DF8 
+ 209      04EB
+ 210 0124 013A     	    subs r2,#1 
+ 211 0126 F8D1     		bne 1b 
+ 212 0128 04BC     	    pop {r2}
+ 213 012a 7047     	2:	_RET
+ 214              	
+ 215              	
+ 216              	//--------------------------
+ 217              	// send ANSI escape sequence
+ARM GAS  terminal.s 			page 13
+
+
+ 218              	// ANSI: ESC[
+ 219              	// note: ESC is ASCII 27
+ 220              	//       [   is ASCII 91 
+ 221              	// input:
+ 222              	//      none 
+ 223              	// output:
+ 224              	//      none 
+ 225              	// use:
+ 226              	//      r0 
+ 227              	//-------------------------- 
+ 228              	    _FUNC send_escape
+ 229 012c 01B4     		push {r0}
+ 230 012e 4FF01B00 	    mov r0,#ESC 
+ 231 0132 00B5FFF7 		_CALL  uart_putc 
+ 231      FEFF5DF8 
+ 231      04EB
+ 232 013c 4FF05B00 		mov r0,#'['
+ 233 0140 00B5FFF7 		_CALL  uart_putc 
+ 233      FEFF5DF8 
+ 233      04EB
+ 234 014a 01BC     		pop {r0}
+ 235 014c 7047     	    _RET 
+ 236              	
+ 237              	/***********************************
+ 238              	   digit10  
+ 239              	   get decimal digit from uint32 
+ 240              	    input:
+ 241              	        r0    uint32  
+ 242              	    output:
+ 243              	        r0    r0%10+'0'  
+ 244              	        r1    quotient 
+ 245              	    use:
+ 246              	        r8 
+ 247              	***********************************/
+ 248 014e 00BF     	    _FUNC digit10 
+ 249 0150 4DF8048D 	    push {r8}
+ 250 0154 01B4     	    push {r0}
+ 251 0156 4FF00A08 	    mov r8,#10 
+ 252 015a B0FBF8F0 	    udiv r0,r8
+ 253 015e 0146     	    mov r1,r0  
+ 254 0160 08FB00F0 	    mul  r0,r8 
+ 255 0164 5DF8048B 	    pop {r8}
+ 256 0168 A8EB0000 	    sub r0,r8,r0
+ 257 016c 00F13000 	    add r0,#'0'  
+ 258 0170 5DF8048B 	    pop {r8}
+ 259 0174 7047     	    _RET 
+ 260              	
+ 261              	
+ 262              	/*****************************
+ 263              	 send ANSI parameter value
+ 264              	 ANSI parameter values are 
+ 265              	 sent as ASCII charater 
+ 266              	 not as binary number.
+ 267              	 this routine 
+ 268              	 convert binary number to 
+ 269              	 ASCII send it.
+ 270              	 input: 
+ARM GAS  terminal.s 			page 14
+
+
+ 271              	 	r0   parameter  
+ 272              	 output:
+ 273              	   none 
+ 274              	 use:
+ 275              	    r8   digit counter 
+ 276              	***************************/
+ 277 0176 00BF     	    _FUNC send_parameter
+ 278 0178 4DF8048D 	    push {r8}
+ 279 017c 4FF00008 	    mov r8,#0 
+ 280 0180 00B5FFF7 	1:  _CALL digit10 
+ 280      E5FF5DF8 
+ 280      04EB
+ 281 018a 08F10108 	    add r8,#1 
+ 282 018e 01B4     	    push {r0}
+ 283 0190 0846     	    mov r0,r1 
+ 284 0192 0040     	    ands r0,r0
+ 285 0194 F4D1     	    bne 1b 
+ 286 0196 01BC     	2:  pop {r0}
+ 287 0198 00B5FFF7 	    _CALL uart_putc  
+ 287      FEFF5DF8 
+ 287      04EB
+ 288 01a2 B8F10108 	    subs r8,#1
+ 289 01a6 F6D1     	    bne 2b 
+ 290 01a8 5DF8048B 		pop {r8}
+ 291 01ac 7047     	    _RET 
+ 292              	
+ 293              	/**********************************
+ 294              	// move cursor left n character
+ 295              	// ANSI: ESC[PnD 
+ 296              	// 'Pn' est a numerical parameter
+ 297              	// specifying number of characters 
+ 298              	// displacement.
+ 299              	// input:
+ 300              	//   r0     character count
+ 301              	// output:
+ 302              	//   none
+ 303              	*********************************/
+ 304 01ae 00BF     	    _FUNC move_left
+ 305 01b0 00B5FFF7 		_CALL  send_escape
+ 305      BBFF5DF8 
+ 305      04EB
+ 306 01ba 00B5FFF7 		_CALL  send_parameter 
+ 306      DCFF5DF8 
+ 306      04EB
+ 307 01c4 4FF04400 		mov r0,#'D' 
+ 308 01c8 00B5FFF7 		_CALL  uart_putc 
+ 308      FEFF5DF8 
+ 308      04EB
+ 309 01d2 7047     		_RET	
+ 310              	
+ 311              	
+ 312              	/***********************************
+ 313              	// move cursor right n character 
+ 314              	// ANSI: ESC[PnC 
+ 315              	// input:
+ 316              	//   r0     character count
+ 317              	// output:
+ARM GAS  terminal.s 			page 15
+
+
+ 318              	//   none
+ 319              	***********************************/
+ 320              	    _FUNC move_right
+ 321 01d4 00B5FFF7 		_CALL  send_escape
+ 321      A9FF5DF8 
+ 321      04EB
+ 322 01de 00B5FFF7 		_CALL  send_parameter 
+ 322      CAFF5DF8 
+ 322      04EB
+ 323 01e8 4FF04300 		mov r0,#'C' 
+ 324 01ec 00B5FFF7 		_CALL  uart_putc 
+ 324      FEFF5DF8 
+ 324      04EB
+ 325 01f6 7047     		_RET 
+ 326              	
+ 327              	/*********************************
+ 328              	// print n spaces on terminal
+ 329              	// input:
+ 330              	//  r0 		number of spaces 
+ 331              	// output:
+ 332              	//	none
+ 333              	// use:
+ 334              	     r8    counter  
+ 335              	********************************/
+ 336              	    _GBL_FUNC spaces
+ 337 01f8 4DF8048D 		push {r8}
+ 338 01fc 50B1     	    cbz r0,9f 
+ 339 01fe 8046     	    mov r8,r0 
+ 340 0200 4FF02000 	1:	mov r0,#SPACE 
+ 341 0204 00B5FFF7 		_CALL  uart_putc 
+ 341      FEFF5DF8 
+ 341      04EB
+ 342 020e B8F10108 		subs r8,#1
+ 343 0212 F5D1     		bne 1b 
+ 344 0214 5DF8048B 	9:  pop {r8}
+ 345 0218 7047     		_RET 
+ 346              	
+ 347              	
+ 348              	/*********************************
+ 349              	    insert_char 
+ 350              	// insert character in tib  
+ 351              	
+ 352              	// input:
+ 353              	//   r0      character to insert 
+ 354              	//   r1      line length
+ 355              	//   r8      insert position 
+ 356              	//   r9      line pointer 
+ 357              	// output:
+ 358              	//   r0       updated insertion point  
+ 359              	**********************************/
+ 360 021a 00BF     	   _FUNC insert_char 
+ 361              	/*   
+ 362              	    ld (CHAR,sp),a 
+ 363              	    ld a,xh 
+ 364              		ld (IPOS,sp),a
+ 365              	    ld a,xl 
+ 366              	    ld (LLEN,sp),a  
+ARM GAS  terminal.s 			page 16
+
+
+ 367              	    ldw x,y
+ 368              	    incw x 
+ 369              	    ld a,(LLEN,sp)
+ 370              	    sub a,(IPOS,sp)
+ 371              	    inc a 
+ 372              	    ld acc8,a 
+ 373              	    clr acc16
+ 374              	    _CALL  move
+ 375              	    ldw y,#tib 
+ 376              	    ld a,(IPOS,sp)
+ 377              	    ld acc8,a 
+ 378              	    addw y,acc16 
+ 379              	    ld a,(CHAR,sp)
+ 380              	    ld (y),a
+ 381              	    incw y  
+ 382              	    ld a,(IPOS,sp)
+ 383              	    _CALL  move_left
+ 384              	    _MOV32 r0,tib 
+ 385              	    _CALL  uart_putsz 
+ 386              	    ld a,(LLEN,sp)
+ 387              	    sub a,(IPOS,sp) 
+ 388              	    _CALL  move_left 
+ 389              	*/
+ 390 021c 7047     		_RET 
+ 391              	
+ 392              	
+ 393              	/***************************************
+ 394              	// delete character under cursor
+ 395              	// input:
+ 396              	//   R0       line length   
+ 397              	//   R1      delete position
+ 398              	//   R8       line pointer 
+ 399              	**************************************/
+ 400 021e 00BF     	    _FUNC delete_under
+ 401              	/*
+ 402              	    ld (LLEN,sp),a 
+ 403              	    ld a,xl 
+ 404              	    ld (CPOS,sp),a 
+ 405              	    ldw x,y // move destination
+ 406              	    incw y  // move source 
+ 407              	    ld a,(LLEN,sp)
+ 408              	    sub a,(CPOS,sp)
+ 409              	    inc a // move including zero at end.
+ 410              	    ld acc8,a 
+ 411              	    clr acc16 
+ 412              		_CALL  move 
+ 413              	    ldw y,#tib 
+ 414              	    ld a,(CPOS,sp)
+ 415              	    ld acc8,a 
+ 416              	    addw y,acc16 
+ 417              	    ldw x,y 
+ 418              	    _CALL  uart_puts 
+ 419              	    ld a,#SPACE  
+ 420              	    _CALL  uart_putc
+ 421              	    ld a,(LLEN,sp)
+ 422              	    sub a,(CPOS,sp)
+ 423              	    _CALL  move_left 
+ARM GAS  terminal.s 			page 17
+
+
+ 424              	    dec (LLEN,sp)
+ 425              	*/
+ 426 0220 7047     		_RET 
+ 427              	
+ 428              	/********************************
+ 429              	// send ANSI sequence to delete
+ 430              	// whole line. Cursor position
+ 431              	// is not updated.
+ 432              	// ANSI: ESC[2K
+ 433              	// input:
+ 434              	//   none
+ 435              	// output:
+ 436              	//   none 
+ 437              	   use:
+ 438              	     r0 
+ 439              	********************************/
+ 440 0222 00BF     	    _FUNC delete_line
+ 441 0224 01B4     	    push {r0}
+ 442 0226 00B5FFF7 	    _CALL  send_escape
+ 442      80FF5DF8 
+ 442      04EB
+ 443 0230 4FF03200 		mov r0,#'2'
+ 444 0234 00B5FFF7 		_CALL  uart_putc 
+ 444      FEFF5DF8 
+ 444      04EB
+ 445 023e 4FF04B00 		mov r0,#'K' 
+ 446 0242 00B5FFF7 		_CALL  uart_putc
+ 446      FEFF5DF8 
+ 446      04EB
+ 447 024c 00B5FFF7 	    _CALL  cursor_home 
+ 447      FEFF5DF8 
+ 447      04EB
+ 448 0256 01BC     		pop {r0}
+ 449 0258 7047     	    _RET 
+ 450              	
+ 451              	/*************************************
+ 452              	   colon  
+ 453              	   send cursor at colon n 
+ 454              	    input: 
+ 455              	        r0  colon 
+ 456              	    output:
+ 457              	        none 
+ 458              	    use:
+ 459              	        none 
+ 460              	*************************************/
+ 461 025a 00BF     	    _GBL_FUNC colon 
+ 462 025c 00B5FFF7 	    _CALL send_escape
+ 462      65FF5DF8 
+ 462      04EB
+ 463 0266 00B5FFF7 	    _CALL send_parameter
+ 463      86FF5DF8 
+ 463      04EB
+ 464 0270 4FF04700 	    mov r0,#'G' 
+ 465 0274 00B5FFF7 	    _CALL uart_putc 
+ 465      FEFF5DF8 
+ 465      04EB
+ 466 027e 7047     	    _RET 
+ARM GAS  terminal.s 			page 18
+
+
+ 467              	
+ 468              	/*************************************
+ 469              	    cursor_home 
+ 470              	    send cursor at left position
+ 471              	  input:
+ 472              	    none 
+ 473              	  output:
+ 474              	    none 
+ 475              	  use:
+ 476              	    r0
+ 477              	*************************************/
+ 478              	    _GBL_FUNC cursor_home 
+ 479 0280 01B4     	    push {r0}
+ 480 0282 00B5FFF7 	    _CALL send_escape
+ 480      52FF5DF8 
+ 480      04EB
+ 481 028c 4FF04700 	    mov r0,#'G' 
+ 482 0290 00B5FFF7 	    _CALL uart_putc 
+ 482      FEFF5DF8 
+ 482      04EB
+ 483 029a 01BC     	    pop {r0}
+ 484 029c 7047     	    _RET 
+ 485              	
+ 486              	/*************************************
+ 487              	  readln 
+ 488              	  read a line of text from terminal
+ 489              	  CTRL_D delete line 
+ 490              	  CTRL_R edit last entered line
+ 491              	  CTRL_O toggle between overwrite|insert   
+ 492              	  LEFT_ARROW move cursor left 
+ 493              	  RIGHT_ARROW move cursor right
+ 494              	  HOME cursor at start of line 
+ 495              	  END  cursor at end of line  
+ 496              	  BS  delete character left of cursor 
+ 497              	  input:
+ 498              	    r0  *buffer
+ 499              	    r1  buffer size 
+ 500              	  output:
+ 501              	    r0  *buffer (asciz)  
+ 502              	    r1  line length  
+ 503              	  use:
+ 504              	    r7  cursor position 
+ 505              	    r8  ovwr|insert flag 
+ 506              	    r9  buffer size -1 
+ 507              	    r10 line length 
+ 508              	    r11 *buffer   
+ 509              	*************************************/
+ 510 029e 00BF     	  _GBL_FUNC readln
+ 511 02a0 2DE9800F 	  push {r7,r8,r9,r10,r11}
+ 512 02a4 87EA0707 	  eor r7,r7  // cursor position 
+ 513 02a8 88EA0808 	  eor r8,r8 // overwrite mode 
+ 514 02ac 8346     	  mov r11,r0 
+ 515 02ae A1F10109 	  sub r9,r1,#1  // buffer size -1
+ 516 02b2 8AEA0A0A 	  eor r10,r10  // 0 line length 
+ 517              	readln_loop:
+ 518 02b6 00B5FFF7 	  _CALL uart_getc 
+ 518      FEFF5DF8 
+ARM GAS  terminal.s 			page 19
+
+
+ 518      04EB
+ 519 02c0 0D28     	  cmp r0,#CR
+ 520 02c2 05D1     	  bne 0f
+ 521 02c4 00B5FFF7 	  _CALL uart_putc 
+ 521      FEFF5DF8 
+ 521      04EB
+ 522 02ce 88E0     	  b readln_exit 
+ 523              	0:
+ 524 02d0 0828     	  cmp r0,#BS 
+ 525 02d2 0BD1     	  bne 1f 
+ 526              	//delete char. left  
+ 527 02d4 3F40     	  ands r7,r7 
+ 528 02d6 EED0     	  beq readln_loop 
+ 529 02d8 00B5FFF7 	  _CALL bksp 
+ 529      05FF5DF8 
+ 529      04EB
+ 530 02e2 A7F10107 	  sub r7,#1
+ 531 02e6 AAF1010A 	  sub r10,#1
+ 532 02ea E4E7     	  b readln_loop 
+ 533 02ec 0428     	1: cmp r0,#CTRL_D 
+ 534 02ee 09D1     	   bne 2f 
+ 535              	// delete whole line  
+ 536 02f0 00B5FFF7 	  _CALL delete_line  
+ 536      97FF5DF8 
+ 536      04EB
+ 537 02fa 87EA0707 	  eor r7,r7   
+ 538 02fe 8AEA0A0A 	  eor r10,r10
+ 539 0302 D8E7     	  b readln_loop 
+ 540 0304 1228     	2: cmp r0,#CTRL_R    
+ 541 0306 11D1     	  bne 3f 
+ 542              	// edit last entered line if  available 
+ 543 0308 1AEA0A0A 	  ands r10,r10 
+ 544 030c D3D1     	  bne readln_loop
+ 545 030e 5846     	  mov r0,r11  
+ 546 0310 00B5FFF7 	  _CALL strlen
+ 546      FEFF5DF8 
+ 546      04EB
+ 547 031a 8246     	  mov r10,r0
+ 548 031c 0746     	  mov r7,r0 
+ 549 031e 5846     	  mov r0,r11  
+ 550 0320 00B5FFF7 	  _CALL uart_putsz
+ 550      FEFF5DF8 
+ 550      04EB
+ 551 032a C4E7     	  b readln_loop     
+ 552 032c 0F28     	3: cmp r0,#CTRL_O 
+ 553 032e 08D1     	   bne 4f 
+ 554 0330 C8F10508 	   rsb r8,#5  
+ 555 0334 4046     	   mov r0,r8 
+ 556 0336 00B5FFF7 	   _CALL cursor_shape
+ 556      FEFF5DF8 
+ 556      04EB
+ 557 0340 B9E7     	   b readln_loop 
+ 558 0342 1B28     	4: cmp r0,#ESC 
+ 559 0344 39D1     	   bne character  
+ 560 0346 00B5FFF7 	   _CALL get_escape
+ 560      5AFE5DF8 
+ 560      04EB
+ARM GAS  terminal.s 			page 20
+
+
+ 561 0350 8228     	   cmp r0,#HOME 
+ 562 0352 07D1     	   bne try_end 
+ 563 0354 00B5FFF7 	   _CALL cursor_home
+ 563      FEFF5DF8 
+ 563      04EB
+ 564 035e 87EA0707 	   eor r7,r7  
+ 565 0362 A8E7     	   b readln_loop 
+ 566              	try_end:
+ 567 0364 8328     	   cmp r0,#END 
+ 568 0366 08D1     	   bne try_left 
+ 569 0368 0AF10100 	   add r0,r10,#1
+ 570 036c 00B5FFF7 	   _CALL colon 
+ 570      FEFF5DF8 
+ 570      04EB
+ 571 0376 5746     	   mov r7,r10 
+ 572 0378 9DE7     	   b readln_loop 
+ 573              	try_left: 
+ 574 037a 8028     	   cmp r0,#ARROW_LEFT
+ 575 037c 0BD1     	   bne try_right 
+ 576 037e 3F40     	   ands r7,r7 
+ 577 0380 99D0     	   beq readln_loop
+ 578 0382 4FF00100 	   mov r0,#1 
+ 579 0386 00B5FFF7 	   _CALL move_left 
+ 579      12FF5DF8 
+ 579      04EB
+ 580 0390 A7F10107 	   sub r7,#1
+ 581 0394 8FE7     	   b readln_loop
+ 582              	try_right:
+ 583 0396 8128     	   cmp r0,#ARROW_RIGHT 
+ 584 0398 0BD1     	   bne try_suprim 
+ 585 039a 5745     	   cmp r7,r10
+ 586 039c 8BD0     	   beq readln_loop
+ 587 039e 07F10107 	   add r7,#1
+ 588 03a2 4FF00100 	   mov r0,#1  
+ 589 03a6 00B5FFF7 	   _CALL move_right  
+ 589      14FF5DF8 
+ 589      04EB
+ 590 03b0 81E7     	   b readln_loop 
+ 591              	try_suprim:
+ 592 03b2 8428     	   cmp r0,#SUP
+ 593 03b4 7FF47FAF 	   bne readln_loop 
+ 594              	
+ 595 03b8 7DE7     	   b readln_loop      
+ 596              	character:
+ 597 03ba CA45     	   cmp r10,r9 
+ 598 03bc 00D4     	   bmi 6f 
+ 599 03be 7AE7     	   b readln_loop  
+ 600              	6:   
+ 601 03c0 2028     	   cmp r0,#SPACE 
+ 602 03c2 3FF578AF 	   bmi readln_loop 
+ 603 03c6 0BF80700 	   strb r0,[r11,r7] 
+ 604 03ca 00B5FFF7 	   _CALL uart_putc
+ 604      FEFF5DF8 
+ 604      04EB
+ 605 03d4 07F10107 	   add r7,#1
+ 606 03d8 5745     	   cmp r7,r10
+ 607 03da 3FF56CAF 	   bmi readln_loop 
+ARM GAS  terminal.s 			page 21
+
+
+ 608 03de BA46     	   mov r10,r7
+ 609 03e0 69E7     	   b readln_loop  
+ 610              	readln_exit:
+ 611 03e2 80EA0000 	  eor r0,r0 
+ 612 03e6 0BF80A00 	  strb r0,[r11,r10]
+ 613 03ea 5146     	  mov r1,r10  // line length
+ 614 03ec 5846     	  mov r0,r11  // *buffer  
+ 615 03ee BDE8800F 	  pop {r7,r8,r9,r10,r11}
+ 616 03f2 7047     	  _RET 
+ 617              	
+ 618              	
+ 619              	/********************************
+ 620              	// print byte  in hexadecimal 
+ 621              	// on console
+ 622              	// input:
+ 623              	//   r0		byte to print
+ 624              	// output:
+ 625              	     to console 
+ 626              	   use:
+ 627              	     none 
+ 628              	******************************/
+ 629              	    _GBL_FUNC print_hex
+ 630 03f4 01B4     		push {r0} 
+ 631 03f6 4FEA1010 		lsr r0,#4  
+ 632 03fa 00B5FFF7 		_CALL  digit_to_char 
+ 632      FEFF5DF8 
+ 632      04EB
+ 633 0404 00B5FFF7 		_CALL  uart_putc 
+ 633      FEFF5DF8 
+ 633      04EB
+ 634 040e 01BC     	    pop {r0} 
+ 635 0410 00B5FFF7 		_CALL  digit_to_char
+ 635      FEFF5DF8 
+ 635      04EB
+ 636 041a 00B5FFF7 		_CALL  uart_putc
+ 636      FEFF5DF8 
+ 636      04EB
+ 637 0424 4FF02000 		mov r0,#SPACE 
+ 638 0428 00B5FFF7 		_CALL  uart_putc  
+ 638      FEFF5DF8 
+ 638      04EB
+ 639 0432 7047     		_RET 
+ 640              	
+ 641              	/***********************************
+ 642              	// convert digit to character  
+ 643              	// input:
+ 644              	//   r0       digit to convert 
+ 645              	// output:
+ 646              	//   r0      hexdecimal character 
+ 647              	   use:
+ 648              	     none 
+ 649              	***********************************/
+ 650              	    _GBL_FUNC digit_to_char 
+ 651 0434 00F00F00 		and r0,#15 
+ 652 0438 0A28     		cmp r0,#10 
+ 653 043a 01D4     		bmi 1f  
+ 654 043c 00F10700 		add r0,#7
+ARM GAS  terminal.s 			page 22
+
+
+ 655 0440 00F13000 	1:  add r0,#'0'  
+ 656 0444 7047     		_RET 
+ 657              	
+ 658 0446 00005400 	
+ 658      0000
+ARM GAS  terminal.s 			page 23
+
+
+DEFINED SYMBOLS
+       stm32f103.inc:5      *ABS*:0000000020000000 RAM_ADR
+       stm32f103.inc:6      *ABS*:0000000000005000 RAM_SIZE
+       stm32f103.inc:7      *ABS*:0000000020005000 RAM_END
+       stm32f103.inc:10     *ABS*:0000000022000000 RAM_BIT_ALIAS
+       stm32f103.inc:14     *ABS*:0000000008000000 FLASH_ADR
+       stm32f103.inc:15     *ABS*:0000000000010000 FLASH_SIZE
+       stm32f103.inc:16     *ABS*:0000000008010000 FLASH_END
+       stm32f103.inc:18     *ABS*:0000000008010000 FLASH_HIDDEN_ADR
+       stm32f103.inc:19     *ABS*:0000000000010000 FLASH_HIDDEN_SIZE
+       stm32f103.inc:20     *ABS*:0000000008020000 FLASH_HIDDEN_END
+       stm32f103.inc:21     *ABS*:0000000000000400 PAGE_SIZE
+       stm32f103.inc:24     *ABS*:000000001ffff000 SYS_MEM
+       stm32f103.inc:25     *ABS*:0000000000000800 SYS_MEM_SIZE
+       stm32f103.inc:28     *ABS*:000000001ffff800 OPTION
+       stm32f103.inc:29     *ABS*:0000000000000010 OPT_SIZE
+       stm32f103.inc:33     *ABS*:0000000040000000 PER_BASE_ADR
+       stm32f103.inc:35     *ABS*:0000000042000000 PER_BIT_ALIAS
+       stm32f103.inc:39     *ABS*:0000000040021000 RCC_BASE_ADR
+       stm32f103.inc:41     *ABS*:0000000000000000 RCC_CR
+       stm32f103.inc:42     *ABS*:0000000000000004 RCC_CFGR
+       stm32f103.inc:43     *ABS*:0000000000000008 RCC_CIR
+       stm32f103.inc:44     *ABS*:000000000000000c RCC_APB2RSTR
+       stm32f103.inc:45     *ABS*:0000000000000010 RCC_APB1RSTR
+       stm32f103.inc:46     *ABS*:0000000000000014 RCC_AHBENR
+       stm32f103.inc:47     *ABS*:0000000000000018 RCC_APB2ENR
+       stm32f103.inc:48     *ABS*:000000000000001c RCC_APB1ENR
+       stm32f103.inc:49     *ABS*:0000000000000020 RCC_BDCR
+       stm32f103.inc:50     *ABS*:0000000000000024 RCC_CSR
+       stm32f103.inc:53     *ABS*:0000000040022000 FLASH_BASE_ADR
+       stm32f103.inc:55     *ABS*:0000000000000000 FLASH_ACR
+       stm32f103.inc:56     *ABS*:0000000000000004 FLASH_KEYR
+       stm32f103.inc:57     *ABS*:0000000000000008 FLASH_OPTKEYR
+       stm32f103.inc:58     *ABS*:000000000000000c FLASH_SR
+       stm32f103.inc:59     *ABS*:0000000000000010 FLASH_CR
+       stm32f103.inc:60     *ABS*:0000000000000014 FLASH_AR
+       stm32f103.inc:61     *ABS*:000000000000001c FLASH_OBR
+       stm32f103.inc:62     *ABS*:0000000000000020 FLASH_WRPR
+       stm32f103.inc:63     *ABS*:00000000000000a5 RDPRT_KEY
+       stm32f103.inc:64     *ABS*:0000000045670123 FLASH_KEY1
+       stm32f103.inc:65     *ABS*:00000000cdef89ab FLASH_KEY2
+       stm32f103.inc:68     *ABS*:0000000040010800 GPIOA_BASE_ADR
+       stm32f103.inc:69     *ABS*:0000000040010c00 GPIOB_BASE_ADR
+       stm32f103.inc:70     *ABS*:0000000040011000 GPIOC_BASE_ADR
+       stm32f103.inc:71     *ABS*:0000000040011400 GPIOD_BASE_ADR
+       stm32f103.inc:72     *ABS*:0000000040011800 GPIOE_BASE_ADR
+       stm32f103.inc:73     *ABS*:0000000040018c00 GPIOF_BASE_ADR
+       stm32f103.inc:74     *ABS*:0000000040012000 GPIOG_BASE_ADR
+       stm32f103.inc:77     *ABS*:0000000000000000 GPIO_CRL
+       stm32f103.inc:78     *ABS*:0000000000000004 GPIO_CRH
+       stm32f103.inc:79     *ABS*:0000000000000008 GPIO_IDR
+       stm32f103.inc:80     *ABS*:000000000000000c GPIO_ODR
+       stm32f103.inc:81     *ABS*:0000000000000010 GPIO_BSRR
+       stm32f103.inc:82     *ABS*:0000000000000014 GPIO_BRR
+       stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LOCKR
+       stm32f103.inc:87     *ABS*:0000000040013800 USART1_BASE_ADR
+       stm32f103.inc:89     *ABS*:0000000000000000 USART_SR
+ARM GAS  terminal.s 			page 24
+
+
+       stm32f103.inc:90     *ABS*:0000000000000004 USART_DR
+       stm32f103.inc:91     *ABS*:0000000000000008 USART_BRR
+       stm32f103.inc:92     *ABS*:000000000000000c USART_CR1
+       stm32f103.inc:93     *ABS*:0000000000000010 USART_CR2
+       stm32f103.inc:94     *ABS*:0000000000000014 USART_CR3
+       stm32f103.inc:95     *ABS*:0000000000000018 USART_GTPR
+       stm32f103.inc:98     *ABS*:00000000e000e010 STK_BASE_ADR
+       stm32f103.inc:100    *ABS*:0000000000000000 STK_CTL
+       stm32f103.inc:101    *ABS*:0000000000000004 STK_LOAD
+       stm32f103.inc:102    *ABS*:0000000000000008 STK_VAL
+       stm32f103.inc:103    *ABS*:000000000000000c STK_CALIB
+       stm32f103.inc:106    *ABS*:00000000e000ed00 SCB_BASE_ADR
+       stm32f103.inc:108    *ABS*:0000000000000000 SCB_CPUID
+       stm32f103.inc:109    *ABS*:0000000000000004 SCB_ICSR
+       stm32f103.inc:110    *ABS*:0000000000000008 SCB_VTOR
+       stm32f103.inc:111    *ABS*:000000000000000c SCB_AIRCR
+       stm32f103.inc:112    *ABS*:0000000000000010 SCB_SCR
+       stm32f103.inc:113    *ABS*:0000000000000014 SCB_CCR
+       stm32f103.inc:114    *ABS*:0000000000000018 SCB_SHPR1
+       stm32f103.inc:115    *ABS*:000000000000001c SCB_SHPR2
+       stm32f103.inc:116    *ABS*:0000000000000020 SCB_SHPR3
+       stm32f103.inc:117    *ABS*:0000000000000024 SCB_SHCRS
+       stm32f103.inc:118    *ABS*:0000000000000028 SCB_CFSR
+       stm32f103.inc:119    *ABS*:000000000000002c SCB_HFSR
+       stm32f103.inc:120    *ABS*:0000000000000034 SCB_MMAR
+       stm32f103.inc:121    *ABS*:0000000000000038 SCB_BFAR
+       stm32f103.inc:123    *ABS*:00000000000005fa SCB_VECTKEY
+       stm32f103.inc:126    *ABS*:00000000e000e100 NVIC_BASE_ADR
+       stm32f103.inc:127    *ABS*:0000000000000000 NVIC_ISER0
+       stm32f103.inc:128    *ABS*:0000000000000004 NVIC_ISER1
+       stm32f103.inc:129    *ABS*:0000000000000008 NVIC_ISER2
+       stm32f103.inc:130    *ABS*:0000000000000080 NVIC_ICER0
+       stm32f103.inc:131    *ABS*:0000000000000084 NVIC_ICER1
+       stm32f103.inc:132    *ABS*:0000000000000088 NVIC_ICER2
+       stm32f103.inc:133    *ABS*:0000000000000100 NVIC_ISPR0
+       stm32f103.inc:134    *ABS*:0000000000000104 NVIC_ISPR1
+       stm32f103.inc:135    *ABS*:0000000000000108 NVIC_ISPR2
+       stm32f103.inc:136    *ABS*:0000000000000180 NVIC_ICPR0
+       stm32f103.inc:137    *ABS*:0000000000000184 NVIC_ICPR1
+       stm32f103.inc:138    *ABS*:0000000000000188 NVIC_ICPR2
+       stm32f103.inc:139    *ABS*:0000000000000200 NVIC_IABR0
+       stm32f103.inc:140    *ABS*:0000000000000204 NVIC_IABR1
+       stm32f103.inc:141    *ABS*:0000000000000208 NVIC_IABR2
+       stm32f103.inc:142    *ABS*:0000000000000300 NVIC_IPR_BASE
+           ascii.inc:24     *ABS*:0000000000000001 CTRL_A
+           ascii.inc:25     *ABS*:0000000000000001 SOH
+           ascii.inc:26     *ABS*:0000000000000002 CTRL_B
+           ascii.inc:27     *ABS*:0000000000000002 STX
+           ascii.inc:28     *ABS*:0000000000000003 CTRL_C
+           ascii.inc:29     *ABS*:0000000000000003 ETX
+           ascii.inc:30     *ABS*:0000000000000004 CTRL_D
+           ascii.inc:31     *ABS*:0000000000000004 EOT
+           ascii.inc:32     *ABS*:0000000000000005 CTRL_E
+           ascii.inc:33     *ABS*:0000000000000005 ENQ
+           ascii.inc:34     *ABS*:0000000000000006 CTRL_F
+           ascii.inc:35     *ABS*:0000000000000006 ACK
+           ascii.inc:36     *ABS*:0000000000000007 CTRL_G
+ARM GAS  terminal.s 			page 25
+
+
+           ascii.inc:37     *ABS*:0000000000000007 BELL
+           ascii.inc:38     *ABS*:0000000000000008 CTRL_H
+           ascii.inc:39     *ABS*:0000000000000008 BS
+           ascii.inc:40     *ABS*:0000000000000009 CTRL_I
+           ascii.inc:41     *ABS*:0000000000000009 TAB
+           ascii.inc:42     *ABS*:000000000000000a CTRL_J
+           ascii.inc:43     *ABS*:000000000000000a LF
+           ascii.inc:44     *ABS*:000000000000000b CTRL_K
+           ascii.inc:45     *ABS*:000000000000000b VT
+           ascii.inc:46     *ABS*:000000000000000c CTRL_L
+           ascii.inc:47     *ABS*:000000000000000c FF
+           ascii.inc:48     *ABS*:000000000000000d CTRL_M
+           ascii.inc:49     *ABS*:000000000000000d CR
+           ascii.inc:50     *ABS*:000000000000000e CTRL_N
+           ascii.inc:51     *ABS*:000000000000000e SO
+           ascii.inc:52     *ABS*:000000000000000f CTRL_O
+           ascii.inc:53     *ABS*:000000000000000f SI
+           ascii.inc:54     *ABS*:0000000000000010 CTRL_P
+           ascii.inc:55     *ABS*:0000000000000010 DLE
+           ascii.inc:56     *ABS*:0000000000000011 CTRL_Q
+           ascii.inc:57     *ABS*:0000000000000011 DC1
+           ascii.inc:58     *ABS*:0000000000000011 XON
+           ascii.inc:59     *ABS*:0000000000000012 CTRL_R
+           ascii.inc:60     *ABS*:0000000000000012 DC2
+           ascii.inc:61     *ABS*:0000000000000013 CTRL_S
+           ascii.inc:62     *ABS*:0000000000000013 DC3
+           ascii.inc:63     *ABS*:0000000000000013 XOFF
+           ascii.inc:64     *ABS*:0000000000000014 CTRL_T
+           ascii.inc:65     *ABS*:0000000000000014 DC4
+           ascii.inc:66     *ABS*:0000000000000015 CTRL_U
+           ascii.inc:67     *ABS*:0000000000000015 NAK
+           ascii.inc:68     *ABS*:0000000000000016 CTRL_V
+           ascii.inc:69     *ABS*:0000000000000016 SYN
+           ascii.inc:70     *ABS*:0000000000000017 CTRL_W
+           ascii.inc:71     *ABS*:0000000000000017 ETB
+           ascii.inc:72     *ABS*:0000000000000018 CTRL_X
+           ascii.inc:73     *ABS*:0000000000000018 CAN
+           ascii.inc:74     *ABS*:0000000000000019 CTRL_Y
+           ascii.inc:75     *ABS*:0000000000000019 EM
+           ascii.inc:76     *ABS*:000000000000001a CTRL_Z
+           ascii.inc:77     *ABS*:000000000000001a SUB
+           ascii.inc:78     *ABS*:00000000000000ff EOF
+           ascii.inc:79     *ABS*:000000000000001b ESC
+           ascii.inc:80     *ABS*:000000000000001c FS
+           ascii.inc:81     *ABS*:000000000000001d GS
+           ascii.inc:82     *ABS*:000000000000001e RS
+           ascii.inc:83     *ABS*:000000000000001f US
+           ascii.inc:84     *ABS*:0000000000000020 SPACE
+           ascii.inc:85     *ABS*:000000000000002c COMMA
+           ascii.inc:86     *ABS*:0000000000000023 SHARP
+           ascii.inc:87     *ABS*:0000000000000027 TICK
+      tbi_macros.inc:20     *ABS*:0000000000000100 STACK_SIZE
+      tbi_macros.inc:21     *ABS*:0000000020005000 STACK_EMPTY
+      tbi_macros.inc:22     *ABS*:0000000020004f00 STACK_FULL
+      tbi_macros.inc:23     *ABS*:0000000000000050 TIB_SIZE
+      tbi_macros.inc:24     *ABS*:0000000000000080 PAD_SIZE
+      tbi_macros.inc:25     *ABS*:0000000000000010 RX_QUEUE_SIZE
+ARM GAS  terminal.s 			page 26
+
+
+      tbi_macros.inc:27     *ABS*:0000000000000048 TAB_WIDTH
+      tbi_macros.inc:30     *ABS*:0000000000000020 F_CMD
+      tbi_macros.inc:31     *ABS*:0000000000000040 F_IFUNC
+      tbi_macros.inc:32     *ABS*:0000000000000080 F_CFUNC
+      tbi_macros.inc:33     *ABS*:00000000000000c0 F_CONST
+      tbi_macros.inc:39     *ABS*:0000000000000000 INP
+      tbi_macros.inc:40     *ABS*:0000000000000001 OUTP
+      tbi_macros.inc:50     *ABS*:0000000000000080 TK_CMD
+      tbi_macros.inc:51     *ABS*:0000000000000081 TK_IFUNC
+      tbi_macros.inc:52     *ABS*:0000000000000082 TK_CFUNC
+      tbi_macros.inc:53     *ABS*:0000000000000083 TK_CONST
+      tbi_macros.inc:54     *ABS*:0000000000000084 TK_INTGR
+      tbi_macros.inc:55     *ABS*:0000000000000085 TK_VAR
+      tbi_macros.inc:56     *ABS*:0000000000000000 TK_NONE
+      tbi_macros.inc:57     *ABS*:0000000000000001 TK_COLON
+      tbi_macros.inc:58     *ABS*:0000000000000002 TK_QSTR
+      tbi_macros.inc:59     *ABS*:0000000000000003 TK_CHAR
+      tbi_macros.inc:60     *ABS*:0000000000000006 TK_ARRAY
+      tbi_macros.inc:61     *ABS*:0000000000000007 TK_LPAREN
+      tbi_macros.inc:62     *ABS*:0000000000000008 TK_RPAREN
+      tbi_macros.inc:63     *ABS*:0000000000000009 TK_COMMA
+      tbi_macros.inc:64     *ABS*:000000000000000a TK_SHARP
+      tbi_macros.inc:65     *ABS*:0000000000000010 TK_PLUS
+      tbi_macros.inc:66     *ABS*:0000000000000011 TK_MINUS
+      tbi_macros.inc:67     *ABS*:0000000000000020 TK_MULT
+      tbi_macros.inc:68     *ABS*:0000000000000021 TK_DIV
+      tbi_macros.inc:69     *ABS*:0000000000000022 TK_MOD
+      tbi_macros.inc:77     *ABS*:0000000000000031 TK_GT
+      tbi_macros.inc:78     *ABS*:0000000000000032 TK_EQUAL
+      tbi_macros.inc:79     *ABS*:0000000000000033 TK_GE
+      tbi_macros.inc:80     *ABS*:0000000000000034 TK_LT
+      tbi_macros.inc:81     *ABS*:0000000000000036 TK_LE
+      tbi_macros.inc:82     *ABS*:0000000000000035 TK_NE
+      tbi_macros.inc:84     *ABS*:0000000000000030 TK_GRP_MASK
+      tbi_macros.inc:85     *ABS*:0000000000000000 TK_GRP_MISC
+      tbi_macros.inc:86     *ABS*:0000000000000010 TK_GRP_ADD
+      tbi_macros.inc:87     *ABS*:0000000000000020 TK_GRP_MULT
+      tbi_macros.inc:88     *ABS*:0000000000000030 TK_GRP_RELOP
+      tbi_macros.inc:89     *ABS*:0000000000000002 CMD_END
+      tbi_macros.inc:94     *ABS*:0000000000000000 ERR_NONE
+      tbi_macros.inc:95     *ABS*:0000000000000001 ERR_MEM_FULL
+      tbi_macros.inc:96     *ABS*:0000000000000002 ERR_SYNTAX
+      tbi_macros.inc:97     *ABS*:0000000000000003 ERR_MATH_OVF
+      tbi_macros.inc:98     *ABS*:0000000000000004 ERR_DIV0
+      tbi_macros.inc:99     *ABS*:0000000000000005 ERR_NO_LINE
+      tbi_macros.inc:100    *ABS*:0000000000000006 ERR_RUN_ONLY
+      tbi_macros.inc:101    *ABS*:0000000000000007 ERR_CMD_ONLY
+      tbi_macros.inc:102    *ABS*:0000000000000008 ERR_DUPLICATE
+      tbi_macros.inc:103    *ABS*:0000000000000009 ERR_NOT_FILE
+      tbi_macros.inc:104    *ABS*:000000000000000a ERR_BAD_VALUE
+      tbi_macros.inc:105    *ABS*:000000000000000b ERR_NO_ACCESS
+      tbi_macros.inc:106    *ABS*:000000000000000c ERR_NO_DATA
+      tbi_macros.inc:107    *ABS*:000000000000000d ERR_NO_PROG
+      tbi_macros.inc:108    *ABS*:000000000000000e ERR_NO_FSPACE
+      tbi_macros.inc:109    *ABS*:000000000000000f ERR_BUF_FULL
+      tbi_macros.inc:114    *ABS*:0000000000000000 MATH_OVF
+      tbi_macros.inc:116    *ABS*:0000000000000004 CELL_SIZE
+ARM GAS  terminal.s 			page 27
+
+
+      tbi_macros.inc:122    *ABS*:0000000000000000 DEBUG
+      tbi_macros.inc:128    *ABS*:0000000000000000 IN
+      tbi_macros.inc:129    *ABS*:0000000000000004 IN_SAVED
+      tbi_macros.inc:130    *ABS*:0000000000000008 COUNT
+      tbi_macros.inc:131    *ABS*:000000000000000c BASICPTR
+      tbi_macros.inc:132    *ABS*:0000000000000010 DATAPTR
+      tbi_macros.inc:133    *ABS*:0000000000000014 DATA
+      tbi_macros.inc:134    *ABS*:0000000000000018 DATALEN
+      tbi_macros.inc:135    *ABS*:000000000000001c BASE
+      tbi_macros.inc:136    *ABS*:0000000000000020 TICKS
+      tbi_macros.inc:137    *ABS*:0000000000000024 TIMER
+      tbi_macros.inc:138    *ABS*:0000000000000028 SEED
+      tbi_macros.inc:139    *ABS*:000000000000002c FSPTR
+      tbi_macros.inc:140    *ABS*:0000000000000030 FFREE
+      tbi_macros.inc:141    *ABS*:0000000000000034 TXTBGN
+      tbi_macros.inc:142    *ABS*:0000000000000038 TXTEND
+      tbi_macros.inc:143    *ABS*:000000000000003c LOOP_DEPTH
+      tbi_macros.inc:144    *ABS*:0000000000000040 ARRAY_SIZE
+      tbi_macros.inc:145    *ABS*:0000000000000044 FLAGS
+      tbi_macros.inc:147    *ABS*:000000000000004c RX_HEAD
+      tbi_macros.inc:148    *ABS*:0000000000000050 RX_TAIL
+      tbi_macros.inc:149    *ABS*:0000000000000054 RX_QUEUE
+      tbi_macros.inc:150    *ABS*:0000000000000064 VARS
+      tbi_macros.inc:151    *ABS*:0000000000000004 CELLL
+      tbi_macros.inc:152    *ABS*:0000000000000068 VARS_SIZE
+      tbi_macros.inc:153    *ABS*:00000000000000cc FREE_RAM
+          terminal.s:60     .text:0000000000000000 $t
+          terminal.s:60     .text:0000000000000000 get_escape
+          terminal.s:102    .text:0000000000000054 convert_table
+                            *ABS*:0000000000000084 SUP
+          terminal.s:96     *ABS*:0000000000000080 ARROW_LEFT
+          terminal.s:97     *ABS*:0000000000000081 ARROW_RIGHT
+          terminal.s:98     *ABS*:0000000000000082 HOME
+          terminal.s:99     *ABS*:0000000000000083 END
+          terminal.s:102    .text:0000000000000054 $d
+          terminal.s:117    .text:0000000000000060 uart_puts
+          terminal.s:117    .text:0000000000000060 $t
+          terminal.s:143    .text:000000000000008c uart_putsz
+          terminal.s:165    .text:00000000000000ac cursor_shape
+          terminal.s:228    .text:000000000000012c send_escape
+          terminal.s:277    .text:0000000000000178 send_parameter
+          terminal.s:185    .text:00000000000000e8 bksp
+          terminal.s:204    .text:0000000000000114 delete_nchar
+          terminal.s:248    .text:0000000000000150 digit10
+          terminal.s:304    .text:00000000000001b0 move_left
+          terminal.s:320    .text:00000000000001d4 move_right
+          terminal.s:336    .text:00000000000001f8 spaces
+          terminal.s:360    .text:000000000000021c insert_char
+          terminal.s:400    .text:0000000000000220 delete_under
+          terminal.s:440    .text:0000000000000224 delete_line
+          terminal.s:478    .text:0000000000000280 cursor_home
+          terminal.s:461    .text:000000000000025c colon
+          terminal.s:510    .text:00000000000002a0 readln
+          terminal.s:517    .text:00000000000002b6 readln_loop
+          terminal.s:610    .text:00000000000003e2 readln_exit
+          terminal.s:596    .text:00000000000003ba character
+          terminal.s:566    .text:0000000000000364 try_end
+ARM GAS  terminal.s 			page 28
+
+
+          terminal.s:573    .text:000000000000037a try_left
+          terminal.s:582    .text:0000000000000396 try_right
+          terminal.s:591    .text:00000000000003b2 try_suprim
+          terminal.s:629    .text:00000000000003f4 print_hex
+          terminal.s:650    .text:0000000000000434 digit_to_char
+          terminal.s:658    .text:0000000000000446 $d
+          terminal.s:658    .text:0000000000000448 $d
+
+UNDEFINED SYMBOLS
+uart_getc
+uart_putc
+strlen

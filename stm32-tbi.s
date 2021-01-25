@@ -245,17 +245,51 @@ reset_handler:
   b .  
 
     _FUNC test
+/*
+  // page erase test 
+    _MOV32 r0,0x800fff0 
+    _CALL erase_page 
+    _MOV32 R1,0x800fff0 
+    ldr r1,[r1]
+    cmp r1,#-1 
+    beq 0f
+    ldr r0,=per_error
+    _CALL uart_puts
+    b 1f 
+  0:     
+  // flash write test
+    _MOV32 r0,0x01020304
+    _MOV32 r1,0x0800fff0
+    _CALL flash_store 
+    _MOV32 r1,0x800fff0 
+    ldr r1,[r1]
+    _MOV32 r0,0X01020304
+    cmp r0,r1 
+    beq 1f
+    ldr r0,=wr_error 
+    _CALL uart_puts 
+*/
+  1: // readln test 
     ldr r0,tib_addr   
     mov r1,#80
     _CALL readln
     _CALL uart_putsz
     mov r0,#CR 
     _CALL uart_putc 
-    b test   
+    b 1b   
     _RET 
   tib_addr: 
     .word _tib
-
+/*
+  wr_error:
+    .byte 19
+    .ascii "flash write error!\r"
+    .p2align 2
+  per_error:
+    .byte 11
+    .ascii "per error!\r"
+    .p2align 2 
+*/
     _FUNC prt_version 
     ldr r0,version_msg 
     _CALL uart_puts 
@@ -504,46 +538,57 @@ lock:
 9: pop {r6}
 	_RET  
 
-/****************************************
-    wait_completion 
-    wait flash write completed 
-    input:
-       none 
-    output:
-       none 
-    use:
-      r4 
-******************************************/
-    _FUNC wait_completion 
-    push {r4}
-    ldr r4,[r3,#WAIT_BUSY_ADR]
-    orr r4,#1
-    push {lr}
-    blx r4 
-    pop {lr}
-    pop {r4}
-    _RET 
-
-/****************************************
-  hword_write 
-  write hword to flash 
-  input: 
-    r0  hword data 
-    r1  address 
-  output:
+/*********************************
+   wait_busy 
+   wait until busy flag is cleared 
+   input:
+    none
+   output:
     none 
-  use:
-    r4    indirect call address 
-*****************************************/
-    _GBL_FUNC hword_write   
-    push {r4}
-    ldr r4,[R3,#FLASH_WRITE_ADR]
-    orr r4,#1 
-    push {lr}
-    blx r4 
-    pop {lr}
-    pop {r4}
-    _RET 
+   use:
+     r0    flash registers address 
+     r1    temp 
+***********************************/
+    _FUNC wait_busy 
+    push {r0,r1}
+    _MOV32	r0,FLASH_BASE_ADR
+1:
+    ldr	r1, [r0, #FLASH_SR]	//  FLASH_SR
+    ands r1, #0x1	//  BSY
+    bne	1b 
+    pop {r0,r1}
+    _RET
+
+/***************************************
+   hword_write
+   write 16 bits value to flash memory 
+   input:
+    r0  data 
+    r1  address 
+   output:
+     none 
+   use: 
+     r6    flash control regs base address 
+     r7    temp  
+***************************************/
+    _FUNC hword_write 
+    push {r6,r7}
+    _MOV32 r6,FLASH_BASE_ADR
+    mov r7,#1 // set PG 
+    str r7,[r6,#FLASH_CR]
+    strh r0,[r1] 
+    _CALL wait_busy  
+    ldr r7,[r6,#FLASH_SR]
+    ands r7,r7,#(5<<2) 
+    beq 9f
+    ldr r0,=write_error
+    _CALL uart_puts   
+9:	pop {r6,r7}
+    _RET  
+write_error:	
+    .byte 13
+    .ascii " write error!"
+    .p2align 2
 
 /****************************************
     flash_store
@@ -558,22 +603,22 @@ lock:
       r8 data 
       r9 adr 
 *****************************************/ 
-	_GBL_FUNC flash_store 
-	push {r8,r9}
-  mov r8,r0
-  mov r9,r1  
-  mov r0,#1
-  _CALL unlock 
-  mov r0,r8 
-  mov r1,r9 
-  _CALL hword_write
-  mov r0,r8,lsr #16 
-  add r1,r8,#2
-  _CALL hword_write
-  eor r0,r0 
-	_CALL unlock  
-	pop {r8,r9}
-  _RET 
+    _GBL_FUNC flash_store 
+    push {r8,r9}
+    mov r8,r0
+    mov r9,r1  
+    mov r0,#1
+    _CALL unlock 
+    mov r0,r8 
+    mov r1,r9 
+    _CALL hword_write
+    mov r0,r8,lsr #16 
+    add r1,r9,#2
+    _CALL hword_write
+    eor r0,r0 
+    _CALL unlock  
+    pop {r8,r9}
+    _RET 
 
 /********************************************
     erase_page 
@@ -607,9 +652,9 @@ lock:
     pop {r8,r9}
     _RET 
 erase_error:
-	.byte 14
-	.ascii " erase error!\r"
-	.p2align 2
+    .byte 14
+    .ascii " erase error!\r"
+    .p2align 2
 
 
 
