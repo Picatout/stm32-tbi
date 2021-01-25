@@ -92,6 +92,7 @@ move_from_low: // move from low address toward high
     strb r6,[r1],#1
     subs r8,#1
     bne move_from_low
+    b 9f 
 move_from_end: // move from high address toward low 
     add r0,r0,r8 
     add r1,r1,r8     

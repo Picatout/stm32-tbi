@@ -685,616 +685,617 @@ ARM GAS  tinyBasic.s 			page 1
   84              	    _GBL_FUNC cmove
   85 001c 40B4     	    push {r6} 
   86 001e 18EA0808 	1:  ands r8,r8
-  87 0022 11D0     	    beq 9f 
+  87 0022 12D0     	    beq 9f 
   88 0024 8842     	    cmp r0,r1 
-  89 0026 06D4     	    bmi move_from_end 
+  89 0026 07D4     	    bmi move_from_end 
   90              	move_from_low: // move from low address toward high 
   91 0028 10F8016B 	    ldrb r6,[r0],#1
   92 002c 01F8016B 	    strb r6,[r1],#1
   93 0030 B8F10108 	    subs r8,#1
   94 0034 F8D1     	    bne move_from_low
-  95              	move_from_end: // move from high address toward low 
-  96 0036 4044     	    add r0,r0,r8 
-  97 0038 4144     	    add r1,r1,r8     
-  98 003a 10F8016D 	3:  ldrb r6,[r0,#-1]!
-  99 003e 01F8016D 	    strb r6,[r1,#-1]!
- 100 0042 B8F10108 	    subs r8,#1
- 101 0046 F8D1     	    bne 3b 
- 102 0048 40BC     	9:  pop {r6}
- 103 004a 7047     	    _RET
- 104              	
+  95 0036 08E0     	    b 9f 
+  96              	move_from_end: // move from high address toward low 
+  97 0038 4044     	    add r0,r0,r8 
+  98 003a 4144     	    add r1,r1,r8     
+  99 003c 10F8016D 	3:  ldrb r6,[r0,#-1]!
+ 100 0040 01F8016D 	    strb r6,[r1,#-1]!
+ 101 0044 B8F10108 	    subs r8,#1
+ 102 0048 F8D1     	    bne 3b 
+ 103 004a 40BC     	9:  pop {r6}
+ 104 004c 7047     	    _RET
  105              	
- 106              	/*********************************
- 107              	  cp_cstr 
- 108              	  compare 2 counted strings 
- 109              	  input:
- 110              	    r0  *str1 
- 111              	    r1  *str2
- 112              	    r8  length 
- 113              	  output:
- 114              	    r0  <0 str1<str2 
- 115              	        0  str1==str2 
- 116              	        >0  str1>str2  
- 117              	  use:
- 118              	    r9  *str1
- 119              	    r10 temp
+ 106              	
+ 107              	/*********************************
+ 108              	  cp_cstr 
+ 109              	  compare 2 counted strings 
+ 110              	  input:
+ 111              	    r0  *str1 
+ 112              	    r1  *str2
+ 113              	    r8  length 
+ 114              	  output:
+ 115              	    r0  <0 str1<str2 
+ 116              	        0  str1==str2 
+ 117              	        >0  str1>str2  
+ 118              	  use:
+ 119              	    r9  *str1
 ARM GAS  tinyBasic.s 			page 13
 
 
- 120              	    r11 temp    
- 121              	*********************************/
- 122              	  _FUNC cp_cstr
- 123 004c 2DE9000E 	  push {r9,r10,r11}
- 124 0050 8146     	  mov r9, r0 
- 125 0052 19F801AB 	  ldrb r10,[r9],#1 // length 
- 126 0056 B8EB0A00 	  subs r0,r8,r10 
- 127 005a 09D1     	  bne 2f 
- 128              	1:
- 129 005c 19F801AB 	  ldrb r10,[r9],#1
- 130 0060 11F801BB 	  ldrb r11,[r1],#1 
- 131 0064 BAEB0B00 	  subs r0,r10,r11  
- 132 0068 02D1     	  bne 2f // not same length       
- 133 006a B8F10108 	  subs r8,#1 
- 134 006e F5D1     	  bne 1b 
- 135              	2: 
- 136 0070 BDE8000E 	  pop {r9,r10,r11}
- 137 0074 7047     	  _RET 
- 138              	
- 139              	//---------------------------------
- 140              	// dictionary search 
- 141              	// input:
- 142              	//	 r0   target name
- 143              	//   r1		dictionary first link address  
- 144              	// output:
- 145              	//  r0 		TK_CMD|TK_IFUNC|TK_CONST|TK_NONE 
- 146              	//  r1		cmd_index if r0!=TK_NONE  
- 147              	// use:
- 148              	//  r8   length dictionary name 
- 149              	//---------------------------------
- 150 0076 00BF     	  _FUNC search_dict
- 151 0078 4DF8048D 	  push {r8}
- 152 007c 03B4     	  push {r0,r1}
- 153              	1:
- 154 007e 11F8010B 	  ldrb r0,[r1],#1 
- 155 0082 0043     	  orrs r0,r0
- 156 0084 13D0     	  beq 9f // end of dictinary 
- 157 0086 00F01F08 	  and r8,r0,#0x1f 
- 158 008a 0098     	  ldr r0,[sp]  
- 159 008c 00B5FFF7 	  _CALL cp_cstr 
- 159      DDFF5DF8 
- 159      04EB
- 160 0096 04D0     	  beq 2f 
- 161 0098 0199     	  ldr r1,[sp,#4]
- 162 009a 51F8081C 	  ldr r1,[r1,#-8]
- 163 009e 0191     	  str r1,[sp,#4]
- 164 00a0 EDE7     	  b 1b   
- 165              	2: // found
- 166 00a2 0199     	  ldr r1,[sp,#4]
- 167 00a4 0878     	  ldrb r0,[r1]
- 168 00a6 4FEA5010 	  lsr r0,#5    // token type 
- 169 00aa 51F8041C 	  ldr r1,[r1,#-4]  // command index 
- 170 00ae 02B0     	9: add sp,#8  // drop pushed r0,r1
- 171 00b0 5DF8048B 	   pop {r8}
- 172 00b4 7047     	   _RET 
- 173              	
- 174              	/*********************************
+ 120              	    r10 temp
+ 121              	    r11 temp    
+ 122              	*********************************/
+ 123 004e 00BF     	  _FUNC cp_cstr
+ 124 0050 2DE9000E 	  push {r9,r10,r11}
+ 125 0054 8146     	  mov r9, r0 
+ 126 0056 19F801AB 	  ldrb r10,[r9],#1 // length 
+ 127 005a B8EB0A00 	  subs r0,r8,r10 
+ 128 005e 09D1     	  bne 2f 
+ 129              	1:
+ 130 0060 19F801AB 	  ldrb r10,[r9],#1
+ 131 0064 11F801BB 	  ldrb r11,[r1],#1 
+ 132 0068 BAEB0B00 	  subs r0,r10,r11  
+ 133 006c 02D1     	  bne 2f // not same length       
+ 134 006e B8F10108 	  subs r8,#1 
+ 135 0072 F5D1     	  bne 1b 
+ 136              	2: 
+ 137 0074 BDE8000E 	  pop {r9,r10,r11}
+ 138 0078 7047     	  _RET 
+ 139              	
+ 140              	//---------------------------------
+ 141              	// dictionary search 
+ 142              	// input:
+ 143              	//	 r0   target name
+ 144              	//   r1		dictionary first link address  
+ 145              	// output:
+ 146              	//  r0 		TK_CMD|TK_IFUNC|TK_CONST|TK_NONE 
+ 147              	//  r1		cmd_index if r0!=TK_NONE  
+ 148              	// use:
+ 149              	//  r8   length dictionary name 
+ 150              	//---------------------------------
+ 151 007a 00BF     	  _FUNC search_dict
+ 152 007c 4DF8048D 	  push {r8}
+ 153 0080 03B4     	  push {r0,r1}
+ 154              	1:
+ 155 0082 11F8010B 	  ldrb r0,[r1],#1 
+ 156 0086 0043     	  orrs r0,r0
+ 157 0088 13D0     	  beq 9f // end of dictinary 
+ 158 008a 00F01F08 	  and r8,r0,#0x1f 
+ 159 008e 0098     	  ldr r0,[sp]  
+ 160 0090 00B5FFF7 	  _CALL cp_cstr 
+ 160      DDFF5DF8 
+ 160      04EB
+ 161 009a 04D0     	  beq 2f 
+ 162 009c 0199     	  ldr r1,[sp,#4]
+ 163 009e 51F8081C 	  ldr r1,[r1,#-8]
+ 164 00a2 0191     	  str r1,[sp,#4]
+ 165 00a4 EDE7     	  b 1b   
+ 166              	2: // found
+ 167 00a6 0199     	  ldr r1,[sp,#4]
+ 168 00a8 0878     	  ldrb r0,[r1]
+ 169 00aa 4FEA5010 	  lsr r0,#5    // token type 
+ 170 00ae 51F8041C 	  ldr r1,[r1,#-4]  // command index 
+ 171 00b2 02B0     	9: add sp,#8  // drop pushed r0,r1
+ 172 00b4 5DF8048B 	   pop {r8}
+ 173 00b8 7047     	   _RET 
+ 174              	
 ARM GAS  tinyBasic.s 			page 14
 
 
- 175              	   cold_init 
- 176              	   initialize BASIC interpreter 
- 177              	   input:
- 178              	     r1    destination address 
- 179              	   output:
- 180              	    none 
- 181              	   use:
- 182              	     r0,r1,r8 
- 183              	*********************************/
- 184 00b6 00BF     	    _GBL_FUNC cold_init
- 185 00b8 2DE90301 	    push {r0,r1,r8}
- 186              	//copy system variables to ram 
- 187 00bc 0848     	    ldr r0,src_addr 
- 188 00be 0B46     	    mov r3,r1 // UPP  
- 189 00c0 A0EB0108 	    sub r8,r0,r1 
- 190 00c4 4DF8048D 	    push {r8} // map offset 
- 191 00c8 4FF0D008 	    mov r8,#ulast-uzero
- 192 00cc 00B5FFF7 	    _CALL cmove  
- 192      FEFF5DF8 
- 192      04EB
- 193 00d6 5DF8048B 	    pop {r8}
- 194 00da BDE80301 	    pop {r0,r1,r8}
- 195 00de 7047     	    _RET 
- 196              	src_addr:
- 197 00e0 00000000 	  .word uzero
- 198              	
+ 175              	/*********************************
+ 176              	   cold_init 
+ 177              	   initialize BASIC interpreter 
+ 178              	   input:
+ 179              	     r1    destination address 
+ 180              	   output:
+ 181              	    none 
+ 182              	   use:
+ 183              	     r0,r1,r8 
+ 184              	*********************************/
+ 185 00ba 00BF     	    _GBL_FUNC cold_init
+ 186 00bc 2DE90301 	    push {r0,r1,r8}
+ 187              	//copy system variables to ram 
+ 188 00c0 0848     	    ldr r0,src_addr 
+ 189 00c2 0B46     	    mov r3,r1 // UPP  
+ 190 00c4 A0EB0108 	    sub r8,r0,r1 
+ 191 00c8 4DF8048D 	    push {r8} // map offset 
+ 192 00cc 4FF0D008 	    mov r8,#ulast-uzero
+ 193 00d0 00B5FFF7 	    _CALL cmove  
+ 193      FEFF5DF8 
+ 193      04EB
+ 194 00da 5DF8048B 	    pop {r8}
+ 195 00de BDE80301 	    pop {r0,r1,r8}
+ 196 00e2 7047     	    _RET 
+ 197              	src_addr:
+ 198 00e4 00000000 	  .word uzero
  199              	
- 200              	  .section .rodata 
- 201              	
- 202              	// system variables initial value 
- 203              	uzero:
- 204 0000 00000000 	  .word 0 // IN
- 205 0004 00000000 	  .word 0 // IN_SAVED
- 206 0008 00000000 	  .word 0 // COUNT
- 207 000c 00000000 	  .word 0 // BASICPTR
- 208 0010 00000000 	  .word 0 // DATAPTR
- 209 0014 00000000 	  .word 0 // DATA
- 210 0018 00000000 	  .word 0 // DATALEN
- 211 001c 0A000000 	  .word 10 // BASE
- 212 0020 00000000 	  .word 0 // TICKS
- 213 0024 00000000 	  .word 0 // TIMER
- 214 0028 AA5555AA 	  .word 0xaa5555aa // SEED
- 215 002c 00000000 	  .word FILE_SYSTEM // FSPTR
- 216 0030 00000000 	  .word 0 // FFREE
- 217 0034 00040020 	  .word RAM_ADR+1024 // TXTBGN
- 218 0038 00040020 	  .word RAM_ADR+1024 // TXTEND
- 219 003c 00000000 	  .word 0 //LOOP_DEPTH
- 220 0040 00000000 	  .word 0 // ARRAY_SIZE
- 221 0044 00000000 	  .word 0 // FLAGS
- 222 0048 04000000 	  .word 4 // TAB_WIDTH
- 223 004c 00000000 	  .word 0 // RX_HEAD
- 224 0050 00000000 	  .word 0 // RX_TAIL
- 225 0054 00000000 	  .space RX_QUEUE_SIZE,0 // RX_QUEUE
- 225      00000000 
- 225      00000000 
- 225      00000000 
- 226 0064 00000000 	  .space VARS_SIZE,0 // VARS
+ 200              	
+ 201              	  .section .rodata 
+ 202              	
+ 203              	// system variables initial value 
+ 204              	uzero:
+ 205 0000 00000000 	  .word 0 // IN
+ 206 0004 00000000 	  .word 0 // IN_SAVED
+ 207 0008 00000000 	  .word 0 // COUNT
+ 208 000c 00000000 	  .word 0 // BASICPTR
+ 209 0010 00000000 	  .word 0 // DATAPTR
+ 210 0014 00000000 	  .word 0 // DATA
+ 211 0018 00000000 	  .word 0 // DATALEN
+ 212 001c 0A000000 	  .word 10 // BASE
+ 213 0020 00000000 	  .word 0 // TICKS
+ 214 0024 00000000 	  .word 0 // TIMER
+ 215 0028 AA5555AA 	  .word 0xaa5555aa // SEED
+ 216 002c 00000000 	  .word FILE_SYSTEM // FSPTR
+ 217 0030 00000000 	  .word 0 // FFREE
+ 218 0034 00040020 	  .word RAM_ADR+1024 // TXTBGN
+ 219 0038 00040020 	  .word RAM_ADR+1024 // TXTEND
+ 220 003c 00000000 	  .word 0 //LOOP_DEPTH
+ 221 0040 00000000 	  .word 0 // ARRAY_SIZE
+ 222 0044 00000000 	  .word 0 // FLAGS
+ 223 0048 04000000 	  .word 4 // TAB_WIDTH
+ 224 004c 00000000 	  .word 0 // RX_HEAD
+ 225 0050 00000000 	  .word 0 // RX_TAIL
+ 226 0054 00000000 	  .space RX_QUEUE_SIZE,0 // RX_QUEUE
+ 226      00000000 
+ 226      00000000 
+ 226      00000000 
 ARM GAS  tinyBasic.s 			page 15
 
 
- 226      00000000 
- 226      00000000 
- 226      00000000 
- 226      00000000 
- 227 00cc 00000000 	  .space 4, 0 // padding 
- 228              	ulast:
- 229              	
- 230              	  .section .rodata.dictionary 
- 231              	
- 232              	// keep alphabetic order for BASIC names from Z-A
- 233              	// this sort order is for for WORDS cmd output. 	
- 234              	
- 235              		.equ link, 0
- 236              	kword_end:
- 237 0000 00000000 	  .word link,0
- 237      00000000 
- 238              	  .equ LINK, .
- 239 0008 00000000 	  .word 0
- 240              	  .p2align 2  
- 241 000c 08000000 	  _dict_entry 5+F_CMD,XTRMT,XTRMT_IDX // xmodem transmit
- 241      64000000 
- 241      25585452 
- 241      4D540000 
- 242 001c 14000000 	  _dict_entry 4+F_CMD,XRCV,XRCV_IDX // xmodem receive
- 242      65000000 
- 242      24585243 
- 242      56000000 
- 243 002c 24000000 	  _dict_entry 3+F_IFUNC,XOR,XOR_IDX //bit_xor
- 243      63000000 
- 243      43584F52 
- 244 0038 34000000 	  _dict_entry 5+F_CMD,WRITE,WRITE_IDX //write  
- 244      62000000 
- 244      25575249 
- 244      54450000 
- 245 0048 40000000 	  _dict_entry 5+F_CMD,WORDS,WORDS_IDX //words 
- 245      61000000 
- 245      25574F52 
- 245      44530000 
- 246 0058 50000000 	  _dict_entry 4+F_CMD,WAIT,WAIT_IDX //wait 
- 246      60000000 
- 246      24574149 
- 246      54000000 
- 247 0068 60000000 	  _dict_entry 3+F_IFUNC,USR,USR_IDX //usr
- 247      5F000000 
- 247      43555352 
- 248 0074 70000000 	  _dict_entry 5+F_CMD,UNTIL,UNTIL_IDX //until 
- 248      5E000000 
- 248      25554E54 
- 248      494C0000 
- 249 0084 7C000000 	  _dict_entry 6+F_IFUNC,UFLASH,UFLASH_IDX //uflash 
- 249      5D000000 
- 249      4655464C 
- 249      41534800 
- 250 0094 8C000000 	  _dict_entry 6+F_IFUNC,UBOUND,UBOUND_IDX //ubound
- 250      5C000000 
- 250      4655424F 
- 250      554E4400 
+ 227 0064 00000000 	  .space VARS_SIZE,0 // VARS
+ 227      00000000 
+ 227      00000000 
+ 227      00000000 
+ 227      00000000 
+ 228 00cc 00000000 	  .space 4, 0 // padding 
+ 229              	ulast:
+ 230              	
+ 231              	  .section .rodata.dictionary 
+ 232              	
+ 233              	// keep alphabetic order for BASIC names from Z-A
+ 234              	// this sort order is for for WORDS cmd output. 	
+ 235              	
+ 236              		.equ link, 0
+ 237              	kword_end:
+ 238 0000 00000000 	  .word link,0
+ 238      00000000 
+ 239              	  .equ LINK, .
+ 240 0008 00000000 	  .word 0
+ 241              	  .p2align 2  
+ 242 000c 08000000 	  _dict_entry 5+F_CMD,XTRMT,XTRMT_IDX // xmodem transmit
+ 242      64000000 
+ 242      25585452 
+ 242      4D540000 
+ 243 001c 14000000 	  _dict_entry 4+F_CMD,XRCV,XRCV_IDX // xmodem receive
+ 243      65000000 
+ 243      24585243 
+ 243      56000000 
+ 244 002c 24000000 	  _dict_entry 3+F_IFUNC,XOR,XOR_IDX //bit_xor
+ 244      63000000 
+ 244      43584F52 
+ 245 0038 34000000 	  _dict_entry 5+F_CMD,WRITE,WRITE_IDX //write  
+ 245      62000000 
+ 245      25575249 
+ 245      54450000 
+ 246 0048 40000000 	  _dict_entry 5+F_CMD,WORDS,WORDS_IDX //words 
+ 246      61000000 
+ 246      25574F52 
+ 246      44530000 
+ 247 0058 50000000 	  _dict_entry 4+F_CMD,WAIT,WAIT_IDX //wait 
+ 247      60000000 
+ 247      24574149 
+ 247      54000000 
+ 248 0068 60000000 	  _dict_entry 3+F_IFUNC,USR,USR_IDX //usr
+ 248      5F000000 
+ 248      43555352 
+ 249 0074 70000000 	  _dict_entry 5+F_CMD,UNTIL,UNTIL_IDX //until 
+ 249      5E000000 
+ 249      25554E54 
+ 249      494C0000 
+ 250 0084 7C000000 	  _dict_entry 6+F_IFUNC,UFLASH,UFLASH_IDX //uflash 
+ 250      5D000000 
+ 250      4655464C 
+ 250      41534800 
+ 251 0094 8C000000 	  _dict_entry 6+F_IFUNC,UBOUND,UBOUND_IDX //ubound
+ 251      5C000000 
+ 251      4655424F 
 ARM GAS  tinyBasic.s 			page 16
 
 
- 251 00a4 9C000000 	  _dict_entry 4+F_CMD,TONE,TONE_IDX //tone  
- 251      5B000000 
- 251      24544F4E 
- 251      45000000 
- 252 00b4 AC000000 	  _dict_entry 2+F_CMD,TO,TO_IDX //to
- 252      5A000000 
- 252      22544F00 
- 253 00c0 BC000000 	  _dict_entry 5+F_CMD,TIMER,TIMER_IDX //set_timer
- 253      58000000 
- 253      2554494D 
- 253      45520000 
- 254 00d0 C8000000 	  _dict_entry 7+F_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
- 254      59000000 
- 254      4754494D 
- 254      454F5554 
- 255 00e0 D8000000 	  _dict_entry 5+F_IFUNC,TICKS,TICKS_IDX //get_ticks
- 255      57000000 
- 255      45544943 
- 255      4B530000 
- 256 00f0 E8000000 	  _dict_entry 4+F_CMD,STOP,STOP_IDX //stop 
- 256      56000000 
- 256      2453544F 
- 256      50000000 
- 257 0100 F8000000 	  _dict_entry 4+F_CMD,STEP,STEP_IDX //step 
- 257      55000000 
- 257      24535445 
+ 251      554E4400 
+ 252 00a4 9C000000 	  _dict_entry 4+F_CMD,TONE,TONE_IDX //tone  
+ 252      5B000000 
+ 252      24544F4E 
+ 252      45000000 
+ 253 00b4 AC000000 	  _dict_entry 2+F_CMD,TO,TO_IDX //to
+ 253      5A000000 
+ 253      22544F00 
+ 254 00c0 BC000000 	  _dict_entry 5+F_CMD,TIMER,TIMER_IDX //set_timer
+ 254      58000000 
+ 254      2554494D 
+ 254      45520000 
+ 255 00d0 C8000000 	  _dict_entry 7+F_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
+ 255      59000000 
+ 255      4754494D 
+ 255      454F5554 
+ 256 00e0 D8000000 	  _dict_entry 5+F_IFUNC,TICKS,TICKS_IDX //get_ticks
+ 256      57000000 
+ 256      45544943 
+ 256      4B530000 
+ 257 00f0 E8000000 	  _dict_entry 4+F_CMD,STOP,STOP_IDX //stop 
+ 257      56000000 
+ 257      2453544F 
  257      50000000 
- 258 0110 08010000 	  _dict_entry 5+F_CMD,SPIWR,SPIWR_IDX //spi_write
- 258      54000000 
- 258      25535049 
- 258      57520000 
- 259 0120 18010000 	  _dict_entry 6+F_CMD,SPISEL,SPISEL_IDX //spi_select
- 259      53000000 
- 259      26535049 
- 259      53454C00 
- 260 0130 28010000 	  _dict_entry 5+F_IFUNC,SPIRD,SPIRD_IDX // spi_read 
- 260      51000000 
- 260      45535049 
- 260      52440000 
- 261 0140 38010000 	  _dict_entry 5+F_CMD,SPIEN,SPIEN_IDX //spi_enable 
- 261      52000000 
- 261      25535049 
- 261      454E0000 
- 262 0150 48010000 	  _dict_entry 5+F_CMD,SLEEP,SLEEP_IDX //sleep 
- 262      50000000 
- 262      25534C45 
- 262      45500000 
- 263 0160 58010000 	  _dict_entry 4+F_IFUNC,SIZE,SIZE_IDX //size
- 263      4F000000 
- 263      4453495A 
- 263      45000000 
- 264 0170 68010000 	  _dict_entry 4+F_CMD,SHOW,SHOW_IDX //show 
- 264      4E000000 
- 264      2453484F 
- 264      57000000 
- 265 0180 78010000 	  _dict_entry 4+F_CMD,SAVE,SAVE_IDX //save
- 265      4D000000 
+ 258 0100 F8000000 	  _dict_entry 4+F_CMD,STEP,STEP_IDX //step 
+ 258      55000000 
+ 258      24535445 
+ 258      50000000 
+ 259 0110 08010000 	  _dict_entry 5+F_CMD,SPIWR,SPIWR_IDX //spi_write
+ 259      54000000 
+ 259      25535049 
+ 259      57520000 
+ 260 0120 18010000 	  _dict_entry 6+F_CMD,SPISEL,SPISEL_IDX //spi_select
+ 260      53000000 
+ 260      26535049 
+ 260      53454C00 
+ 261 0130 28010000 	  _dict_entry 5+F_IFUNC,SPIRD,SPIRD_IDX // spi_read 
+ 261      51000000 
+ 261      45535049 
+ 261      52440000 
+ 262 0140 38010000 	  _dict_entry 5+F_CMD,SPIEN,SPIEN_IDX //spi_enable 
+ 262      52000000 
+ 262      25535049 
+ 262      454E0000 
+ 263 0150 48010000 	  _dict_entry 5+F_CMD,SLEEP,SLEEP_IDX //sleep 
+ 263      50000000 
+ 263      25534C45 
+ 263      45500000 
+ 264 0160 58010000 	  _dict_entry 4+F_IFUNC,SIZE,SIZE_IDX //size
+ 264      4F000000 
+ 264      4453495A 
+ 264      45000000 
+ 265 0170 68010000 	  _dict_entry 4+F_CMD,SHOW,SHOW_IDX //show 
+ 265      4E000000 
+ 265      2453484F 
+ 265      57000000 
+ 266 0180 78010000 	  _dict_entry 4+F_CMD,SAVE,SAVE_IDX //save
 ARM GAS  tinyBasic.s 			page 17
 
 
- 265      24534156 
- 265      45000000 
- 266 0190 88010000 	  _dict_entry 3+F_CMD,RUN,RUN_IDX //run
- 266      4C000000 
- 266      2352554E 
- 267 019c 98010000 	  _dict_entry 6+F_IFUNC,RSHIFT,RSHIFT_IDX //rshift
- 267      4B000000 
- 267      46525348 
- 267      49465400 
- 268 01ac A4010000 	  _dict_entry 3+F_IFUNC,RND,RND_IDX //random 
- 268      4A000000 
- 268      43524E44 
- 269 01b8 B4010000 	  _dict_entry 6+F_CMD,RETURN,RET_IDX //return 
- 269      49000000 
- 269      26524554 
- 269      55524E00 
- 270 01c8 C0010000 	  _dict_entry 7+F_CMD,RESTORE,REST_IDX //restore 
- 270      48000000 
- 270      27524553 
- 270      544F5245 
- 271 01d8 D0010000 	  _dict_entry 6+F_CMD,REMARK,REM_IDX //remark 
- 271      47000000 
- 271      2652454D 
- 271      41524B00 
- 272 01e8 E0010000 	  _dict_entry 6+F_CMD,REBOOT,RBT_IDX //cold_start
- 272      46000000 
- 272      26524542 
- 272      4F4F5400 
- 273 01f8 F0010000 	  _dict_entry 4+F_IFUNC,READ,READ_IDX //read  
- 273      45000000 
- 273      44524541 
- 273      44000000 
- 274 0208 00020000 	  _dict_entry 4+F_IFUNC,QKEY,QKEY_IDX //qkey  
+ 266      4D000000 
+ 266      24534156 
+ 266      45000000 
+ 267 0190 88010000 	  _dict_entry 3+F_CMD,RUN,RUN_IDX //run
+ 267      4C000000 
+ 267      2352554E 
+ 268 019c 98010000 	  _dict_entry 6+F_IFUNC,RSHIFT,RSHIFT_IDX //rshift
+ 268      4B000000 
+ 268      46525348 
+ 268      49465400 
+ 269 01ac A4010000 	  _dict_entry 3+F_IFUNC,RND,RND_IDX //random 
+ 269      4A000000 
+ 269      43524E44 
+ 270 01b8 B4010000 	  _dict_entry 6+F_CMD,RETURN,RET_IDX //return 
+ 270      49000000 
+ 270      26524554 
+ 270      55524E00 
+ 271 01c8 C0010000 	  _dict_entry 7+F_CMD,RESTORE,REST_IDX //restore 
+ 271      48000000 
+ 271      27524553 
+ 271      544F5245 
+ 272 01d8 D0010000 	  _dict_entry 6+F_CMD,REMARK,REM_IDX //remark 
+ 272      47000000 
+ 272      2652454D 
+ 272      41524B00 
+ 273 01e8 E0010000 	  _dict_entry 6+F_CMD,REBOOT,RBT_IDX //cold_start
+ 273      46000000 
+ 273      26524542 
+ 273      4F4F5400 
+ 274 01f8 F0010000 	  _dict_entry 4+F_IFUNC,READ,READ_IDX //read  
+ 274      45000000 
+ 274      44524541 
  274      44000000 
- 274      44514B45 
- 274      59000000 
- 275 0218 10020000 	  _dict_entry 4+F_IFUNC,PRTI,PRTI_IDX //const_porti 
- 275      43000000 
- 275      44505254 
- 275      49000000 
- 276 0228 20020000 	  _dict_entry 4+F_IFUNC,PRTH,PRTH_IDX //const_porth 
- 276      42000000 
+ 275 0208 00020000 	  _dict_entry 4+F_IFUNC,QKEY,QKEY_IDX //qkey  
+ 275      44000000 
+ 275      44514B45 
+ 275      59000000 
+ 276 0218 10020000 	  _dict_entry 4+F_IFUNC,PRTI,PRTI_IDX //const_porti 
+ 276      43000000 
  276      44505254 
- 276      48000000 
- 277 0238 30020000 	  _dict_entry 4+F_IFUNC,PRTG,PRTG_IDX //const_portg 
- 277      41000000 
+ 276      49000000 
+ 277 0228 20020000 	  _dict_entry 4+F_IFUNC,PRTH,PRTH_IDX //const_porth 
+ 277      42000000 
  277      44505254 
- 277      47000000 
- 278 0248 40020000 	  _dict_entry 4+F_IFUNC,PRTF,PRTF_IDX //const_portf
- 278      40000000 
+ 277      48000000 
+ 278 0238 30020000 	  _dict_entry 4+F_IFUNC,PRTG,PRTG_IDX //const_portg 
+ 278      41000000 
  278      44505254 
- 278      46000000 
- 279 0258 50020000 	  _dict_entry 4+F_IFUNC,PRTE,PRTE_IDX //const_porte
- 279      3F000000 
+ 278      47000000 
+ 279 0248 40020000 	  _dict_entry 4+F_IFUNC,PRTF,PRTF_IDX //const_portf
+ 279      40000000 
  279      44505254 
- 279      45000000 
- 280 0268 60020000 	  _dict_entry 4+F_IFUNC,PRTD,PRTD_IDX //const_portd
+ 279      46000000 
+ 280 0258 50020000 	  _dict_entry 4+F_IFUNC,PRTE,PRTE_IDX //const_porte
+ 280      3F000000 
+ 280      44505254 
+ 280      45000000 
 ARM GAS  tinyBasic.s 			page 18
 
 
- 280      3E000000 
- 280      44505254 
- 280      44000000 
- 281 0278 70020000 	  _dict_entry 4+F_IFUNC,PRTC,PRTC_IDX //const_portc
- 281      3D000000 
+ 281 0268 60020000 	  _dict_entry 4+F_IFUNC,PRTD,PRTD_IDX //const_portd
+ 281      3E000000 
  281      44505254 
- 281      43000000 
- 282 0288 80020000 	  _dict_entry 4+F_IFUNC,PRTB,PRTB_IDX //const_portb
- 282      3C000000 
+ 281      44000000 
+ 282 0278 70020000 	  _dict_entry 4+F_IFUNC,PRTC,PRTC_IDX //const_portc
+ 282      3D000000 
  282      44505254 
- 282      42000000 
- 283 0298 90020000 	  _dict_entry 4+F_IFUNC,PRTA,PRTA_IDX //const_porta 
- 283      3B000000 
+ 282      43000000 
+ 283 0288 80020000 	  _dict_entry 4+F_IFUNC,PRTB,PRTB_IDX //const_portb
+ 283      3C000000 
  283      44505254 
- 283      41000000 
- 284 02a8 A0020000 	  _dict_entry 5+F_CMD,PRINT,PRT_IDX //print 
- 284      3A000000 
- 284      25505249 
- 284      4E540000 
- 285 02b8 B0020000 	  _dict_entry 4+F_IFUNC,POUT,POUT_IDX //const_output
- 285      39000000 
- 285      44504F55 
- 285      54000000 
- 286 02c8 C0020000 	  _dict_entry 4+F_CMD,POKE,POKE_IDX //poke 
- 286      38000000 
- 286      24504F4B 
- 286      45000000 
- 287 02d8 D0020000 	  _dict_entry 5+F_CMD,PMODE,PMODE_IDX //pin_mode 
- 287      35000000 
- 287      25504D4F 
- 287      44450000 
- 288 02e8 E0020000 	  _dict_entry 4+F_IFUNC,PINP,PINP_IDX //const_input
- 288      37000000 
- 288      4450494E 
- 288      50000000 
- 289 02f8 F0020000 	  _dict_entry 4+F_IFUNC,PEEK,PEEK_IDX //peek 
- 289      36000000 
- 289      44504545 
- 289      4B000000 
- 290 0308 00030000 	  _dict_entry 5+F_CMD,PAUSE,PAUSE_IDX //pause 
- 290      34000000 
- 290      25504155 
- 290      53450000 
- 291 0318 10030000 	  _dict_entry 3+F_IFUNC,PAD,PAD_IDX //pad_ref 
- 291      33000000 
- 291      43504144 
- 292 0324 20030000 	  _dict_entry 2+F_IFUNC,OR,OR_IDX //bit_or
- 292      32000000 
- 292      424F5200 
- 293 0330 2C030000 	  _dict_entry 3+F_IFUNC,ODR,ODR_IDX //const_odr 
- 293      31000000 
- 293      434F4452 
- 294 033c 38030000 	  _dict_entry 3+F_IFUNC,NOT,NOT_IDX //func_not 
- 294      30000000 
- 294      434E4F54 
- 295 0348 44030000 	  _dict_entry 4+F_CMD,NEXT,NEXT_IDX //next 
- 295      2E000000 
+ 283      42000000 
+ 284 0298 90020000 	  _dict_entry 4+F_IFUNC,PRTA,PRTA_IDX //const_porta 
+ 284      3B000000 
+ 284      44505254 
+ 284      41000000 
+ 285 02a8 A0020000 	  _dict_entry 5+F_CMD,PRINT,PRT_IDX //print 
+ 285      3A000000 
+ 285      25505249 
+ 285      4E540000 
+ 286 02b8 B0020000 	  _dict_entry 4+F_IFUNC,POUT,POUT_IDX //const_output
+ 286      39000000 
+ 286      44504F55 
+ 286      54000000 
+ 287 02c8 C0020000 	  _dict_entry 4+F_CMD,POKE,POKE_IDX //poke 
+ 287      38000000 
+ 287      24504F4B 
+ 287      45000000 
+ 288 02d8 D0020000 	  _dict_entry 5+F_CMD,PMODE,PMODE_IDX //pin_mode 
+ 288      35000000 
+ 288      25504D4F 
+ 288      44450000 
+ 289 02e8 E0020000 	  _dict_entry 4+F_IFUNC,PINP,PINP_IDX //const_input
+ 289      37000000 
+ 289      4450494E 
+ 289      50000000 
+ 290 02f8 F0020000 	  _dict_entry 4+F_IFUNC,PEEK,PEEK_IDX //peek 
+ 290      36000000 
+ 290      44504545 
+ 290      4B000000 
+ 291 0308 00030000 	  _dict_entry 5+F_CMD,PAUSE,PAUSE_IDX //pause 
+ 291      34000000 
+ 291      25504155 
+ 291      53450000 
+ 292 0318 10030000 	  _dict_entry 3+F_IFUNC,PAD,PAD_IDX //pad_ref 
+ 292      33000000 
+ 292      43504144 
+ 293 0324 20030000 	  _dict_entry 2+F_IFUNC,OR,OR_IDX //bit_or
+ 293      32000000 
+ 293      424F5200 
+ 294 0330 2C030000 	  _dict_entry 3+F_IFUNC,ODR,ODR_IDX //const_odr 
+ 294      31000000 
+ 294      434F4452 
+ 295 033c 38030000 	  _dict_entry 3+F_IFUNC,NOT,NOT_IDX //func_not 
+ 295      30000000 
+ 295      434E4F54 
+ 296 0348 44030000 	  _dict_entry 4+F_CMD,NEXT,NEXT_IDX //next 
 ARM GAS  tinyBasic.s 			page 19
 
 
- 295      244E4558 
- 295      54000000 
- 296 0358 50030000 	  _dict_entry 3+F_CMD,NEW,NEW_IDX //new
- 296      2F000000 
- 296      234E4557 
- 297 0364 60030000 	  _dict_entry 6+F_IFUNC,MULDIV,MULDIV_IDX //muldiv 
- 297      2D000000 
- 297      464D554C 
- 297      44495600 
- 298 0374 6C030000 	  _dict_entry 6+F_IFUNC,LSHIFT,LSHIFT_IDX //lshift
- 298      2C000000 
- 298      464C5348 
- 298      49465400 
- 299 0384 7C030000 	  _dict_entry 3+F_IFUNC,LOG,LOG_IDX //log2 
- 299      2B000000 
- 299      434C4F47 
- 300 0390 8C030000 	  _dict_entry 4+F_CMD,LOAD,LOAD_IDX //load 
- 300      2A000000 
- 300      244C4F41 
- 300      44000000 
- 301 03a0 98030000 	  _dict_entry 4+F_CMD,LIST,LIST_IDX //list
- 301      29000000 
- 301      244C4953 
- 301      54000000 
- 302 03b0 A8030000 	  _dict_entry 3+F_CMD,LET,LET_IDX //let 
- 302      28000000 
- 302      234C4554 
- 303 03bc B8030000 	  _dict_entry 3+F_IFUNC,KEY,KEY_IDX //key 
- 303      27000000 
- 303      434B4559 
- 304 03c8 C4030000 	  _dict_entry 7+F_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
- 304      26000000 
- 304      27495744 
- 304      47524546 
- 305 03d8 D0030000 	  _dict_entry 6+F_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
- 305      25000000 
- 305      26495744 
- 305      47454E00 
- 306 03e8 E0030000 	  _dict_entry 6+F_IFUNC,INVERT,INVERT_IDX //invert 
- 306      24000000 
- 306      46494E56 
- 306      45525400 
- 307 03f8 F0030000 	  _dict_entry 5+F_CMD,INPUT,INPUT_IDX //input_var  
- 307      23000000 
- 307      25494E50 
- 307      55540000 
- 308 0408 00040000 	  _dict_entry 2+F_CMD,IF,IF_IDX //if 
- 308      22000000 
- 308      22494600 
- 309 0414 10040000 	  _dict_entry 3+F_IFUNC,IDR,IDR_IDX //const_idr 
- 309      21000000 
- 309      43494452 
- 310 0420 1C040000 	  _dict_entry 3+F_CMD,HEX,HEX_IDX //hex_base
- 310      20000000 
- 310      23484558 
- 311 042c 28040000 	  _dict_entry 4+F_IFUNC,GPIO,GPIO_IDX //gpio 
- 311      1F000000 
+ 296      2E000000 
+ 296      244E4558 
+ 296      54000000 
+ 297 0358 50030000 	  _dict_entry 3+F_CMD,NEW,NEW_IDX //new
+ 297      2F000000 
+ 297      234E4557 
+ 298 0364 60030000 	  _dict_entry 6+F_IFUNC,MULDIV,MULDIV_IDX //muldiv 
+ 298      2D000000 
+ 298      464D554C 
+ 298      44495600 
+ 299 0374 6C030000 	  _dict_entry 6+F_IFUNC,LSHIFT,LSHIFT_IDX //lshift
+ 299      2C000000 
+ 299      464C5348 
+ 299      49465400 
+ 300 0384 7C030000 	  _dict_entry 3+F_IFUNC,LOG,LOG_IDX //log2 
+ 300      2B000000 
+ 300      434C4F47 
+ 301 0390 8C030000 	  _dict_entry 4+F_CMD,LOAD,LOAD_IDX //load 
+ 301      2A000000 
+ 301      244C4F41 
+ 301      44000000 
+ 302 03a0 98030000 	  _dict_entry 4+F_CMD,LIST,LIST_IDX //list
+ 302      29000000 
+ 302      244C4953 
+ 302      54000000 
+ 303 03b0 A8030000 	  _dict_entry 3+F_CMD,LET,LET_IDX //let 
+ 303      28000000 
+ 303      234C4554 
+ 304 03bc B8030000 	  _dict_entry 3+F_IFUNC,KEY,KEY_IDX //key 
+ 304      27000000 
+ 304      434B4559 
+ 305 03c8 C4030000 	  _dict_entry 7+F_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
+ 305      26000000 
+ 305      27495744 
+ 305      47524546 
+ 306 03d8 D0030000 	  _dict_entry 6+F_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
+ 306      25000000 
+ 306      26495744 
+ 306      47454E00 
+ 307 03e8 E0030000 	  _dict_entry 6+F_IFUNC,INVERT,INVERT_IDX //invert 
+ 307      24000000 
+ 307      46494E56 
+ 307      45525400 
+ 308 03f8 F0030000 	  _dict_entry 5+F_CMD,INPUT,INPUT_IDX //input_var  
+ 308      23000000 
+ 308      25494E50 
+ 308      55540000 
+ 309 0408 00040000 	  _dict_entry 2+F_CMD,IF,IF_IDX //if 
+ 309      22000000 
+ 309      22494600 
+ 310 0414 10040000 	  _dict_entry 3+F_IFUNC,IDR,IDR_IDX //const_idr 
+ 310      21000000 
+ 310      43494452 
+ 311 0420 1C040000 	  _dict_entry 3+F_CMD,HEX,HEX_IDX //hex_base
+ 311      20000000 
+ 311      23484558 
+ 312 042c 28040000 	  _dict_entry 4+F_IFUNC,GPIO,GPIO_IDX //gpio 
 ARM GAS  tinyBasic.s 			page 20
 
 
- 311      44475049 
- 311      4F000000 
- 312 043c 34040000 	  _dict_entry 4+F_CMD,GOTO,GOTO_IDX //goto 
- 312      1E000000 
- 312      24474F54 
+ 312      1F000000 
+ 312      44475049 
  312      4F000000 
- 313 044c 44040000 	  _dict_entry 5+F_CMD,GOSUB,GOSUB_IDX //gosub 
- 313      1D000000 
- 313      25474F53 
- 313      55420000 
- 314 045c 54040000 	  _dict_entry 6+F_CMD,FORGET,FORGET_IDX //forget 
- 314      1C000000 
- 314      26464F52 
- 314      47455400 
- 315 046c 64040000 	  _dict_entry 3+F_CMD,FOR,FOR_IDX //for 
- 315      1B000000 
- 315      23464F52 
- 316 0478 74040000 	  _dict_entry 4+F_CMD,FCPU,FCPU_IDX //fcpu 
- 316      1A000000 
- 316      24464350 
- 316      55000000 
- 317 0488 80040000 	  _dict_entry 3+F_CMD,END,END_IDX //cmd_end  
- 317      18000000 
- 317      23454E44 
- 318 0494 90040000 	  _dict_entry 6+F_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
- 318      19000000 
- 318      46454550 
- 318      524F4D00 
- 319 04a4 9C040000 	  _dict_entry 6+F_CMD,DWRITE,DWRITE_IDX //digital_write
- 319      17000000 
- 319      26445752 
- 319      49544500 
- 320 04b4 AC040000 	  _dict_entry 5+F_IFUNC,DREAD,DREAD_IDX //digital_read
- 320      16000000 
- 320      45445245 
- 320      41440000 
- 321 04c4 BC040000 	  _dict_entry 2+F_CMD,DO,DO_IDX //do_loop
- 321      15000000 
- 321      22444F00 
- 322 04d0 CC040000 	  _dict_entry 3+F_CMD,DIR,DIR_IDX //directory 
- 322      14000000 
- 322      23444952 
- 323 04dc D8040000 	  _dict_entry 3+F_CMD,DEC,DEC_IDX //dec_base
- 323      13000000 
- 323      23444543 
- 324 04e8 E4040000 	  _dict_entry 3+F_IFUNC,DDR,DDR_IDX //const_ddr 
- 324      12000000 
- 324      43444452 
- 325 04f4 F0040000 	  _dict_entry 6+F_CMD,DATALN,DATALN_IDX //data_line  
- 325      11000000 
- 325      26444154 
- 325      414C4E00 
- 326 0504 FC040000 	  _dict_entry 4+F_CMD,DATA,DATA_IDX //data  
- 326      10000000 
- 326      24444154 
- 326      41000000 
- 327 0514 0C050000 	  _dict_entry 3+F_IFUNC,CRL,CRL_IDX //const_cr1 
+ 313 043c 34040000 	  _dict_entry 4+F_CMD,GOTO,GOTO_IDX //goto 
+ 313      1E000000 
+ 313      24474F54 
+ 313      4F000000 
+ 314 044c 44040000 	  _dict_entry 5+F_CMD,GOSUB,GOSUB_IDX //gosub 
+ 314      1D000000 
+ 314      25474F53 
+ 314      55420000 
+ 315 045c 54040000 	  _dict_entry 6+F_CMD,FORGET,FORGET_IDX //forget 
+ 315      1C000000 
+ 315      26464F52 
+ 315      47455400 
+ 316 046c 64040000 	  _dict_entry 3+F_CMD,FOR,FOR_IDX //for 
+ 316      1B000000 
+ 316      23464F52 
+ 317 0478 74040000 	  _dict_entry 4+F_CMD,FCPU,FCPU_IDX //fcpu 
+ 317      1A000000 
+ 317      24464350 
+ 317      55000000 
+ 318 0488 80040000 	  _dict_entry 3+F_CMD,END,END_IDX //cmd_end  
+ 318      18000000 
+ 318      23454E44 
+ 319 0494 90040000 	  _dict_entry 6+F_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
+ 319      19000000 
+ 319      46454550 
+ 319      524F4D00 
+ 320 04a4 9C040000 	  _dict_entry 6+F_CMD,DWRITE,DWRITE_IDX //digital_write
+ 320      17000000 
+ 320      26445752 
+ 320      49544500 
+ 321 04b4 AC040000 	  _dict_entry 5+F_IFUNC,DREAD,DREAD_IDX //digital_read
+ 321      16000000 
+ 321      45445245 
+ 321      41440000 
+ 322 04c4 BC040000 	  _dict_entry 2+F_CMD,DO,DO_IDX //do_loop
+ 322      15000000 
+ 322      22444F00 
+ 323 04d0 CC040000 	  _dict_entry 3+F_CMD,DIR,DIR_IDX //directory 
+ 323      14000000 
+ 323      23444952 
+ 324 04dc D8040000 	  _dict_entry 3+F_CMD,DEC,DEC_IDX //dec_base
+ 324      13000000 
+ 324      23444543 
+ 325 04e8 E4040000 	  _dict_entry 3+F_IFUNC,DDR,DDR_IDX //const_ddr 
+ 325      12000000 
+ 325      43444452 
+ 326 04f4 F0040000 	  _dict_entry 6+F_CMD,DATALN,DATALN_IDX //data_line  
+ 326      11000000 
+ 326      26444154 
+ 326      414C4E00 
+ 327 0504 FC040000 	  _dict_entry 4+F_CMD,DATA,DATA_IDX //data  
+ 327      10000000 
+ 327      24444154 
+ 327      41000000 
 ARM GAS  tinyBasic.s 			page 21
 
 
- 327      0F000000 
- 327      4343524C 
- 328 0520 1C050000 	  _dict_entry 3+F_IFUNC,CRH,CRH_IDX //const_cr2 
- 328      0E000000 
- 328      43435248 
- 329 052c 28050000 	  _dict_entry 4+F_CFUNC,CHAR,CHAR_IDX //char
- 329      0D000000 
- 329      84434841 
- 329      52000000 
- 330 053c 34050000 	  _dict_entry 3+F_CMD,BYE,BYE_IDX //bye 
- 330      0C000000 
- 330      23425945 
- 331 0548 44050000 	  _dict_entry 5+F_CMD,BTOGL,BTOGL_IDX //bit_toggle
- 331      0B000000 
- 331      2542544F 
- 331      474C0000 
- 332 0558 50050000 	  _dict_entry 5+F_IFUNC,BTEST,BTEST_IDX //bit_test 
- 332      0A000000 
- 332      45425445 
- 332      53540000 
- 333 0568 60050000 	  _dict_entry 4+F_CMD,BSET,BSET_IDX //bit_set 
- 333      09000000 
- 333      24425345 
- 333      54000000 
- 334 0578 70050000 	  _dict_entry 4+F_CMD,BRES,BRES_IDX //bit_reset
- 334      08000000 
- 334      24425245 
- 334      53000000 
- 335 0588 80050000 	  _dict_entry 3+F_IFUNC,BIT,BIT_IDX //bitmask
- 335      07000000 
- 335      43424954 
- 336 0594 90050000 	  _dict_entry 3+F_CMD,AWU,AWU_IDX //awu 
- 336      06000000 
- 336      23415755 
- 337 05a0 9C050000 	  _dict_entry 7+F_CMD,AUTORUN,AUTORUN_IDX //autorun
- 337      05000000 
- 337      27415554 
- 337      4F52554E 
- 338 05b0 A8050000 	  _dict_entry 3+F_IFUNC,ASC,ASC_IDX //ascii
- 338      04000000 
- 338      43415343 
- 339 05bc B8050000 	  _dict_entry 3+F_IFUNC,AND,AND_IDX //bit_and
- 339      03000000 
- 339      43414E44 
- 340 05c8 C4050000 	  _dict_entry 7+F_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
- 340      02000000 
- 340      47414443 
- 340      52454144 
- 341 05d8 D0050000 	  _dict_entry 5+F_CMD,ADCON,ADCON_IDX //power_adc 
- 341      01000000 
- 341      25414443 
- 341      4F4E0000 
- 342              	first_link: 
- 343 05e8 E0050000 	  .word LINK 
- 344 05ec 00000000 	  .word ABS_IDX 
- 345              	  .equ LINK,. 
- 346              	kword_dict: // first name field 
+ 328 0514 0C050000 	  _dict_entry 3+F_IFUNC,CRL,CRL_IDX //const_cr1 
+ 328      0F000000 
+ 328      4343524C 
+ 329 0520 1C050000 	  _dict_entry 3+F_IFUNC,CRH,CRH_IDX //const_cr2 
+ 329      0E000000 
+ 329      43435248 
+ 330 052c 28050000 	  _dict_entry 4+F_CFUNC,CHAR,CHAR_IDX //char
+ 330      0D000000 
+ 330      84434841 
+ 330      52000000 
+ 331 053c 34050000 	  _dict_entry 3+F_CMD,BYE,BYE_IDX //bye 
+ 331      0C000000 
+ 331      23425945 
+ 332 0548 44050000 	  _dict_entry 5+F_CMD,BTOGL,BTOGL_IDX //bit_toggle
+ 332      0B000000 
+ 332      2542544F 
+ 332      474C0000 
+ 333 0558 50050000 	  _dict_entry 5+F_IFUNC,BTEST,BTEST_IDX //bit_test 
+ 333      0A000000 
+ 333      45425445 
+ 333      53540000 
+ 334 0568 60050000 	  _dict_entry 4+F_CMD,BSET,BSET_IDX //bit_set 
+ 334      09000000 
+ 334      24425345 
+ 334      54000000 
+ 335 0578 70050000 	  _dict_entry 4+F_CMD,BRES,BRES_IDX //bit_reset
+ 335      08000000 
+ 335      24425245 
+ 335      53000000 
+ 336 0588 80050000 	  _dict_entry 3+F_IFUNC,BIT,BIT_IDX //bitmask
+ 336      07000000 
+ 336      43424954 
+ 337 0594 90050000 	  _dict_entry 3+F_CMD,AWU,AWU_IDX //awu 
+ 337      06000000 
+ 337      23415755 
+ 338 05a0 9C050000 	  _dict_entry 7+F_CMD,AUTORUN,AUTORUN_IDX //autorun
+ 338      05000000 
+ 338      27415554 
+ 338      4F52554E 
+ 339 05b0 A8050000 	  _dict_entry 3+F_IFUNC,ASC,ASC_IDX //ascii
+ 339      04000000 
+ 339      43415343 
+ 340 05bc B8050000 	  _dict_entry 3+F_IFUNC,AND,AND_IDX //bit_and
+ 340      03000000 
+ 340      43414E44 
+ 341 05c8 C4050000 	  _dict_entry 7+F_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
+ 341      02000000 
+ 341      47414443 
+ 341      52454144 
+ 342 05d8 D0050000 	  _dict_entry 5+F_CMD,ADCON,ADCON_IDX //power_adc 
+ 342      01000000 
+ 342      25414443 
+ 342      4F4E0000 
+ 343              	first_link: 
+ 344 05e8 E0050000 	  .word LINK 
+ 345 05ec 00000000 	  .word ABS_IDX 
+ 346              	  .equ LINK,. 
 ARM GAS  tinyBasic.s 			page 22
 
 
- 347 05f0 43       	  .byte 3+F_IFUNC
- 348 05f1 414253   	  .ascii "ABS" 
- 349              	  .p2align 2 
- 350              	
- 351              	//comands and fonctions address table 	
- 352              	code_addr:
- 353              	/*
- 354              		.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
- 355              		.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
- 356              		.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //1
- 357              		.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
- 358              		.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
- 359              		.word let,list,load,log2,lshift,muldiv,next,new // 40..47
- 360              		.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
- 361              		.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..6
- 362              		.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,remark // 64..71 
- 363              		.word restore,return, random,rshift,run,save,show,size // 72..79
- 364              		.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
- 365              		.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
- 366              		.word wait,words,write,bit_xor,transmit,receive // 96..103 
- 367              	*/ 
- 368 05f4 00000000 		.word 0 
- 369              	
- 370              	/*************************************************
- 371              	   extra FLASH memory not used by Tiny BASIC
- 372              	   is used to save BASIC programs.
- 373              	************************************************/
- 374 05f8 00000000 	  .p2align 10  // align to 1KB, smallest erasable segment 
- 374      00000000 
- 374      00000000 
- 374      00000000 
- 374      00000000 
- 375              	  .section .fs
- 376              	FILE_SYSTEM: // file system start here
+ 347              	kword_dict: // first name field 
+ 348 05f0 43       	  .byte 3+F_IFUNC
+ 349 05f1 414253   	  .ascii "ABS" 
+ 350              	  .p2align 2 
+ 351              	
+ 352              	//comands and fonctions address table 	
+ 353              	code_addr:
+ 354              	/*
+ 355              		.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
+ 356              		.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
+ 357              		.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //1
+ 358              		.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
+ 359              		.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
+ 360              		.word let,list,load,log2,lshift,muldiv,next,new // 40..47
+ 361              		.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
+ 362              		.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..6
+ 363              		.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,remark // 64..71 
+ 364              		.word restore,return, random,rshift,run,save,show,size // 72..79
+ 365              		.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
+ 366              		.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
+ 367              		.word wait,words,write,bit_xor,transmit,receive // 96..103 
+ 368              	*/ 
+ 369 05f4 00000000 		.word 0 
+ 370              	
+ 371              	/*************************************************
+ 372              	   extra FLASH memory not used by Tiny BASIC
+ 373              	   is used to save BASIC programs.
+ 374              	************************************************/
+ 375 05f8 00000000 	  .p2align 10  // align to 1KB, smallest erasable segment 
+ 375      00000000 
+ 375      00000000 
+ 375      00000000 
+ 375      00000000 
+ 376              	  .section .fs
+ 377              	FILE_SYSTEM: // file system start here
 ARM GAS  tinyBasic.s 			page 23
 
 
@@ -1685,23 +1686,23 @@ DEFINED SYMBOLS
          tinyBasic.s:60     .text:0000000000000000 strlen
          tinyBasic.s:60     .text:0000000000000000 $t
          tinyBasic.s:84     .text:000000000000001c cmove
-         tinyBasic.s:95     .text:0000000000000036 move_from_end
+         tinyBasic.s:96     .text:0000000000000038 move_from_end
          tinyBasic.s:90     .text:0000000000000028 move_from_low
-         tinyBasic.s:122    .text:000000000000004c cp_cstr
-         tinyBasic.s:150    .text:0000000000000078 search_dict
-         tinyBasic.s:184    .text:00000000000000b8 cold_init
-         tinyBasic.s:196    .text:00000000000000e0 src_addr
-         tinyBasic.s:228    .rodata:00000000000000d0 ulast
-         tinyBasic.s:203    .rodata:0000000000000000 uzero
-         tinyBasic.s:197    .text:00000000000000e0 $d
-         tinyBasic.s:376    .fs:0000000000000000 FILE_SYSTEM
-         tinyBasic.s:225    .rodata:0000000000000054 $d
-         tinyBasic.s:235    *ABS*:0000000000000000 link
-         tinyBasic.s:236    .rodata.dictionary:0000000000000000 kword_end
-         tinyBasic.s:345    .rodata.dictionary:00000000000005f0 LINK
-         tinyBasic.s:240    .rodata.dictionary:000000000000000c $d
-         tinyBasic.s:342    .rodata.dictionary:00000000000005e8 first_link
-         tinyBasic.s:346    .rodata.dictionary:00000000000005f0 kword_dict
-         tinyBasic.s:352    .rodata.dictionary:00000000000005f4 code_addr
+         tinyBasic.s:123    .text:0000000000000050 cp_cstr
+         tinyBasic.s:151    .text:000000000000007c search_dict
+         tinyBasic.s:185    .text:00000000000000bc cold_init
+         tinyBasic.s:197    .text:00000000000000e4 src_addr
+         tinyBasic.s:229    .rodata:00000000000000d0 ulast
+         tinyBasic.s:204    .rodata:0000000000000000 uzero
+         tinyBasic.s:198    .text:00000000000000e4 $d
+         tinyBasic.s:377    .fs:0000000000000000 FILE_SYSTEM
+         tinyBasic.s:226    .rodata:0000000000000054 $d
+         tinyBasic.s:236    *ABS*:0000000000000000 link
+         tinyBasic.s:237    .rodata.dictionary:0000000000000000 kword_end
+         tinyBasic.s:346    .rodata.dictionary:00000000000005f0 LINK
+         tinyBasic.s:241    .rodata.dictionary:000000000000000c $d
+         tinyBasic.s:343    .rodata.dictionary:00000000000005e8 first_link
+         tinyBasic.s:347    .rodata.dictionary:00000000000005f0 kword_dict
+         tinyBasic.s:353    .rodata.dictionary:00000000000005f4 code_addr
 
 NO UNDEFINED SYMBOLS

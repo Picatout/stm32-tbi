@@ -449,16 +449,16 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
     _RET 
 
 /*************************************
-   colon  
-   send cursor at colon n 
+   cursor_x  
+   send cursor at column n 
     input: 
-        r0  colon 
+        r0  n 
     output:
         none 
     use:
         none 
 *************************************/
-    _GBL_FUNC colon 
+    _GBL_FUNC cursor_x 
     _CALL send_escape
     _CALL send_parameter
     mov r0,#'G' 
@@ -481,6 +481,21 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
     mov r0,#'G' 
     _CALL uart_putc 
     pop {r0}
+    _RET 
+
+/************************************
+   update_line 
+   update edited line on display 
+   input:
+     r0    *line 
+   output:
+     none 
+   use:
+      none 
+*************************************/
+    _FUNC update_line 
+    _CALL delete_line
+    _CALL uart_putsz
     _RET 
 
 /*************************************
@@ -514,31 +529,52 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
   mov r11,r0 
   sub r9,r1,#1  // buffer size -1
   eor r10,r10  // 0 line length 
+  eor r0,r0
+  strb r0,[r11,r9]  
+  _CALL cursor_shape
 readln_loop:
   _CALL uart_getc 
   cmp r0,#CR
   bne 0f
-  _CALL uart_putc 
   b readln_exit 
 0:
   cmp r0,#BS 
-  bne 1f 
+  bne 2f 
 //delete char. left  
   ands r7,r7 
   beq readln_loop 
+  cmp r7,r10 
+  beq 1f
+// in mol 
+  add r0,r11,r7 
+  sub r1,r0,#1 
+  push {r8}
+  sub r8,r10,r7 
+  _CALL cmove
+  pop {r8} 
+  sub r10,#1 
+  sub r7,#1
+  eor r0,r0
+  strb r0,[r11,r10] 
+  mov r0,r11
+  _CALL update_line 
+  add r0,r7,#1 
+  _CALL cursor_x 
+  b readln_loop       
+1: // at eol 
   _CALL bksp 
   sub r7,#1
   sub r10,#1
   b readln_loop 
-1: cmp r0,#CTRL_D 
-   bne 2f 
+2: cmp r0,#CTRL_D 
+   bne 3f 
 // delete whole line  
   _CALL delete_line  
   eor r7,r7   
   eor r10,r10
   b readln_loop 
-2: cmp r0,#CTRL_R    
-  bne 3f 
+3: cmp r0,#CTRL_R    
+  bne 4f 
 // edit last entered line if  available 
   ands r10,r10 
   bne readln_loop
@@ -549,13 +585,13 @@ readln_loop:
   mov r0,r11  
   _CALL uart_putsz
   b readln_loop     
-3: cmp r0,#CTRL_O 
-   bne 4f 
+4: cmp r0,#CTRL_O 
+   bne 5f 
    rsb r8,#5  
    mov r0,r8 
    _CALL cursor_shape
    b readln_loop 
-4: cmp r0,#ESC 
+5: cmp r0,#ESC 
    bne character  
    _CALL get_escape
    cmp r0,#HOME 
@@ -567,7 +603,7 @@ try_end:
    cmp r0,#END 
    bne try_left 
    add r0,r10,#1
-   _CALL colon 
+   _CALL cursor_x 
    mov r7,r10 
    b readln_loop 
 try_left: 
@@ -591,23 +627,73 @@ try_right:
 try_suprim:
    cmp r0,#SUP
    bne readln_loop 
-
+// delete character at cursor 
+   cmp r7,r10
+   beq readln_loop 
+   add r1,r7,r11 
+   add r0,r1,#1 
+   push {r8}
+   sub r8,r10,r7
+   _CALL cmove 
+   pop {r8}
+   sub r10,#1 
+   eor r0,r0 
+   strb r0,[r11,r10]
+   mov r0,r11 
+   _CALL update_line
+   add  r0,r7,#1 
+   _CALL cursor_x 
    b readln_loop      
 character:
+   cmp r7,r10 
+   beq 5f // cursor at eol 
+// cursor in middle of line 
+// action depend on edit mode 
+  ands r8,r8  //check edit mode 
+  beq 2f 
+// insert mode
+  cmp r9,r10 
+  beq readln_loop // buffer full  
+  push {r0,r8}
+  add r0,r11,r7  // src 
+  add r1,r0,#1   // dest 
+  sub r8,r10,r7  // move count 
+  _CALL cmove   
+  pop {r0,r8}
+  strb r0,[r11,r7] 
+  add r7,#1
+  add r10,#1 
+  eor r0,r0 
+  strb r0,[r11,r10]
+  mov r0,r11   
+  _CALL update_line
+  add r0,r7,#1 
+  _CALL cursor_x  
+  b readln_loop   
+2: // overwrite mode 
+  strb r0,[r11,r7]
+  add r7,#1
+  eor r0,r0 
+  strb r0,[r11,r10] 
+  mov r0,r11 
+  _CALL update_line 
+  add r0,r7,#1 
+  _CALL cursor_x 
+  b readln_loop 
+5: // cursor at eol, mode doesn't matter 
    cmp r10,r9 
    bmi 6f 
-   b readln_loop  
-6:   
+   b readln_loop  // buffer full
+6: // only accept char>=32  
    cmp r0,#SPACE 
    bmi readln_loop 
    strb r0,[r11,r7] 
    _CALL uart_putc
    add r7,#1
-   cmp r7,r10
-   bmi readln_loop 
    mov r10,r7
    b readln_loop  
 readln_exit:
+  _CALL uart_putc 
   eor r0,r0 
   strb r0,[r11,r10]
   mov r1,r10  // line length
