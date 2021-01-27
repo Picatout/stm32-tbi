@@ -103,6 +103,27 @@ move_from_end: // move from high address toward low
 9:  pop {r6}
     _RET
 
+/*********************************
+  strcpy 
+  copy .asciz string 
+  input:
+    r0   *string
+    r1   *dest_buffer
+  output:
+    r0   *string
+    r1   *dest_buffer 
+  use:
+    r7   temp
+**********************************/
+    _GBL_FUNC strcpy 
+    push {r0,r1,r7}
+1:  ldrb r7,[r0],#1
+    cbz  r7, 9f 
+    strb r7,[r1],#1
+    b 1b 
+9:  strb r7,[r1] 
+    pop {r0,r1,r7}
+    _RET 
 
 /*********************************
   cp_cstr 
@@ -136,6 +157,156 @@ move_from_end: // move from high address toward low
 2: 
   pop {r9,r10,r11}
   _RET 
+
+/**********************************
+      BASIC commands 
+**********************************/
+
+/*********************************
+    syntax_error 
+    display error message and 
+    abort program 
+  input:
+    none  
+  output: 
+    none 
+  use:
+*********************************/
+    _FUNC syntax_error 
+    mov r0,#ERR_SYNTAX
+    b tb_error 
+
+/*********************************
+    tb_error 
+    display BASIC error and 
+    abort program. 
+  input:
+    r0    error code   
+  output: 
+    none 
+  use:
+    r1    temp 
+*********************************/
+    _FUNC tb_error 
+    ldr r1,=err_msg 
+    lsl r0,#2 
+    add r0,r1 
+    ldr r0,[r0]
+    _CALL uart_putsz
+    b  warm_start  
+    _RET 
+err_msg:
+	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
+	.word err_run_only,err_cmd_only,err_duplicate,err_not_file,err_bad_value
+	.word err_no_access,err_no_data,err_no_prog,err_no_fspace,err_buf_full    
+
+    .section .rodata.tb_error 
+
+err_mem_full: .asciz "Memory full\n" 
+err_syntax: .asciz "syntax error\n" 
+err_math_ovf: .asciz "math operation overflow\n"
+err_div0: .asciz "division by 0\n" 
+err_no_line: .asciz "invalid line number.\n"
+err_run_only: .asciz "run time only usage.\n" 
+err_cmd_only: .asciz "command line only usage.\n"
+err_duplicate: .asciz "duplicate name.\n"
+err_not_file: .asciz "File not found.\n"
+err_bad_value: .asciz "bad value.\n"
+err_no_access: .asciz "File in extended memory, can't be run from there.\n" 
+err_no_data: .asciz "No data found.\n"
+err_no_prog: .asciz "No program in RAM!\n"
+err_no_fspace: .asciz "File system full.\n" 
+err_buf_full: .asciz "Buffer full\n"
+
+rt_msg: .asciz "\nrun time error, "
+comp_msg: .asciz "\ncompile error, "
+tk_id: .asciz "last token id: "
+
+
+    .section  .text , "ax", %progbits 
+
+/*********************************
+     arg_list 
+     extract command arguments
+     and push them on parameter stack 
+    input:
+       none 
+    output:
+       r0  arguments count found
+       args on dstack in order left to right 
+    use:
+       r8   arguments counter  
+********************************/
+     _FUNC arg_list 
+     push {r8}
+
+     pop {r8}      
+     _RET 
+
+
+/*********************************
+   BASIC: BSET adr, mask   
+   set bits [adr]=[adr] | mask  
+   input:
+     r0    adr 
+     r1    mask 
+    output;
+      none 
+    use:
+      r8   temp
+*******************************/     
+    _FUNC BSET 
+    push {r8,r9}
+    sub sp,#8 
+    _CALL arg_list 
+    cmp r0,#2 
+    beq 1f 
+    mov r0,#ERR_SYNTAX
+    b syntax_error 
+1:  pop {r0,r1}
+    ldr r8,[r0]
+    mov r9,#1 
+    lsl r9,r1 
+    orr r8,r9,r8 
+    str r8,[r0]
+    pop {r8,r9}
+    _RET 
+
+
+/*********************************
+   BASIC: BRES adr, mask   
+   reset bits [adr]= [adr] & ~mask  
+   input:
+     r0    adr 
+     r1    mask 
+    output;
+      none 
+    use:
+      r8   temp
+      r9   temp  
+*******************************/     
+    _FUNC BRES 
+
+    _RET 
+
+/*********************************
+   BASIC: BTGL adr, mask   
+   toggle bits [adr]=[adr]^mask  
+   input:
+     r0    adr 
+     r1    mask 
+    output;
+      none 
+    use:
+      r8   temp
+      r9   temp  
+*******************************/     
+    _FUNC BTGL 
+
+    _RET 
+
+
+
 
 //---------------------------------
 // dictionary search 
@@ -172,8 +343,48 @@ move_from_end: // move from high address toward low
    pop {r8}
    _RET 
 
+/************************************
+    print firmware version 
+    input: 
+      none 
+    output:
+      none 
+    use:
+      r0 
+***********************************/
+    _FUNC prt_version 
+    ldr r0,=version_msg 
+    _CALL uart_putsz 
+    ldrb r0,version 
+    lsr r0,#4 
+    add r0,#'0' 
+    cmp r0,#'9'+1 
+    bmi 1f 
+    add r0,#7 
+  1:
+    _CALL uart_putc 
+    mov r0,#'. 
+    _CALL uart_putc 
+    ldrb r0,version 
+    and r0,#15 
+    add r0,'0' 
+    cmp r0,#'9'+1 
+    bmi 1f 
+    add r0,#7
+  1: 
+    _CALL uart_putc 
+    mov r0,#CR 
+    _CALL uart_putc 
+    _RET  
+version_msg:
+    .asciz "\nblue pill tiny BASIC, version "
+version:
+    .byte 0x10 
+    .p2align 2 
+
+
 /*********************************
-   cold_init 
+   cold_start 
    initialize BASIC interpreter 
    input:
      r1    destination address 
@@ -182,8 +393,10 @@ move_from_end: // move from high address toward low
    use:
      r0,r1,r8 
 *********************************/
-    _GBL_FUNC cold_init
+    _GBL_FUNC cold_start 
     push {r0,r1,r8}
+// initialise parameters stack
+   ldr r12,dstack_empty     
 //copy system variables to ram 
     ldr r0,src_addr 
     mov r3,r1 // UPP  
@@ -192,10 +405,176 @@ move_from_end: // move from high address toward low
     mov r8,#ulast-uzero
     _CALL cmove  
     pop {r8}
+    _CALL prt_version 
     pop {r0,r1,r8}
-    _RET 
+    _RET
+    _CALL warm_init 
+    b cmd_line   
 src_addr:
   .word uzero
+dstack_empty:
+   .word _dstack 
+
+/*****************************
+    clear_vars 
+    initialize variables to 0
+  input:
+    none 
+  output:
+    none 
+  use:
+    r8   counter 
+*****************************/
+    _FUNC clear_vars 
+    push {r0,r1,r8}
+    eor r0,r0 
+    add r1,r3,#VARS
+    mov r8,#26
+1:  str r0,[r1],#4 
+    subs r8,#1
+    bne 1b  
+    pop {r0,r1,r8}
+    _RET 
+
+/*****************************
+   clear_basic 
+   reset BASIC text pointers 
+   and clear variables 
+*****************************/
+    _FUNC clear_basic
+	eor r0,r0 
+  str r0,[r3,#COUNT]
+  str r0,[r3,#IN]
+  add r0,r3,#FREE_RAM
+  str r0,[r3,#TXTBGN]
+  str r0,[r3,#TXTEND]
+	_CALL clear_vars 
+	_RET  
+
+/***********************************
+   warm_init 
+   initialize interpreter context 
+  input:
+    none
+  output:
+    none 
+  use:
+    r0 
+***********************************/
+warm_init:
+  eor r0,r0 
+	str r0,[r3,FLAGS]
+  str r0,[r3,LOOP_DEPTH] 
+  mov r0, #DEFAULT_TAB_WIDTH
+  str r0,[r3,#TAB_WIDTH]
+	mov r0,#10 // default base decimal 
+	str r0,[r3,#BASE]
+  str r0,[r3,#BASICPTR]
+  str r0,[r3,#IN]
+  str r0,[r3,COUNT]  
+	_RET  
+
+/**********************************
+   cmd_line 
+   shell command line 
+   input:
+      none 
+   output:
+      none 
+   use:
+
+***********************************/
+    _FUNC cmd_line 
+    mov r0,#CR 
+    _CALL uart_putc 
+1:  ldr r0,tib
+    _CALL readln 
+    ands r0,r0 
+    beq 1b 
+    _CALL compile 
+    ands r0,r0 
+    beq 1b  
+// interpret 
+interpreter:
+   ldr r0,[r3,#IN]
+   ldr r1,[r3,#COUNT]
+   cmp r0,r1 
+   bmi interp_loop 
+next_line:
+  ldr r0,[r3,#FLAGS]
+  tst r0,#(1<<FRUN)
+  beq cmd_line 
+  ldr r0,[r3,#BASICPTR]
+  ldr r1,[r3,#IN]
+  add r0,r1 
+  ldr r1,[r3,#TXTEND]
+  cmp r0,r1 
+  bmi 1f 
+  _CALL warm_start 
+  b cmd_line
+1:
+  mov r0,#3 
+  str r0,[r3,IN] 
+interp_loop:
+  _CALL next_token 
+  cmp r0,#TK_NONE 
+  beq next_line 
+  cmp r0,#TK_CMD 
+  bne 2f
+  BLX r1
+  b interp_loop 
+2: 
+  cmp r0,#TK_VAR 
+  bne 3f 
+  BLX let_var 
+  b interp_loop
+3: 
+  cmp r0,#TK_ARRAY 
+  bne 4f
+  BLX let_array 
+  b interp_loop
+4: 
+  cmp r0,#TK_COLON
+  beq interp_loop
+  b syntax_error
+
+/*****************************
+  next_token 
+  extract next token 
+  input:
+    none 
+  output:
+    r0    token type 
+    r1    token value 
+  use:
+
+****************************/
+  _FUNC next_token 
+
+  _RET 
+
+
+tib: .word _tib 
+
+
+/**********************************
+    warm_start 
+    start BASIC interpreter without 
+    reset variables and code space 
+  input:
+    none 
+  output:
+    none 
+  use:
+
+**********************************/
+    _FUNC warm_start 
+// initialise parameters stack
+   ldr r12,dstack_empty     
+
+    b warm_start 
+
+compile:
 
 
   .section .rodata 

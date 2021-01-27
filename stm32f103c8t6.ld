@@ -9,8 +9,10 @@ ENTRY(reset_handler)
 
 _mstack_size = 0x100; /* main stack size used by exceptions and interrupts */
 _mstack = 0x20005000; /* main stack top */
+_dstack_size = 0x80 ; /* parameter stack size */
+_dstack = _mstack - _dstack_size ;  /* parameter stack */ 
 _tib_size = 0x50 ; /* tib buffer size */
-_tib = _mstack - _mstack_size - _tib_size ; /* transaction input buffer */
+_tib = _dstack - _dstack_size - _tib_size ; /* transaction input buffer */
 _pad_size = 0x80 ; 
 _pad = _tib - _pad_size ;
 _array = _tib - 4 ;

@@ -24,7 +24,7 @@
   .equ  PAD_SIZE,128 
   .equ RX_QUEUE_SIZE,16
 
-.equ TAB_WIDTH,4 // default tabulation width 
+.equ DEFAULT_TAB_WIDTH,4 // default tabulation width 
 .equ EOF,0xff // end of file marker 
 // keyword types 
   .equ F_CMD,0x20     // command keyword

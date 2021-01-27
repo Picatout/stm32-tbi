@@ -310,7 +310,7 @@ ARM GAS  terminal.s 			page 1
   24              	  .equ  PAD_SIZE,128 
   25              	  .equ RX_QUEUE_SIZE,16
   26              	
-  27              	.equ TAB_WIDTH,4 // default tabulation width 
+  27              	.equ DEFAULT_TAB_WIDTH,4 // default tabulation width 
   28              	.equ EOF,0xff // end of file marker 
   29              	// keyword types 
   30              	  .equ F_CMD,0x20     // command keyword
@@ -1569,7 +1569,7 @@ DEFINED SYMBOLS
 ARM GAS  terminal.s 			page 28
 
 
-      tbi_macros.inc:27     *ABS*:0000000000000048 TAB_WIDTH
+      tbi_macros.inc:27     *ABS*:0000000000000004 DEFAULT_TAB_WIDTH
       tbi_macros.inc:30     *ABS*:0000000000000020 F_CMD
       tbi_macros.inc:31     *ABS*:0000000000000040 F_IFUNC
       tbi_macros.inc:32     *ABS*:0000000000000080 F_CFUNC
@@ -1648,6 +1648,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:143    *ABS*:000000000000003c LOOP_DEPTH
       tbi_macros.inc:144    *ABS*:0000000000000040 ARRAY_SIZE
       tbi_macros.inc:145    *ABS*:0000000000000044 FLAGS
+      tbi_macros.inc:146    *ABS*:0000000000000048 TAB_WIDTH
       tbi_macros.inc:147    *ABS*:000000000000004c RX_HEAD
       tbi_macros.inc:148    *ABS*:0000000000000050 RX_TAIL
       tbi_macros.inc:149    *ABS*:0000000000000054 RX_QUEUE
@@ -1685,10 +1686,10 @@ DEFINED SYMBOLS
           terminal.s:525    .text:00000000000002b8 readln
           terminal.s:535    .text:00000000000002e0 readln_loop
           terminal.s:695    .text:0000000000000522 readln_exit
-          terminal.s:647    .text:0000000000000476 character
 ARM GAS  terminal.s 			page 30
 
 
+          terminal.s:647    .text:0000000000000476 character
           terminal.s:602    .text:00000000000003d2 try_end
           terminal.s:609    .text:00000000000003e8 try_left
           terminal.s:618    .text:0000000000000406 try_right

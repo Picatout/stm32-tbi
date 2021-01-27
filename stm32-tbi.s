@@ -28,6 +28,7 @@
  R6         //  FOR loop limit 
  R7         //  FOR loop increment 
  R8-R11     //  temporary registers
+ R12        //  parameters stack pointer 
 *****************************************/
 
   .syntax unified
@@ -239,12 +240,15 @@ reset_handler:
 	bl	init_devices	 	/* RCC, GPIOs */
 	bl  uart_init
   _MOV32 r1,(RAM_ADR + (isr_end-isr_vectors))
-	bl  cold_init  /* initialize BASIC SYSTEM */ 
-  bl  prt_version 
+	bl  cold_start  /* initialize BASIC SYSTEM */ 
   bl  test 
   b .  
 
     _FUNC test
+    add r0,r3,FREE_RAM+1 
+    ldr r1,[r0]
+    mov r1,#129
+    str r1,[r0]
 /*
   // page erase test 
     _MOV32 r0,0x800fff0 
@@ -290,37 +294,6 @@ reset_handler:
     .ascii "per error!\r"
     .p2align 2 
 */
-    _FUNC prt_version 
-    ldr r0,version_msg 
-    _CALL uart_puts 
-    ldrb r0,version 
-    lsr r0,#4 
-    add r0,#'0' 
-    cmp r0,#'9'+1 
-    bmi 1f 
-    add r0,#7 
-  1:
-    _CALL uart_putc 
-    mov r0,#'. 
-    _CALL uart_putc 
-    ldrb r0,version 
-    and r0,#15 
-    add r0,'0' 
-    cmp r0,#'9'+1 
-    bmi 1f 
-    add r0,#7
-  1: 
-    _CALL uart_putc 
-    mov r0,#CR 
-    _CALL uart_putc 
-    _RET  
-version_msg:
-    .word .+4 
-    .byte 30
-    .ascii "blue pill tiny BASIC, version "
-version:
-    .byte 0x10 
-    .p2align 2 
 
 // tranfert isr_vector to RAM at 0x20000000
     _FUNC remap 

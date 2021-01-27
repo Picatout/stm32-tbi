@@ -294,7 +294,7 @@ ARM GAS  tinyBasic.s 			page 1
   24              	  .equ  PAD_SIZE,128 
   25              	  .equ RX_QUEUE_SIZE,16
   26              	
-  27              	.equ TAB_WIDTH,4 // default tabulation width 
+  27              	.equ DEFAULT_TAB_WIDTH,4 // default tabulation width 
   28              	.equ EOF,0xff // end of file marker 
   29              	// keyword types 
   30              	  .equ F_CMD,0x20     // command keyword
@@ -704,599 +704,1061 @@ ARM GAS  tinyBasic.s 			page 1
  103 004a 40BC     	9:  pop {r6}
  104 004c 7047     	    _RET
  105              	
- 106              	
- 107              	/*********************************
- 108              	  cp_cstr 
- 109              	  compare 2 counted strings 
- 110              	  input:
- 111              	    r0  *str1 
- 112              	    r1  *str2
- 113              	    r8  length 
- 114              	  output:
- 115              	    r0  <0 str1<str2 
- 116              	        0  str1==str2 
- 117              	        >0  str1>str2  
- 118              	  use:
- 119              	    r9  *str1
+ 106              	/*********************************
+ 107              	  strcpy 
+ 108              	  copy .asciz string 
+ 109              	  input:
+ 110              	    r0   *string
+ 111              	    r1   *dest_buffer
+ 112              	  output:
+ 113              	    r0   *string
+ 114              	    r1   *dest_buffer 
+ 115              	  use:
+ 116              	    r7   temp
+ 117              	**********************************/
+ 118 004e 00BF     	    _GBL_FUNC strcpy 
+ 119 0050 83B4     	    push {r0,r1,r7}
 ARM GAS  tinyBasic.s 			page 13
 
 
- 120              	    r10 temp
- 121              	    r11 temp    
- 122              	*********************************/
- 123 004e 00BF     	  _FUNC cp_cstr
- 124 0050 2DE9000E 	  push {r9,r10,r11}
- 125 0054 8146     	  mov r9, r0 
- 126 0056 19F801AB 	  ldrb r10,[r9],#1 // length 
- 127 005a B8EB0A00 	  subs r0,r8,r10 
- 128 005e 09D1     	  bne 2f 
- 129              	1:
- 130 0060 19F801AB 	  ldrb r10,[r9],#1
- 131 0064 11F801BB 	  ldrb r11,[r1],#1 
- 132 0068 BAEB0B00 	  subs r0,r10,r11  
- 133 006c 02D1     	  bne 2f // not same length       
- 134 006e B8F10108 	  subs r8,#1 
- 135 0072 F5D1     	  bne 1b 
- 136              	2: 
- 137 0074 BDE8000E 	  pop {r9,r10,r11}
- 138 0078 7047     	  _RET 
- 139              	
- 140              	//---------------------------------
- 141              	// dictionary search 
- 142              	// input:
- 143              	//	 r0   target name
- 144              	//   r1		dictionary first link address  
- 145              	// output:
- 146              	//  r0 		TK_CMD|TK_IFUNC|TK_CONST|TK_NONE 
- 147              	//  r1		cmd_index if r0!=TK_NONE  
- 148              	// use:
- 149              	//  r8   length dictionary name 
- 150              	//---------------------------------
- 151 007a 00BF     	  _FUNC search_dict
- 152 007c 4DF8048D 	  push {r8}
- 153 0080 03B4     	  push {r0,r1}
- 154              	1:
- 155 0082 11F8010B 	  ldrb r0,[r1],#1 
- 156 0086 0043     	  orrs r0,r0
- 157 0088 13D0     	  beq 9f // end of dictinary 
- 158 008a 00F01F08 	  and r8,r0,#0x1f 
- 159 008e 0098     	  ldr r0,[sp]  
- 160 0090 00B5FFF7 	  _CALL cp_cstr 
- 160      DDFF5DF8 
- 160      04EB
- 161 009a 04D0     	  beq 2f 
- 162 009c 0199     	  ldr r1,[sp,#4]
- 163 009e 51F8081C 	  ldr r1,[r1,#-8]
- 164 00a2 0191     	  str r1,[sp,#4]
- 165 00a4 EDE7     	  b 1b   
- 166              	2: // found
- 167 00a6 0199     	  ldr r1,[sp,#4]
- 168 00a8 0878     	  ldrb r0,[r1]
- 169 00aa 4FEA5010 	  lsr r0,#5    // token type 
- 170 00ae 51F8041C 	  ldr r1,[r1,#-4]  // command index 
- 171 00b2 02B0     	9: add sp,#8  // drop pushed r0,r1
- 172 00b4 5DF8048B 	   pop {r8}
- 173 00b8 7047     	   _RET 
- 174              	
+ 120 0052 10F8017B 	1:  ldrb r7,[r0],#1
+ 121 0056 17B1     	    cbz  r7, 9f 
+ 122 0058 01F8017B 	    strb r7,[r1],#1
+ 123 005c F9E7     	    b 1b 
+ 124 005e 0F70     	9:  strb r7,[r1] 
+ 125 0060 83BC     	    pop {r0,r1,r7}
+ 126 0062 7047     	    _RET 
+ 127              	
+ 128              	/*********************************
+ 129              	  cp_cstr 
+ 130              	  compare 2 counted strings 
+ 131              	  input:
+ 132              	    r0  *str1 
+ 133              	    r1  *str2
+ 134              	    r8  length 
+ 135              	  output:
+ 136              	    r0  <0 str1<str2 
+ 137              	        0  str1==str2 
+ 138              	        >0  str1>str2  
+ 139              	  use:
+ 140              	    r9  *str1
+ 141              	    r10 temp
+ 142              	    r11 temp    
+ 143              	*********************************/
+ 144              	  _FUNC cp_cstr
+ 145 0064 2DE9000E 	  push {r9,r10,r11}
+ 146 0068 8146     	  mov r9, r0 
+ 147 006a 19F801AB 	  ldrb r10,[r9],#1 // length 
+ 148 006e B8EB0A00 	  subs r0,r8,r10 
+ 149 0072 09D1     	  bne 2f 
+ 150              	1:
+ 151 0074 19F801AB 	  ldrb r10,[r9],#1
+ 152 0078 11F801BB 	  ldrb r11,[r1],#1 
+ 153 007c BAEB0B00 	  subs r0,r10,r11  
+ 154 0080 02D1     	  bne 2f // not same length       
+ 155 0082 B8F10108 	  subs r8,#1 
+ 156 0086 F5D1     	  bne 1b 
+ 157              	2: 
+ 158 0088 BDE8000E 	  pop {r9,r10,r11}
+ 159 008c 7047     	  _RET 
+ 160              	
+ 161              	/**********************************
+ 162              	      BASIC commands 
+ 163              	**********************************/
+ 164              	
+ 165              	/*********************************
+ 166              	    syntax_error 
+ 167              	    display error message and 
+ 168              	    abort program 
+ 169              	  input:
+ 170              	    none  
+ 171              	  output: 
+ 172              	    none 
+ 173              	  use:
+ 174              	*********************************/
+ 175 008e 00BF     	    _FUNC syntax_error 
+ 176 0090 4FF00200 	    mov r0,#ERR_SYNTAX
 ARM GAS  tinyBasic.s 			page 14
 
 
- 175              	/*********************************
- 176              	   cold_init 
- 177              	   initialize BASIC interpreter 
- 178              	   input:
- 179              	     r1    destination address 
- 180              	   output:
- 181              	    none 
- 182              	   use:
- 183              	     r0,r1,r8 
- 184              	*********************************/
- 185 00ba 00BF     	    _GBL_FUNC cold_init
- 186 00bc 2DE90301 	    push {r0,r1,r8}
- 187              	//copy system variables to ram 
- 188 00c0 0848     	    ldr r0,src_addr 
- 189 00c2 0B46     	    mov r3,r1 // UPP  
- 190 00c4 A0EB0108 	    sub r8,r0,r1 
- 191 00c8 4DF8048D 	    push {r8} // map offset 
- 192 00cc 4FF0D008 	    mov r8,#ulast-uzero
- 193 00d0 00B5FFF7 	    _CALL cmove  
- 193      FEFF5DF8 
- 193      04EB
- 194 00da 5DF8048B 	    pop {r8}
- 195 00de BDE80301 	    pop {r0,r1,r8}
- 196 00e2 7047     	    _RET 
- 197              	src_addr:
- 198 00e4 00000000 	  .word uzero
- 199              	
- 200              	
- 201              	  .section .rodata 
+ 177 0094 00E0     	    b tb_error 
+ 178              	
+ 179              	/*********************************
+ 180              	    tb_error 
+ 181              	    display BASIC error and 
+ 182              	    abort program. 
+ 183              	  input:
+ 184              	    r0    error code   
+ 185              	  output: 
+ 186              	    none 
+ 187              	  use:
+ 188              	    r1    temp 
+ 189              	*********************************/
+ 190 0096 00BF     	    _FUNC tb_error 
+ 191 0098 9549     	    ldr r1,=err_msg 
+ 192 009a 4FEA8000 	    lsl r0,#2 
+ 193 009e 0844     	    add r0,r1 
+ 194 00a0 0068     	    ldr r0,[r0]
+ 195 00a2 00B5FFF7 	    _CALL uart_putsz
+ 195      FEFF5DF8 
+ 195      04EB
+ 196 00ac 1CE1     	    b  warm_start  
+ 197 00ae 7047     	    _RET 
+ 198              	err_msg:
+ 199 00b0 00000000 		.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
+ 199      00000000 
+ 199      0D000000 
+ 199      1B000000 
+ 199      34000000 
+ 200 00c8 59000000 		.word err_run_only,err_cmd_only,err_duplicate,err_not_file,err_bad_value
+ 200      6F000000 
+ 200      89000000 
+ 200      9A000000 
+ 200      AB000000 
+ 201 00dc B7000000 		.word err_no_access,err_no_data,err_no_prog,err_no_fspace,err_buf_full    
+ 201      EA000000 
+ 201      FA000000 
+ 201      0E010000 
+ 201      21010000 
  202              	
- 203              	// system variables initial value 
- 204              	uzero:
- 205 0000 00000000 	  .word 0 // IN
- 206 0004 00000000 	  .word 0 // IN_SAVED
- 207 0008 00000000 	  .word 0 // COUNT
- 208 000c 00000000 	  .word 0 // BASICPTR
- 209 0010 00000000 	  .word 0 // DATAPTR
- 210 0014 00000000 	  .word 0 // DATA
- 211 0018 00000000 	  .word 0 // DATALEN
- 212 001c 0A000000 	  .word 10 // BASE
- 213 0020 00000000 	  .word 0 // TICKS
- 214 0024 00000000 	  .word 0 // TIMER
- 215 0028 AA5555AA 	  .word 0xaa5555aa // SEED
- 216 002c 00000000 	  .word FILE_SYSTEM // FSPTR
- 217 0030 00000000 	  .word 0 // FFREE
- 218 0034 00040020 	  .word RAM_ADR+1024 // TXTBGN
- 219 0038 00040020 	  .word RAM_ADR+1024 // TXTEND
- 220 003c 00000000 	  .word 0 //LOOP_DEPTH
- 221 0040 00000000 	  .word 0 // ARRAY_SIZE
- 222 0044 00000000 	  .word 0 // FLAGS
- 223 0048 04000000 	  .word 4 // TAB_WIDTH
- 224 004c 00000000 	  .word 0 // RX_HEAD
- 225 0050 00000000 	  .word 0 // RX_TAIL
- 226 0054 00000000 	  .space RX_QUEUE_SIZE,0 // RX_QUEUE
- 226      00000000 
- 226      00000000 
- 226      00000000 
+ 203              	    .section .rodata.tb_error 
+ 204              	
+ 205 0000 4D656D6F 	err_mem_full: .asciz "Memory full\n" 
+ 205      72792066 
+ 205      756C6C0A 
+ 205      00
+ 206 000d 73796E74 	err_syntax: .asciz "syntax error\n" 
+ 206      61782065 
+ 206      72726F72 
+ 206      0A00
+ 207 001b 6D617468 	err_math_ovf: .asciz "math operation overflow\n"
+ 207      206F7065 
+ 207      72617469 
+ 207      6F6E206F 
+ 207      76657266 
+ 208 0034 64697669 	err_div0: .asciz "division by 0\n" 
+ 208      73696F6E 
 ARM GAS  tinyBasic.s 			page 15
 
 
- 227 0064 00000000 	  .space VARS_SIZE,0 // VARS
- 227      00000000 
- 227      00000000 
- 227      00000000 
- 227      00000000 
- 228 00cc 00000000 	  .space 4, 0 // padding 
- 229              	ulast:
- 230              	
- 231              	  .section .rodata.dictionary 
- 232              	
- 233              	// keep alphabetic order for BASIC names from Z-A
- 234              	// this sort order is for for WORDS cmd output. 	
- 235              	
- 236              		.equ link, 0
- 237              	kword_end:
- 238 0000 00000000 	  .word link,0
- 238      00000000 
- 239              	  .equ LINK, .
- 240 0008 00000000 	  .word 0
- 241              	  .p2align 2  
- 242 000c 08000000 	  _dict_entry 5+F_CMD,XTRMT,XTRMT_IDX // xmodem transmit
- 242      64000000 
- 242      25585452 
- 242      4D540000 
- 243 001c 14000000 	  _dict_entry 4+F_CMD,XRCV,XRCV_IDX // xmodem receive
- 243      65000000 
- 243      24585243 
- 243      56000000 
- 244 002c 24000000 	  _dict_entry 3+F_IFUNC,XOR,XOR_IDX //bit_xor
- 244      63000000 
- 244      43584F52 
- 245 0038 34000000 	  _dict_entry 5+F_CMD,WRITE,WRITE_IDX //write  
- 245      62000000 
- 245      25575249 
- 245      54450000 
- 246 0048 40000000 	  _dict_entry 5+F_CMD,WORDS,WORDS_IDX //words 
- 246      61000000 
- 246      25574F52 
- 246      44530000 
- 247 0058 50000000 	  _dict_entry 4+F_CMD,WAIT,WAIT_IDX //wait 
- 247      60000000 
- 247      24574149 
- 247      54000000 
- 248 0068 60000000 	  _dict_entry 3+F_IFUNC,USR,USR_IDX //usr
- 248      5F000000 
- 248      43555352 
- 249 0074 70000000 	  _dict_entry 5+F_CMD,UNTIL,UNTIL_IDX //until 
- 249      5E000000 
- 249      25554E54 
- 249      494C0000 
- 250 0084 7C000000 	  _dict_entry 6+F_IFUNC,UFLASH,UFLASH_IDX //uflash 
- 250      5D000000 
- 250      4655464C 
- 250      41534800 
- 251 0094 8C000000 	  _dict_entry 6+F_IFUNC,UBOUND,UBOUND_IDX //ubound
- 251      5C000000 
- 251      4655424F 
+ 208      20627920 
+ 208      300A00
+ 209 0043 696E7661 	err_no_line: .asciz "invalid line number.\n"
+ 209      6C696420 
+ 209      6C696E65 
+ 209      206E756D 
+ 209      6265722E 
+ 210 0059 72756E20 	err_run_only: .asciz "run time only usage.\n" 
+ 210      74696D65 
+ 210      206F6E6C 
+ 210      79207573 
+ 210      6167652E 
+ 211 006f 636F6D6D 	err_cmd_only: .asciz "command line only usage.\n"
+ 211      616E6420 
+ 211      6C696E65 
+ 211      206F6E6C 
+ 211      79207573 
+ 212 0089 6475706C 	err_duplicate: .asciz "duplicate name.\n"
+ 212      69636174 
+ 212      65206E61 
+ 212      6D652E0A 
+ 212      00
+ 213 009a 46696C65 	err_not_file: .asciz "File not found.\n"
+ 213      206E6F74 
+ 213      20666F75 
+ 213      6E642E0A 
+ 213      00
+ 214 00ab 62616420 	err_bad_value: .asciz "bad value.\n"
+ 214      76616C75 
+ 214      652E0A00 
+ 215 00b7 46696C65 	err_no_access: .asciz "File in extended memory, can't be run from there.\n" 
+ 215      20696E20 
+ 215      65787465 
+ 215      6E646564 
+ 215      206D656D 
+ 216 00ea 4E6F2064 	err_no_data: .asciz "No data found.\n"
+ 216      61746120 
+ 216      666F756E 
+ 216      642E0A00 
+ 217 00fa 4E6F2070 	err_no_prog: .asciz "No program in RAM!\n"
+ 217      726F6772 
+ 217      616D2069 
+ 217      6E205241 
+ 217      4D210A00 
+ 218 010e 46696C65 	err_no_fspace: .asciz "File system full.\n" 
+ 218      20737973 
+ 218      74656D20 
+ 218      66756C6C 
+ 218      2E0A00
+ 219 0121 42756666 	err_buf_full: .asciz "Buffer full\n"
+ 219      65722066 
+ 219      756C6C0A 
+ 219      00
+ 220              	
+ 221 012e 0A72756E 	rt_msg: .asciz "\nrun time error, "
+ 221      2074696D 
+ 221      65206572 
 ARM GAS  tinyBasic.s 			page 16
 
 
- 251      554E4400 
- 252 00a4 9C000000 	  _dict_entry 4+F_CMD,TONE,TONE_IDX //tone  
- 252      5B000000 
- 252      24544F4E 
- 252      45000000 
- 253 00b4 AC000000 	  _dict_entry 2+F_CMD,TO,TO_IDX //to
- 253      5A000000 
- 253      22544F00 
- 254 00c0 BC000000 	  _dict_entry 5+F_CMD,TIMER,TIMER_IDX //set_timer
- 254      58000000 
- 254      2554494D 
- 254      45520000 
- 255 00d0 C8000000 	  _dict_entry 7+F_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
- 255      59000000 
- 255      4754494D 
- 255      454F5554 
- 256 00e0 D8000000 	  _dict_entry 5+F_IFUNC,TICKS,TICKS_IDX //get_ticks
- 256      57000000 
- 256      45544943 
- 256      4B530000 
- 257 00f0 E8000000 	  _dict_entry 4+F_CMD,STOP,STOP_IDX //stop 
- 257      56000000 
- 257      2453544F 
- 257      50000000 
- 258 0100 F8000000 	  _dict_entry 4+F_CMD,STEP,STEP_IDX //step 
- 258      55000000 
- 258      24535445 
- 258      50000000 
- 259 0110 08010000 	  _dict_entry 5+F_CMD,SPIWR,SPIWR_IDX //spi_write
- 259      54000000 
- 259      25535049 
- 259      57520000 
- 260 0120 18010000 	  _dict_entry 6+F_CMD,SPISEL,SPISEL_IDX //spi_select
- 260      53000000 
- 260      26535049 
- 260      53454C00 
- 261 0130 28010000 	  _dict_entry 5+F_IFUNC,SPIRD,SPIRD_IDX // spi_read 
- 261      51000000 
- 261      45535049 
- 261      52440000 
- 262 0140 38010000 	  _dict_entry 5+F_CMD,SPIEN,SPIEN_IDX //spi_enable 
- 262      52000000 
- 262      25535049 
- 262      454E0000 
- 263 0150 48010000 	  _dict_entry 5+F_CMD,SLEEP,SLEEP_IDX //sleep 
- 263      50000000 
- 263      25534C45 
- 263      45500000 
- 264 0160 58010000 	  _dict_entry 4+F_IFUNC,SIZE,SIZE_IDX //size
- 264      4F000000 
- 264      4453495A 
- 264      45000000 
- 265 0170 68010000 	  _dict_entry 4+F_CMD,SHOW,SHOW_IDX //show 
- 265      4E000000 
- 265      2453484F 
- 265      57000000 
- 266 0180 78010000 	  _dict_entry 4+F_CMD,SAVE,SAVE_IDX //save
+ 221      726F722C 
+ 221      2000
+ 222 0140 0A636F6D 	comp_msg: .asciz "\ncompile error, "
+ 222      70696C65 
+ 222      20657272 
+ 222      6F722C20 
+ 222      00
+ 223 0151 6C617374 	tk_id: .asciz "last token id: "
+ 223      20746F6B 
+ 223      656E2069 
+ 223      643A2000 
+ 224              	
+ 225              	
+ 226              	    .section  .text , "ax", %progbits 
+ 227              	
+ 228              	/*********************************
+ 229              	     arg_list 
+ 230              	     extract command arguments
+ 231              	     and push them on parameter stack 
+ 232              	    input:
+ 233              	       none 
+ 234              	    output:
+ 235              	       r0  arguments count found
+ 236              	       args on dstack in order left to right 
+ 237              	    use:
+ 238              	       r8   arguments counter  
+ 239              	********************************/
+ 240              	     _FUNC arg_list 
+ 241 00f0 4DF8048D 	     push {r8}
+ 242              	
+ 243 00f4 5DF8048B 	     pop {r8}      
+ 244 00f8 7047     	     _RET 
+ 245              	
+ 246              	
+ 247              	/*********************************
+ 248              	   BASIC: BSET adr, mask   
+ 249              	   set bits [adr]=[adr] | mask  
+ 250              	   input:
+ 251              	     r0    adr 
+ 252              	     r1    mask 
+ 253              	    output;
+ 254              	      none 
+ 255              	    use:
+ 256              	      r8   temp
+ 257              	*******************************/     
+ 258 00fa 00BF     	    _FUNC BSET 
+ 259 00fc 2DE90003 	    push {r8,r9}
+ 260 0100 82B0     	    sub sp,#8 
+ 261 0102 00B5FFF7 	    _CALL arg_list 
+ 261      F4FF5DF8 
+ 261      04EB
+ 262 010c 0228     	    cmp r0,#2 
+ 263 010e 02D0     	    beq 1f 
+ 264 0110 4FF00200 	    mov r0,#ERR_SYNTAX
+ 265 0114 BCE7     	    b syntax_error 
+ 266 0116 03BC     	1:  pop {r0,r1}
+ 267 0118 D0F80080 	    ldr r8,[r0]
 ARM GAS  tinyBasic.s 			page 17
 
 
- 266      4D000000 
- 266      24534156 
- 266      45000000 
- 267 0190 88010000 	  _dict_entry 3+F_CMD,RUN,RUN_IDX //run
- 267      4C000000 
- 267      2352554E 
- 268 019c 98010000 	  _dict_entry 6+F_IFUNC,RSHIFT,RSHIFT_IDX //rshift
- 268      4B000000 
- 268      46525348 
- 268      49465400 
- 269 01ac A4010000 	  _dict_entry 3+F_IFUNC,RND,RND_IDX //random 
- 269      4A000000 
- 269      43524E44 
- 270 01b8 B4010000 	  _dict_entry 6+F_CMD,RETURN,RET_IDX //return 
- 270      49000000 
- 270      26524554 
- 270      55524E00 
- 271 01c8 C0010000 	  _dict_entry 7+F_CMD,RESTORE,REST_IDX //restore 
- 271      48000000 
- 271      27524553 
- 271      544F5245 
- 272 01d8 D0010000 	  _dict_entry 6+F_CMD,REMARK,REM_IDX //remark 
- 272      47000000 
- 272      2652454D 
- 272      41524B00 
- 273 01e8 E0010000 	  _dict_entry 6+F_CMD,REBOOT,RBT_IDX //cold_start
- 273      46000000 
- 273      26524542 
- 273      4F4F5400 
- 274 01f8 F0010000 	  _dict_entry 4+F_IFUNC,READ,READ_IDX //read  
- 274      45000000 
- 274      44524541 
- 274      44000000 
- 275 0208 00020000 	  _dict_entry 4+F_IFUNC,QKEY,QKEY_IDX //qkey  
- 275      44000000 
- 275      44514B45 
- 275      59000000 
- 276 0218 10020000 	  _dict_entry 4+F_IFUNC,PRTI,PRTI_IDX //const_porti 
- 276      43000000 
- 276      44505254 
- 276      49000000 
- 277 0228 20020000 	  _dict_entry 4+F_IFUNC,PRTH,PRTH_IDX //const_porth 
- 277      42000000 
- 277      44505254 
- 277      48000000 
- 278 0238 30020000 	  _dict_entry 4+F_IFUNC,PRTG,PRTG_IDX //const_portg 
- 278      41000000 
- 278      44505254 
- 278      47000000 
- 279 0248 40020000 	  _dict_entry 4+F_IFUNC,PRTF,PRTF_IDX //const_portf
- 279      40000000 
- 279      44505254 
- 279      46000000 
- 280 0258 50020000 	  _dict_entry 4+F_IFUNC,PRTE,PRTE_IDX //const_porte
- 280      3F000000 
- 280      44505254 
- 280      45000000 
+ 268 011c 4FF00109 	    mov r9,#1 
+ 269 0120 09FA01F9 	    lsl r9,r1 
+ 270 0124 49EA0808 	    orr r8,r9,r8 
+ 271 0128 C0F80080 	    str r8,[r0]
+ 272 012c BDE80003 	    pop {r8,r9}
+ 273 0130 7047     	    _RET 
+ 274              	
+ 275              	
+ 276              	/*********************************
+ 277              	   BASIC: BRES adr, mask   
+ 278              	   reset bits [adr]= [adr] & ~mask  
+ 279              	   input:
+ 280              	     r0    adr 
+ 281              	     r1    mask 
+ 282              	    output;
+ 283              	      none 
+ 284              	    use:
+ 285              	      r8   temp
+ 286              	      r9   temp  
+ 287              	*******************************/     
+ 288 0132 00BF     	    _FUNC BRES 
+ 289              	
+ 290 0134 7047     	    _RET 
+ 291              	
+ 292              	/*********************************
+ 293              	   BASIC: BTGL adr, mask   
+ 294              	   toggle bits [adr]=[adr]^mask  
+ 295              	   input:
+ 296              	     r0    adr 
+ 297              	     r1    mask 
+ 298              	    output;
+ 299              	      none 
+ 300              	    use:
+ 301              	      r8   temp
+ 302              	      r9   temp  
+ 303              	*******************************/     
+ 304 0136 00BF     	    _FUNC BTGL 
+ 305              	
+ 306 0138 7047     	    _RET 
+ 307              	
+ 308              	
+ 309              	
+ 310              	
+ 311              	//---------------------------------
+ 312              	// dictionary search 
+ 313              	// input:
+ 314              	//	 r0   target name
+ 315              	//   r1		dictionary first link address  
+ 316              	// output:
+ 317              	//  r0 		TK_CMD|TK_IFUNC|TK_CONST|TK_NONE 
+ 318              	//  r1		cmd_index if r0!=TK_NONE  
+ 319              	// use:
+ 320              	//  r8   length dictionary name 
+ 321              	//---------------------------------
+ 322 013a 00BF     	  _FUNC search_dict
+ 323 013c 4DF8048D 	  push {r8}
+ 324 0140 03B4     	  push {r0,r1}
 ARM GAS  tinyBasic.s 			page 18
 
 
- 281 0268 60020000 	  _dict_entry 4+F_IFUNC,PRTD,PRTD_IDX //const_portd
- 281      3E000000 
- 281      44505254 
- 281      44000000 
- 282 0278 70020000 	  _dict_entry 4+F_IFUNC,PRTC,PRTC_IDX //const_portc
- 282      3D000000 
- 282      44505254 
- 282      43000000 
- 283 0288 80020000 	  _dict_entry 4+F_IFUNC,PRTB,PRTB_IDX //const_portb
- 283      3C000000 
- 283      44505254 
- 283      42000000 
- 284 0298 90020000 	  _dict_entry 4+F_IFUNC,PRTA,PRTA_IDX //const_porta 
- 284      3B000000 
- 284      44505254 
- 284      41000000 
- 285 02a8 A0020000 	  _dict_entry 5+F_CMD,PRINT,PRT_IDX //print 
- 285      3A000000 
- 285      25505249 
- 285      4E540000 
- 286 02b8 B0020000 	  _dict_entry 4+F_IFUNC,POUT,POUT_IDX //const_output
- 286      39000000 
- 286      44504F55 
- 286      54000000 
- 287 02c8 C0020000 	  _dict_entry 4+F_CMD,POKE,POKE_IDX //poke 
- 287      38000000 
- 287      24504F4B 
- 287      45000000 
- 288 02d8 D0020000 	  _dict_entry 5+F_CMD,PMODE,PMODE_IDX //pin_mode 
- 288      35000000 
- 288      25504D4F 
- 288      44450000 
- 289 02e8 E0020000 	  _dict_entry 4+F_IFUNC,PINP,PINP_IDX //const_input
- 289      37000000 
- 289      4450494E 
- 289      50000000 
- 290 02f8 F0020000 	  _dict_entry 4+F_IFUNC,PEEK,PEEK_IDX //peek 
- 290      36000000 
- 290      44504545 
- 290      4B000000 
- 291 0308 00030000 	  _dict_entry 5+F_CMD,PAUSE,PAUSE_IDX //pause 
- 291      34000000 
- 291      25504155 
- 291      53450000 
- 292 0318 10030000 	  _dict_entry 3+F_IFUNC,PAD,PAD_IDX //pad_ref 
- 292      33000000 
- 292      43504144 
- 293 0324 20030000 	  _dict_entry 2+F_IFUNC,OR,OR_IDX //bit_or
- 293      32000000 
- 293      424F5200 
- 294 0330 2C030000 	  _dict_entry 3+F_IFUNC,ODR,ODR_IDX //const_odr 
- 294      31000000 
- 294      434F4452 
- 295 033c 38030000 	  _dict_entry 3+F_IFUNC,NOT,NOT_IDX //func_not 
- 295      30000000 
- 295      434E4F54 
- 296 0348 44030000 	  _dict_entry 4+F_CMD,NEXT,NEXT_IDX //next 
+ 325              	1:
+ 326 0142 11F8010B 	  ldrb r0,[r1],#1 
+ 327 0146 0043     	  orrs r0,r0
+ 328 0148 13D0     	  beq 9f // end of dictinary 
+ 329 014a 00F01F08 	  and r8,r0,#0x1f 
+ 330 014e 0098     	  ldr r0,[sp]  
+ 331 0150 00B5FFF7 	  _CALL cp_cstr 
+ 331      87FF5DF8 
+ 331      04EB
+ 332 015a 04D0     	  beq 2f 
+ 333 015c 0199     	  ldr r1,[sp,#4]
+ 334 015e 51F8081C 	  ldr r1,[r1,#-8]
+ 335 0162 0191     	  str r1,[sp,#4]
+ 336 0164 EDE7     	  b 1b   
+ 337              	2: // found
+ 338 0166 0199     	  ldr r1,[sp,#4]
+ 339 0168 0878     	  ldrb r0,[r1]
+ 340 016a 4FEA5010 	  lsr r0,#5    // token type 
+ 341 016e 51F8041C 	  ldr r1,[r1,#-4]  // command index 
+ 342 0172 02B0     	9: add sp,#8  // drop pushed r0,r1
+ 343 0174 5DF8048B 	   pop {r8}
+ 344 0178 7047     	   _RET 
+ 345              	
+ 346              	/************************************
+ 347              	    print firmware version 
+ 348              	    input: 
+ 349              	      none 
+ 350              	    output:
+ 351              	      none 
+ 352              	    use:
+ 353              	      r0 
+ 354              	***********************************/
+ 355 017a 00BF     	    _FUNC prt_version 
+ 356 017c 5D48     	    ldr r0,=version_msg 
+ 357 017e 00B5FFF7 	    _CALL uart_putsz 
+ 357      FEFF5DF8 
+ 357      04EB
+ 358 0188 9FF87600 	    ldrb r0,version 
+ 359 018c 4FEA1010 	    lsr r0,#4 
+ 360 0190 00F13000 	    add r0,#'0' 
+ 361 0194 3A28     	    cmp r0,#'9'+1 
+ 362 0196 01D4     	    bmi 1f 
+ 363 0198 00F10700 	    add r0,#7 
+ 364              	  1:
+ 365 019c 00B5FFF7 	    _CALL uart_putc 
+ 365      FEFF5DF8 
+ 365      04EB
+ 366 01a6 4FF02E00 	    mov r0,#'. 
+ 367 01aa 00B5FFF7 	    _CALL uart_putc 
+ 367      FEFF5DF8 
+ 367      04EB
+ 368 01b4 9FF84A00 	    ldrb r0,version 
+ 369 01b8 00F00F00 	    and r0,#15 
+ 370 01bc 00F13000 	    add r0,'0' 
+ 371 01c0 3A28     	    cmp r0,#'9'+1 
+ 372 01c2 01D4     	    bmi 1f 
+ 373 01c4 00F10700 	    add r0,#7
 ARM GAS  tinyBasic.s 			page 19
 
 
- 296      2E000000 
- 296      244E4558 
- 296      54000000 
- 297 0358 50030000 	  _dict_entry 3+F_CMD,NEW,NEW_IDX //new
- 297      2F000000 
- 297      234E4557 
- 298 0364 60030000 	  _dict_entry 6+F_IFUNC,MULDIV,MULDIV_IDX //muldiv 
- 298      2D000000 
- 298      464D554C 
- 298      44495600 
- 299 0374 6C030000 	  _dict_entry 6+F_IFUNC,LSHIFT,LSHIFT_IDX //lshift
- 299      2C000000 
- 299      464C5348 
- 299      49465400 
- 300 0384 7C030000 	  _dict_entry 3+F_IFUNC,LOG,LOG_IDX //log2 
- 300      2B000000 
- 300      434C4F47 
- 301 0390 8C030000 	  _dict_entry 4+F_CMD,LOAD,LOAD_IDX //load 
- 301      2A000000 
- 301      244C4F41 
- 301      44000000 
- 302 03a0 98030000 	  _dict_entry 4+F_CMD,LIST,LIST_IDX //list
- 302      29000000 
- 302      244C4953 
- 302      54000000 
- 303 03b0 A8030000 	  _dict_entry 3+F_CMD,LET,LET_IDX //let 
- 303      28000000 
- 303      234C4554 
- 304 03bc B8030000 	  _dict_entry 3+F_IFUNC,KEY,KEY_IDX //key 
- 304      27000000 
- 304      434B4559 
- 305 03c8 C4030000 	  _dict_entry 7+F_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
- 305      26000000 
- 305      27495744 
- 305      47524546 
- 306 03d8 D0030000 	  _dict_entry 6+F_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
- 306      25000000 
- 306      26495744 
- 306      47454E00 
- 307 03e8 E0030000 	  _dict_entry 6+F_IFUNC,INVERT,INVERT_IDX //invert 
- 307      24000000 
- 307      46494E56 
- 307      45525400 
- 308 03f8 F0030000 	  _dict_entry 5+F_CMD,INPUT,INPUT_IDX //input_var  
- 308      23000000 
- 308      25494E50 
- 308      55540000 
- 309 0408 00040000 	  _dict_entry 2+F_CMD,IF,IF_IDX //if 
- 309      22000000 
- 309      22494600 
- 310 0414 10040000 	  _dict_entry 3+F_IFUNC,IDR,IDR_IDX //const_idr 
- 310      21000000 
- 310      43494452 
- 311 0420 1C040000 	  _dict_entry 3+F_CMD,HEX,HEX_IDX //hex_base
- 311      20000000 
- 311      23484558 
- 312 042c 28040000 	  _dict_entry 4+F_IFUNC,GPIO,GPIO_IDX //gpio 
+ 374              	  1: 
+ 375 01c8 00B5FFF7 	    _CALL uart_putc 
+ 375      FEFF5DF8 
+ 375      04EB
+ 376 01d2 4FF00D00 	    mov r0,#CR 
+ 377 01d6 00B5FFF7 	    _CALL uart_putc 
+ 377      FEFF5DF8 
+ 377      04EB
+ 378 01e0 7047     	    _RET  
+ 379              	version_msg:
+ 380 01e2 0A626C75 	    .asciz "\nblue pill tiny BASIC, version "
+ 380      65207069 
+ 380      6C6C2074 
+ 380      696E7920 
+ 380      42415349 
+ 381              	version:
+ 382 0202 10       	    .byte 0x10 
+ 383 0203 00       	    .p2align 2 
+ 384              	
+ 385              	
+ 386              	/*********************************
+ 387              	   cold_start 
+ 388              	   initialize BASIC interpreter 
+ 389              	   input:
+ 390              	     r1    destination address 
+ 391              	   output:
+ 392              	    none 
+ 393              	   use:
+ 394              	     r0,r1,r8 
+ 395              	*********************************/
+ 396              	    _GBL_FUNC cold_start 
+ 397 0204 2DE90301 	    push {r0,r1,r8}
+ 398              	// initialise parameters stack
+ 399 0208 DFF840C0 	   ldr r12,dstack_empty     
+ 400              	//copy system variables to ram 
+ 401 020c DFF83800 	    ldr r0,src_addr 
+ 402 0210 0B46     	    mov r3,r1 // UPP  
+ 403 0212 A0EB0108 	    sub r8,r0,r1 
+ 404 0216 4DF8048D 	    push {r8} // map offset 
+ 405 021a 4FF0D008 	    mov r8,#ulast-uzero
+ 406 021e 00B5FFF7 	    _CALL cmove  
+ 406      FEFF5DF8 
+ 406      04EB
+ 407 0228 5DF8048B 	    pop {r8}
+ 408 022c 00B5FFF7 	    _CALL prt_version 
+ 408      A5FF5DF8 
+ 408      04EB
+ 409 0236 BDE80301 	    pop {r0,r1,r8}
+ 410 023a 7047     	    _RET
+ 411 023c 00B500F0 	    _CALL warm_init 
+ 411      25F85DF8 
+ 411      04EB
+ 412 0246 2FE0     	    b cmd_line   
+ 413              	src_addr:
+ 414 0248 00000000 	  .word uzero
+ 415              	dstack_empty:
+ 416 024c 00000000 	   .word _dstack 
 ARM GAS  tinyBasic.s 			page 20
 
 
- 312      1F000000 
- 312      44475049 
- 312      4F000000 
- 313 043c 34040000 	  _dict_entry 4+F_CMD,GOTO,GOTO_IDX //goto 
- 313      1E000000 
- 313      24474F54 
- 313      4F000000 
- 314 044c 44040000 	  _dict_entry 5+F_CMD,GOSUB,GOSUB_IDX //gosub 
- 314      1D000000 
- 314      25474F53 
- 314      55420000 
- 315 045c 54040000 	  _dict_entry 6+F_CMD,FORGET,FORGET_IDX //forget 
- 315      1C000000 
- 315      26464F52 
- 315      47455400 
- 316 046c 64040000 	  _dict_entry 3+F_CMD,FOR,FOR_IDX //for 
- 316      1B000000 
- 316      23464F52 
- 317 0478 74040000 	  _dict_entry 4+F_CMD,FCPU,FCPU_IDX //fcpu 
- 317      1A000000 
- 317      24464350 
- 317      55000000 
- 318 0488 80040000 	  _dict_entry 3+F_CMD,END,END_IDX //cmd_end  
- 318      18000000 
- 318      23454E44 
- 319 0494 90040000 	  _dict_entry 6+F_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
- 319      19000000 
- 319      46454550 
- 319      524F4D00 
- 320 04a4 9C040000 	  _dict_entry 6+F_CMD,DWRITE,DWRITE_IDX //digital_write
- 320      17000000 
- 320      26445752 
- 320      49544500 
- 321 04b4 AC040000 	  _dict_entry 5+F_IFUNC,DREAD,DREAD_IDX //digital_read
- 321      16000000 
- 321      45445245 
- 321      41440000 
- 322 04c4 BC040000 	  _dict_entry 2+F_CMD,DO,DO_IDX //do_loop
- 322      15000000 
- 322      22444F00 
- 323 04d0 CC040000 	  _dict_entry 3+F_CMD,DIR,DIR_IDX //directory 
- 323      14000000 
- 323      23444952 
- 324 04dc D8040000 	  _dict_entry 3+F_CMD,DEC,DEC_IDX //dec_base
- 324      13000000 
- 324      23444543 
- 325 04e8 E4040000 	  _dict_entry 3+F_IFUNC,DDR,DDR_IDX //const_ddr 
- 325      12000000 
- 325      43444452 
- 326 04f4 F0040000 	  _dict_entry 6+F_CMD,DATALN,DATALN_IDX //data_line  
- 326      11000000 
- 326      26444154 
- 326      414C4E00 
- 327 0504 FC040000 	  _dict_entry 4+F_CMD,DATA,DATA_IDX //data  
- 327      10000000 
- 327      24444154 
- 327      41000000 
+ 417              	
+ 418              	/*****************************
+ 419              	    clear_vars 
+ 420              	    initialize variables to 0
+ 421              	  input:
+ 422              	    none 
+ 423              	  output:
+ 424              	    none 
+ 425              	  use:
+ 426              	    r8   counter 
+ 427              	*****************************/
+ 428              	    _FUNC clear_vars 
+ 429 0250 2DE90301 	    push {r0,r1,r8}
+ 430 0254 80EA0000 	    eor r0,r0 
+ 431 0258 03F16401 	    add r1,r3,#VARS
+ 432 025c 4FF01A08 	    mov r8,#26
+ 433 0260 41F8040B 	1:  str r0,[r1],#4 
+ 434 0264 B8F10108 	    subs r8,#1
+ 435 0268 FAD1     	    bne 1b  
+ 436 026a BDE80301 	    pop {r0,r1,r8}
+ 437 026e 7047     	    _RET 
+ 438              	
+ 439              	/*****************************
+ 440              	   clear_basic 
+ 441              	   reset BASIC text pointers 
+ 442              	   and clear variables 
+ 443              	*****************************/
+ 444              	    _FUNC clear_basic
+ 445 0270 80EA0000 		eor r0,r0 
+ 446 0274 9860     	  str r0,[r3,#COUNT]
+ 447 0276 1860     	  str r0,[r3,#IN]
+ 448 0278 03F1CC00 	  add r0,r3,#FREE_RAM
+ 449 027c 5863     	  str r0,[r3,#TXTBGN]
+ 450 027e 9863     	  str r0,[r3,#TXTEND]
+ 451 0280 00B5FFF7 		_CALL clear_vars 
+ 451      E5FF5DF8 
+ 451      04EB
+ 452 028a 7047     		_RET  
+ 453              	
+ 454              	/***********************************
+ 455              	   warm_init 
+ 456              	   initialize interpreter context 
+ 457              	  input:
+ 458              	    none
+ 459              	  output:
+ 460              	    none 
+ 461              	  use:
+ 462              	    r0 
+ 463              	***********************************/
+ 464              	warm_init:
+ 465 028c 80EA0000 	  eor r0,r0 
+ 466 0290 5864     		str r0,[r3,FLAGS]
+ 467 0292 D863     	  str r0,[r3,LOOP_DEPTH] 
+ 468 0294 4FF00400 	  mov r0, #DEFAULT_TAB_WIDTH
+ 469 0298 9864     	  str r0,[r3,#TAB_WIDTH]
+ 470 029a 4FF00A00 		mov r0,#10 // default base decimal 
+ 471 029e D861     		str r0,[r3,#BASE]
 ARM GAS  tinyBasic.s 			page 21
 
 
- 328 0514 0C050000 	  _dict_entry 3+F_IFUNC,CRL,CRL_IDX //const_cr1 
- 328      0F000000 
- 328      4343524C 
- 329 0520 1C050000 	  _dict_entry 3+F_IFUNC,CRH,CRH_IDX //const_cr2 
- 329      0E000000 
- 329      43435248 
- 330 052c 28050000 	  _dict_entry 4+F_CFUNC,CHAR,CHAR_IDX //char
- 330      0D000000 
- 330      84434841 
- 330      52000000 
- 331 053c 34050000 	  _dict_entry 3+F_CMD,BYE,BYE_IDX //bye 
- 331      0C000000 
- 331      23425945 
- 332 0548 44050000 	  _dict_entry 5+F_CMD,BTOGL,BTOGL_IDX //bit_toggle
- 332      0B000000 
- 332      2542544F 
- 332      474C0000 
- 333 0558 50050000 	  _dict_entry 5+F_IFUNC,BTEST,BTEST_IDX //bit_test 
- 333      0A000000 
- 333      45425445 
- 333      53540000 
- 334 0568 60050000 	  _dict_entry 4+F_CMD,BSET,BSET_IDX //bit_set 
- 334      09000000 
- 334      24425345 
- 334      54000000 
- 335 0578 70050000 	  _dict_entry 4+F_CMD,BRES,BRES_IDX //bit_reset
- 335      08000000 
- 335      24425245 
- 335      53000000 
- 336 0588 80050000 	  _dict_entry 3+F_IFUNC,BIT,BIT_IDX //bitmask
- 336      07000000 
- 336      43424954 
- 337 0594 90050000 	  _dict_entry 3+F_CMD,AWU,AWU_IDX //awu 
- 337      06000000 
- 337      23415755 
- 338 05a0 9C050000 	  _dict_entry 7+F_CMD,AUTORUN,AUTORUN_IDX //autorun
- 338      05000000 
- 338      27415554 
- 338      4F52554E 
- 339 05b0 A8050000 	  _dict_entry 3+F_IFUNC,ASC,ASC_IDX //ascii
- 339      04000000 
- 339      43415343 
- 340 05bc B8050000 	  _dict_entry 3+F_IFUNC,AND,AND_IDX //bit_and
- 340      03000000 
- 340      43414E44 
- 341 05c8 C4050000 	  _dict_entry 7+F_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
- 341      02000000 
- 341      47414443 
- 341      52454144 
- 342 05d8 D0050000 	  _dict_entry 5+F_CMD,ADCON,ADCON_IDX //power_adc 
- 342      01000000 
- 342      25414443 
- 342      4F4E0000 
- 343              	first_link: 
- 344 05e8 E0050000 	  .word LINK 
- 345 05ec 00000000 	  .word ABS_IDX 
- 346              	  .equ LINK,. 
+ 472 02a0 D860     	  str r0,[r3,#BASICPTR]
+ 473 02a2 1860     	  str r0,[r3,#IN]
+ 474 02a4 9860     	  str r0,[r3,COUNT]  
+ 475 02a6 7047     		_RET  
+ 476              	
+ 477              	/**********************************
+ 478              	   cmd_line 
+ 479              	   shell command line 
+ 480              	   input:
+ 481              	      none 
+ 482              	   output:
+ 483              	      none 
+ 484              	   use:
+ 485              	
+ 486              	***********************************/
+ 487              	    _FUNC cmd_line 
+ 488 02a8 4FF00D00 	    mov r0,#CR 
+ 489 02ac 00B5FFF7 	    _CALL uart_putc 
+ 489      FEFF5DF8 
+ 489      04EB
+ 490 02b6 0B48     	1:  ldr r0,tib
+ 491 02b8 00B5FFF7 	    _CALL readln 
+ 491      FEFF5DF8 
+ 491      04EB
+ 492 02c2 0040     	    ands r0,r0 
+ 493 02c4 F7D0     	    beq 1b 
+ 494 02c6 00B500F0 	    _CALL compile 
+ 494      11F85DF8 
+ 494      04EB
+ 495 02d0 0040     	    ands r0,r0 
+ 496 02d2 F0D0     	    beq 1b  
+ 497              	// interpret 
+ 498              	interpreter:
+ 499 02d4 1868     	   ldr r0,[r3,#IN]
+ 500 02d6 9968     	   ldr r1,[r3,#COUNT]
+ 501 02d8 8842     	   cmp r0,r1 
+ 502 02da 03D4     	   bmi interp_loop 
+ 503              	next_line:
+ 504 02dc 586C     	  ldr r0,[r3,#FLAGS]
+ 505 02de 10F0010F 	  tst r0,#(1<<FRUN)
+ 506 02e2 E1D0     	  beq cmd_line 
+ 507              	
+ 508              	interp_loop:
+ 509              	
+ 510              	
+ 511 02e4 00000000 	tib: .word _tib 
+ 512              	
+ 513              	/**********************************
+ 514              	    warm_start 
+ 515              	    start BASIC interpreter without 
+ 516              	    reset variables and code space 
+ 517              	  input:
+ 518              	    none 
+ 519              	  output:
+ 520              	    none 
+ 521              	  use:
+ 522              	
 ARM GAS  tinyBasic.s 			page 22
 
 
- 347              	kword_dict: // first name field 
- 348 05f0 43       	  .byte 3+F_IFUNC
- 349 05f1 414253   	  .ascii "ABS" 
- 350              	  .p2align 2 
- 351              	
- 352              	//comands and fonctions address table 	
- 353              	code_addr:
- 354              	/*
- 355              		.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
- 356              		.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
- 357              		.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //1
- 358              		.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
- 359              		.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
- 360              		.word let,list,load,log2,lshift,muldiv,next,new // 40..47
- 361              		.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
- 362              		.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..6
- 363              		.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,remark // 64..71 
- 364              		.word restore,return, random,rshift,run,save,show,size // 72..79
- 365              		.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
- 366              		.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
- 367              		.word wait,words,write,bit_xor,transmit,receive // 96..103 
- 368              	*/ 
- 369 05f4 00000000 		.word 0 
- 370              	
- 371              	/*************************************************
- 372              	   extra FLASH memory not used by Tiny BASIC
- 373              	   is used to save BASIC programs.
- 374              	************************************************/
- 375 05f8 00000000 	  .p2align 10  // align to 1KB, smallest erasable segment 
- 375      00000000 
- 375      00000000 
- 375      00000000 
- 375      00000000 
- 376              	  .section .fs
- 377              	FILE_SYSTEM: // file system start here
+ 523              	**********************************/
+ 524              	    _FUNC warm_start 
+ 525              	// initialise parameters stack
+ 526 02e8 5FF8A0C0 	   ldr r12,dstack_empty     
+ 527              	
+ 528 02ec FCE7     	    b warm_start 
+ 529              	
+ 530              	compile:
+ 531              	
+ 532              	
+ 533 02ee 0000     	  .section .rodata 
+ 534              	
+ 535              	// system variables initial value 
+ 536              	uzero:
+ 537 0000 00000000 	  .word 0 // IN
+ 538 0004 00000000 	  .word 0 // IN_SAVED
+ 539 0008 00000000 	  .word 0 // COUNT
+ 540 000c 00000000 	  .word 0 // BASICPTR
+ 541 0010 00000000 	  .word 0 // DATAPTR
+ 542 0014 00000000 	  .word 0 // DATA
+ 543 0018 00000000 	  .word 0 // DATALEN
+ 544 001c 0A000000 	  .word 10 // BASE
+ 545 0020 00000000 	  .word 0 // TICKS
+ 546 0024 00000000 	  .word 0 // TIMER
+ 547 0028 AA5555AA 	  .word 0xaa5555aa // SEED
+ 548 002c 00000000 	  .word FILE_SYSTEM // FSPTR
+ 549 0030 00000000 	  .word 0 // FFREE
+ 550 0034 00040020 	  .word RAM_ADR+1024 // TXTBGN
+ 551 0038 00040020 	  .word RAM_ADR+1024 // TXTEND
+ 552 003c 00000000 	  .word 0 //LOOP_DEPTH
+ 553 0040 00000000 	  .word 0 // ARRAY_SIZE
+ 554 0044 00000000 	  .word 0 // FLAGS
+ 555 0048 04000000 	  .word 4 // TAB_WIDTH
+ 556 004c 00000000 	  .word 0 // RX_HEAD
+ 557 0050 00000000 	  .word 0 // RX_TAIL
+ 558 0054 00000000 	  .space RX_QUEUE_SIZE,0 // RX_QUEUE
+ 558      00000000 
+ 558      00000000 
+ 558      00000000 
+ 559 0064 00000000 	  .space VARS_SIZE,0 // VARS
+ 559      00000000 
+ 559      00000000 
+ 559      00000000 
+ 559      00000000 
+ 560 00cc 00000000 	  .space 4, 0 // padding 
+ 561              	ulast:
+ 562              	
+ 563              	  .section .rodata.dictionary 
+ 564              	
+ 565              	// keep alphabetic order for BASIC names from Z-A
+ 566              	// this sort order is for for WORDS cmd output. 	
+ 567              	
+ 568              		.equ link, 0
+ 569              	kword_end:
+ 570 0000 00000000 	  .word link,0
+ 570      00000000 
+ 571              	  .equ LINK, .
 ARM GAS  tinyBasic.s 			page 23
+
+
+ 572 0008 00000000 	  .word 0
+ 573              	  .p2align 2  
+ 574 000c 08000000 	  _dict_entry 5+F_CMD,XTRMT,XTRMT_IDX // xmodem transmit
+ 574      64000000 
+ 574      25585452 
+ 574      4D540000 
+ 575 001c 14000000 	  _dict_entry 4+F_CMD,XRCV,XRCV_IDX // xmodem receive
+ 575      65000000 
+ 575      24585243 
+ 575      56000000 
+ 576 002c 24000000 	  _dict_entry 3+F_IFUNC,XOR,XOR_IDX //bit_xor
+ 576      63000000 
+ 576      43584F52 
+ 577 0038 34000000 	  _dict_entry 5+F_CMD,WRITE,WRITE_IDX //write  
+ 577      62000000 
+ 577      25575249 
+ 577      54450000 
+ 578 0048 40000000 	  _dict_entry 5+F_CMD,WORDS,WORDS_IDX //words 
+ 578      61000000 
+ 578      25574F52 
+ 578      44530000 
+ 579 0058 50000000 	  _dict_entry 4+F_CMD,WAIT,WAIT_IDX //wait 
+ 579      60000000 
+ 579      24574149 
+ 579      54000000 
+ 580 0068 60000000 	  _dict_entry 3+F_IFUNC,USR,USR_IDX //usr
+ 580      5F000000 
+ 580      43555352 
+ 581 0074 70000000 	  _dict_entry 5+F_CMD,UNTIL,UNTIL_IDX //until 
+ 581      5E000000 
+ 581      25554E54 
+ 581      494C0000 
+ 582 0084 7C000000 	  _dict_entry 6+F_IFUNC,UFLASH,UFLASH_IDX //uflash 
+ 582      5D000000 
+ 582      4655464C 
+ 582      41534800 
+ 583 0094 8C000000 	  _dict_entry 6+F_IFUNC,UBOUND,UBOUND_IDX //ubound
+ 583      5C000000 
+ 583      4655424F 
+ 583      554E4400 
+ 584 00a4 9C000000 	  _dict_entry 4+F_CMD,TONE,TONE_IDX //tone  
+ 584      5B000000 
+ 584      24544F4E 
+ 584      45000000 
+ 585 00b4 AC000000 	  _dict_entry 2+F_CMD,TO,TO_IDX //to
+ 585      5A000000 
+ 585      22544F00 
+ 586 00c0 BC000000 	  _dict_entry 5+F_CMD,TIMER,TIMER_IDX //set_timer
+ 586      58000000 
+ 586      2554494D 
+ 586      45520000 
+ 587 00d0 C8000000 	  _dict_entry 7+F_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
+ 587      59000000 
+ 587      4754494D 
+ 587      454F5554 
+ 588 00e0 D8000000 	  _dict_entry 5+F_IFUNC,TICKS,TICKS_IDX //get_ticks
+ 588      57000000 
+ARM GAS  tinyBasic.s 			page 24
+
+
+ 588      45544943 
+ 588      4B530000 
+ 589 00f0 E8000000 	  _dict_entry 4+F_CMD,STOP,STOP_IDX //stop 
+ 589      56000000 
+ 589      2453544F 
+ 589      50000000 
+ 590 0100 F8000000 	  _dict_entry 4+F_CMD,STEP,STEP_IDX //step 
+ 590      55000000 
+ 590      24535445 
+ 590      50000000 
+ 591 0110 08010000 	  _dict_entry 5+F_CMD,SPIWR,SPIWR_IDX //spi_write
+ 591      54000000 
+ 591      25535049 
+ 591      57520000 
+ 592 0120 18010000 	  _dict_entry 6+F_CMD,SPISEL,SPISEL_IDX //spi_select
+ 592      53000000 
+ 592      26535049 
+ 592      53454C00 
+ 593 0130 28010000 	  _dict_entry 5+F_IFUNC,SPIRD,SPIRD_IDX // spi_read 
+ 593      51000000 
+ 593      45535049 
+ 593      52440000 
+ 594 0140 38010000 	  _dict_entry 5+F_CMD,SPIEN,SPIEN_IDX //spi_enable 
+ 594      52000000 
+ 594      25535049 
+ 594      454E0000 
+ 595 0150 48010000 	  _dict_entry 5+F_CMD,SLEEP,SLEEP_IDX //sleep 
+ 595      50000000 
+ 595      25534C45 
+ 595      45500000 
+ 596 0160 58010000 	  _dict_entry 4+F_IFUNC,SIZE,SIZE_IDX //size
+ 596      4F000000 
+ 596      4453495A 
+ 596      45000000 
+ 597 0170 68010000 	  _dict_entry 4+F_CMD,SHOW,SHOW_IDX //show 
+ 597      4E000000 
+ 597      2453484F 
+ 597      57000000 
+ 598 0180 78010000 	  _dict_entry 4+F_CMD,SAVE,SAVE_IDX //save
+ 598      4D000000 
+ 598      24534156 
+ 598      45000000 
+ 599 0190 88010000 	  _dict_entry 3+F_CMD,RUN,RUN_IDX //run
+ 599      4C000000 
+ 599      2352554E 
+ 600 019c 98010000 	  _dict_entry 6+F_IFUNC,RSHIFT,RSHIFT_IDX //rshift
+ 600      4B000000 
+ 600      46525348 
+ 600      49465400 
+ 601 01ac A4010000 	  _dict_entry 3+F_IFUNC,RND,RND_IDX //random 
+ 601      4A000000 
+ 601      43524E44 
+ 602 01b8 B4010000 	  _dict_entry 6+F_CMD,RETURN,RET_IDX //return 
+ 602      49000000 
+ 602      26524554 
+ 602      55524E00 
+ 603 01c8 C0010000 	  _dict_entry 7+F_CMD,RESTORE,REST_IDX //restore 
+ARM GAS  tinyBasic.s 			page 25
+
+
+ 603      48000000 
+ 603      27524553 
+ 603      544F5245 
+ 604 01d8 D0010000 	  _dict_entry 6+F_CMD,REMARK,REM_IDX //remark 
+ 604      47000000 
+ 604      2652454D 
+ 604      41524B00 
+ 605 01e8 E0010000 	  _dict_entry 6+F_CMD,REBOOT,RBT_IDX //cold_start
+ 605      46000000 
+ 605      26524542 
+ 605      4F4F5400 
+ 606 01f8 F0010000 	  _dict_entry 4+F_IFUNC,READ,READ_IDX //read  
+ 606      45000000 
+ 606      44524541 
+ 606      44000000 
+ 607 0208 00020000 	  _dict_entry 4+F_IFUNC,QKEY,QKEY_IDX //qkey  
+ 607      44000000 
+ 607      44514B45 
+ 607      59000000 
+ 608 0218 10020000 	  _dict_entry 4+F_IFUNC,PRTI,PRTI_IDX //const_porti 
+ 608      43000000 
+ 608      44505254 
+ 608      49000000 
+ 609 0228 20020000 	  _dict_entry 4+F_IFUNC,PRTH,PRTH_IDX //const_porth 
+ 609      42000000 
+ 609      44505254 
+ 609      48000000 
+ 610 0238 30020000 	  _dict_entry 4+F_IFUNC,PRTG,PRTG_IDX //const_portg 
+ 610      41000000 
+ 610      44505254 
+ 610      47000000 
+ 611 0248 40020000 	  _dict_entry 4+F_IFUNC,PRTF,PRTF_IDX //const_portf
+ 611      40000000 
+ 611      44505254 
+ 611      46000000 
+ 612 0258 50020000 	  _dict_entry 4+F_IFUNC,PRTE,PRTE_IDX //const_porte
+ 612      3F000000 
+ 612      44505254 
+ 612      45000000 
+ 613 0268 60020000 	  _dict_entry 4+F_IFUNC,PRTD,PRTD_IDX //const_portd
+ 613      3E000000 
+ 613      44505254 
+ 613      44000000 
+ 614 0278 70020000 	  _dict_entry 4+F_IFUNC,PRTC,PRTC_IDX //const_portc
+ 614      3D000000 
+ 614      44505254 
+ 614      43000000 
+ 615 0288 80020000 	  _dict_entry 4+F_IFUNC,PRTB,PRTB_IDX //const_portb
+ 615      3C000000 
+ 615      44505254 
+ 615      42000000 
+ 616 0298 90020000 	  _dict_entry 4+F_IFUNC,PRTA,PRTA_IDX //const_porta 
+ 616      3B000000 
+ 616      44505254 
+ 616      41000000 
+ 617 02a8 A0020000 	  _dict_entry 5+F_CMD,PRINT,PRT_IDX //print 
+ 617      3A000000 
+ARM GAS  tinyBasic.s 			page 26
+
+
+ 617      25505249 
+ 617      4E540000 
+ 618 02b8 B0020000 	  _dict_entry 4+F_IFUNC,POUT,POUT_IDX //const_output
+ 618      39000000 
+ 618      44504F55 
+ 618      54000000 
+ 619 02c8 C0020000 	  _dict_entry 4+F_CMD,POKE,POKE_IDX //poke 
+ 619      38000000 
+ 619      24504F4B 
+ 619      45000000 
+ 620 02d8 D0020000 	  _dict_entry 5+F_CMD,PMODE,PMODE_IDX //pin_mode 
+ 620      35000000 
+ 620      25504D4F 
+ 620      44450000 
+ 621 02e8 E0020000 	  _dict_entry 4+F_IFUNC,PINP,PINP_IDX //const_input
+ 621      37000000 
+ 621      4450494E 
+ 621      50000000 
+ 622 02f8 F0020000 	  _dict_entry 4+F_IFUNC,PEEK,PEEK_IDX //peek 
+ 622      36000000 
+ 622      44504545 
+ 622      4B000000 
+ 623 0308 00030000 	  _dict_entry 5+F_CMD,PAUSE,PAUSE_IDX //pause 
+ 623      34000000 
+ 623      25504155 
+ 623      53450000 
+ 624 0318 10030000 	  _dict_entry 3+F_IFUNC,PAD,PAD_IDX //pad_ref 
+ 624      33000000 
+ 624      43504144 
+ 625 0324 20030000 	  _dict_entry 2+F_IFUNC,OR,OR_IDX //bit_or
+ 625      32000000 
+ 625      424F5200 
+ 626 0330 2C030000 	  _dict_entry 3+F_IFUNC,ODR,ODR_IDX //const_odr 
+ 626      31000000 
+ 626      434F4452 
+ 627 033c 38030000 	  _dict_entry 3+F_IFUNC,NOT,NOT_IDX //func_not 
+ 627      30000000 
+ 627      434E4F54 
+ 628 0348 44030000 	  _dict_entry 4+F_CMD,NEXT,NEXT_IDX //next 
+ 628      2E000000 
+ 628      244E4558 
+ 628      54000000 
+ 629 0358 50030000 	  _dict_entry 3+F_CMD,NEW,NEW_IDX //new
+ 629      2F000000 
+ 629      234E4557 
+ 630 0364 60030000 	  _dict_entry 6+F_IFUNC,MULDIV,MULDIV_IDX //muldiv 
+ 630      2D000000 
+ 630      464D554C 
+ 630      44495600 
+ 631 0374 6C030000 	  _dict_entry 6+F_IFUNC,LSHIFT,LSHIFT_IDX //lshift
+ 631      2C000000 
+ 631      464C5348 
+ 631      49465400 
+ 632 0384 7C030000 	  _dict_entry 3+F_IFUNC,LOG,LOG_IDX //log2 
+ 632      2B000000 
+ 632      434C4F47 
+ 633 0390 8C030000 	  _dict_entry 4+F_CMD,LOAD,LOAD_IDX //load 
+ARM GAS  tinyBasic.s 			page 27
+
+
+ 633      2A000000 
+ 633      244C4F41 
+ 633      44000000 
+ 634 03a0 98030000 	  _dict_entry 4+F_CMD,LIST,LIST_IDX //list
+ 634      29000000 
+ 634      244C4953 
+ 634      54000000 
+ 635 03b0 A8030000 	  _dict_entry 3+F_CMD,LET,LET_IDX //let 
+ 635      28000000 
+ 635      234C4554 
+ 636 03bc B8030000 	  _dict_entry 3+F_IFUNC,KEY,KEY_IDX //key 
+ 636      27000000 
+ 636      434B4559 
+ 637 03c8 C4030000 	  _dict_entry 7+F_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
+ 637      26000000 
+ 637      27495744 
+ 637      47524546 
+ 638 03d8 D0030000 	  _dict_entry 6+F_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
+ 638      25000000 
+ 638      26495744 
+ 638      47454E00 
+ 639 03e8 E0030000 	  _dict_entry 6+F_IFUNC,INVERT,INVERT_IDX //invert 
+ 639      24000000 
+ 639      46494E56 
+ 639      45525400 
+ 640 03f8 F0030000 	  _dict_entry 5+F_CMD,INPUT,INPUT_IDX //input_var  
+ 640      23000000 
+ 640      25494E50 
+ 640      55540000 
+ 641 0408 00040000 	  _dict_entry 2+F_CMD,IF,IF_IDX //if 
+ 641      22000000 
+ 641      22494600 
+ 642 0414 10040000 	  _dict_entry 3+F_IFUNC,IDR,IDR_IDX //const_idr 
+ 642      21000000 
+ 642      43494452 
+ 643 0420 1C040000 	  _dict_entry 3+F_CMD,HEX,HEX_IDX //hex_base
+ 643      20000000 
+ 643      23484558 
+ 644 042c 28040000 	  _dict_entry 4+F_IFUNC,GPIO,GPIO_IDX //gpio 
+ 644      1F000000 
+ 644      44475049 
+ 644      4F000000 
+ 645 043c 34040000 	  _dict_entry 4+F_CMD,GOTO,GOTO_IDX //goto 
+ 645      1E000000 
+ 645      24474F54 
+ 645      4F000000 
+ 646 044c 44040000 	  _dict_entry 5+F_CMD,GOSUB,GOSUB_IDX //gosub 
+ 646      1D000000 
+ 646      25474F53 
+ 646      55420000 
+ 647 045c 54040000 	  _dict_entry 6+F_CMD,FORGET,FORGET_IDX //forget 
+ 647      1C000000 
+ 647      26464F52 
+ 647      47455400 
+ 648 046c 64040000 	  _dict_entry 3+F_CMD,FOR,FOR_IDX //for 
+ 648      1B000000 
+ 648      23464F52 
+ARM GAS  tinyBasic.s 			page 28
+
+
+ 649 0478 74040000 	  _dict_entry 4+F_CMD,FCPU,FCPU_IDX //fcpu 
+ 649      1A000000 
+ 649      24464350 
+ 649      55000000 
+ 650 0488 80040000 	  _dict_entry 3+F_CMD,END,END_IDX //cmd_end  
+ 650      18000000 
+ 650      23454E44 
+ 651 0494 90040000 	  _dict_entry 6+F_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
+ 651      19000000 
+ 651      46454550 
+ 651      524F4D00 
+ 652 04a4 9C040000 	  _dict_entry 6+F_CMD,DWRITE,DWRITE_IDX //digital_write
+ 652      17000000 
+ 652      26445752 
+ 652      49544500 
+ 653 04b4 AC040000 	  _dict_entry 5+F_IFUNC,DREAD,DREAD_IDX //digital_read
+ 653      16000000 
+ 653      45445245 
+ 653      41440000 
+ 654 04c4 BC040000 	  _dict_entry 2+F_CMD,DO,DO_IDX //do_loop
+ 654      15000000 
+ 654      22444F00 
+ 655 04d0 CC040000 	  _dict_entry 3+F_CMD,DIR,DIR_IDX //directory 
+ 655      14000000 
+ 655      23444952 
+ 656 04dc D8040000 	  _dict_entry 3+F_CMD,DEC,DEC_IDX //dec_base
+ 656      13000000 
+ 656      23444543 
+ 657 04e8 E4040000 	  _dict_entry 3+F_IFUNC,DDR,DDR_IDX //const_ddr 
+ 657      12000000 
+ 657      43444452 
+ 658 04f4 F0040000 	  _dict_entry 6+F_CMD,DATALN,DATALN_IDX //data_line  
+ 658      11000000 
+ 658      26444154 
+ 658      414C4E00 
+ 659 0504 FC040000 	  _dict_entry 4+F_CMD,DATA,DATA_IDX //data  
+ 659      10000000 
+ 659      24444154 
+ 659      41000000 
+ 660 0514 0C050000 	  _dict_entry 3+F_IFUNC,CRL,CRL_IDX //const_cr1 
+ 660      0F000000 
+ 660      4343524C 
+ 661 0520 1C050000 	  _dict_entry 3+F_IFUNC,CRH,CRH_IDX //const_cr2 
+ 661      0E000000 
+ 661      43435248 
+ 662 052c 28050000 	  _dict_entry 4+F_CFUNC,CHAR,CHAR_IDX //char
+ 662      0D000000 
+ 662      84434841 
+ 662      52000000 
+ 663 053c 34050000 	  _dict_entry 3+F_CMD,BYE,BYE_IDX //bye 
+ 663      0C000000 
+ 663      23425945 
+ 664 0548 44050000 	  _dict_entry 5+F_CMD,BTOGL,BTOGL_IDX //bit_toggle
+ 664      0B000000 
+ 664      2542544F 
+ 664      474C0000 
+ 665 0558 50050000 	  _dict_entry 5+F_IFUNC,BTEST,BTEST_IDX //bit_test 
+ARM GAS  tinyBasic.s 			page 29
+
+
+ 665      0A000000 
+ 665      45425445 
+ 665      53540000 
+ 666 0568 60050000 	  _dict_entry 4+F_CMD,BSET,BSET_IDX //bit_set 
+ 666      09000000 
+ 666      24425345 
+ 666      54000000 
+ 667 0578 70050000 	  _dict_entry 4+F_CMD,BRES,BRES_IDX //bit_reset
+ 667      08000000 
+ 667      24425245 
+ 667      53000000 
+ 668 0588 80050000 	  _dict_entry 3+F_IFUNC,BIT,BIT_IDX //bitmask
+ 668      07000000 
+ 668      43424954 
+ 669 0594 90050000 	  _dict_entry 3+F_CMD,AWU,AWU_IDX //awu 
+ 669      06000000 
+ 669      23415755 
+ 670 05a0 9C050000 	  _dict_entry 7+F_CMD,AUTORUN,AUTORUN_IDX //autorun
+ 670      05000000 
+ 670      27415554 
+ 670      4F52554E 
+ 671 05b0 A8050000 	  _dict_entry 3+F_IFUNC,ASC,ASC_IDX //ascii
+ 671      04000000 
+ 671      43415343 
+ 672 05bc B8050000 	  _dict_entry 3+F_IFUNC,AND,AND_IDX //bit_and
+ 672      03000000 
+ 672      43414E44 
+ 673 05c8 C4050000 	  _dict_entry 7+F_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
+ 673      02000000 
+ 673      47414443 
+ 673      52454144 
+ 674 05d8 D0050000 	  _dict_entry 5+F_CMD,ADCON,ADCON_IDX //power_adc 
+ 674      01000000 
+ 674      25414443 
+ 674      4F4E0000 
+ 675              	first_link: 
+ 676 05e8 E0050000 	  .word LINK 
+ 677 05ec 00000000 	  .word ABS_IDX 
+ 678              	  .equ LINK,. 
+ 679              	kword_dict: // first name field 
+ 680 05f0 43       	  .byte 3+F_IFUNC
+ 681 05f1 414253   	  .ascii "ABS" 
+ 682              	  .p2align 2 
+ 683              	
+ 684              	//comands and fonctions address table 	
+ 685              	code_addr:
+ 686              	/*
+ 687              		.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
+ 688              		.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
+ 689              		.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //1
+ 690              		.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
+ 691              		.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
+ 692              		.word let,list,load,log2,lshift,muldiv,next,new // 40..47
+ 693              		.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
+ 694              		.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..6
+ 695              		.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,remark // 64..71 
+ 696              		.word restore,return, random,rshift,run,save,show,size // 72..79
+ARM GAS  tinyBasic.s 			page 30
+
+
+ 697              		.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
+ 698              		.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
+ 699              		.word wait,words,write,bit_xor,transmit,receive // 96..103 
+ 700              	*/ 
+ 701 05f4 00000000 		.word 0 
+ 702              	
+ 703              	/*************************************************
+ 704              	   extra FLASH memory not used by Tiny BASIC
+ 705              	   is used to save BASIC programs.
+ 706              	************************************************/
+ 707 05f8 00000000 	  .p2align 10  // align to 1KB, smallest erasable segment 
+ 707      00000000 
+ 707      00000000 
+ 707      00000000 
+ 707      00000000 
+ 708              	  .section .fs
+ 709              	FILE_SYSTEM: // file system start here
+ARM GAS  tinyBasic.s 			page 31
 
 
 DEFINED SYMBOLS
@@ -1356,7 +1818,7 @@ DEFINED SYMBOLS
        stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LOCKR
        stm32f103.inc:87     *ABS*:0000000040013800 USART1_BASE_ADR
        stm32f103.inc:89     *ABS*:0000000000000000 USART_SR
-ARM GAS  tinyBasic.s 			page 24
+ARM GAS  tinyBasic.s 			page 32
 
 
        stm32f103.inc:90     *ABS*:0000000000000004 USART_DR
@@ -1416,7 +1878,7 @@ DEFINED SYMBOLS
            ascii.inc:34     *ABS*:0000000000000006 CTRL_F
            ascii.inc:35     *ABS*:0000000000000006 ACK
            ascii.inc:36     *ABS*:0000000000000007 CTRL_G
-ARM GAS  tinyBasic.s 			page 25
+ARM GAS  tinyBasic.s 			page 33
 
 
            ascii.inc:37     *ABS*:0000000000000007 BELL
@@ -1476,10 +1938,10 @@ DEFINED SYMBOLS
       tbi_macros.inc:23     *ABS*:0000000000000050 TIB_SIZE
       tbi_macros.inc:24     *ABS*:0000000000000080 PAD_SIZE
       tbi_macros.inc:25     *ABS*:0000000000000010 RX_QUEUE_SIZE
-ARM GAS  tinyBasic.s 			page 26
+ARM GAS  tinyBasic.s 			page 34
 
 
-      tbi_macros.inc:27     *ABS*:0000000000000048 TAB_WIDTH
+      tbi_macros.inc:27     *ABS*:0000000000000004 DEFAULT_TAB_WIDTH
       tbi_macros.inc:30     *ABS*:0000000000000020 F_CMD
       tbi_macros.inc:31     *ABS*:0000000000000040 F_IFUNC
       tbi_macros.inc:32     *ABS*:0000000000000080 F_CFUNC
@@ -1536,7 +1998,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:109    *ABS*:000000000000000f ERR_BUF_FULL
       tbi_macros.inc:114    *ABS*:0000000000000000 MATH_OVF
       tbi_macros.inc:116    *ABS*:0000000000000004 CELL_SIZE
-ARM GAS  tinyBasic.s 			page 27
+ARM GAS  tinyBasic.s 			page 35
 
 
       tbi_macros.inc:122    *ABS*:0000000000000000 DEBUG
@@ -1558,6 +2020,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:143    *ABS*:000000000000003c LOOP_DEPTH
       tbi_macros.inc:144    *ABS*:0000000000000040 ARRAY_SIZE
       tbi_macros.inc:145    *ABS*:0000000000000044 FLAGS
+      tbi_macros.inc:146    *ABS*:0000000000000048 TAB_WIDTH
       tbi_macros.inc:147    *ABS*:000000000000004c RX_HEAD
       tbi_macros.inc:148    *ABS*:0000000000000050 RX_TAIL
       tbi_macros.inc:149    *ABS*:0000000000000054 RX_QUEUE
@@ -1595,10 +2058,10 @@ DEFINED SYMBOLS
        cmd_index.inc:52     *ABS*:000000000000001b FOR_IDX
        cmd_index.inc:53     *ABS*:000000000000001c FORGET_IDX
        cmd_index.inc:54     *ABS*:000000000000001d GOSUB_IDX
+ARM GAS  tinyBasic.s 			page 36
+
+
        cmd_index.inc:55     *ABS*:000000000000001e GOTO_IDX
-ARM GAS  tinyBasic.s 			page 28
-
-
        cmd_index.inc:56     *ABS*:000000000000001f GPIO_IDX
        cmd_index.inc:57     *ABS*:0000000000000020 HEX_IDX
        cmd_index.inc:58     *ABS*:0000000000000021 IDR_IDX
@@ -1655,10 +2118,10 @@ DEFINED SYMBOLS
        cmd_index.inc:109    *ABS*:0000000000000054 SPIWR_IDX
        cmd_index.inc:110    *ABS*:0000000000000055 STEP_IDX
        cmd_index.inc:111    *ABS*:0000000000000056 STOP_IDX
+ARM GAS  tinyBasic.s 			page 37
+
+
        cmd_index.inc:112    *ABS*:0000000000000057 TICKS_IDX
-ARM GAS  tinyBasic.s 			page 29
-
-
        cmd_index.inc:113    *ABS*:0000000000000058 TIMER_IDX
        cmd_index.inc:114    *ABS*:0000000000000059 TMROUT_IDX
        cmd_index.inc:115    *ABS*:000000000000005a TO_IDX
@@ -1688,21 +2151,79 @@ DEFINED SYMBOLS
          tinyBasic.s:84     .text:000000000000001c cmove
          tinyBasic.s:96     .text:0000000000000038 move_from_end
          tinyBasic.s:90     .text:0000000000000028 move_from_low
-         tinyBasic.s:123    .text:0000000000000050 cp_cstr
-         tinyBasic.s:151    .text:000000000000007c search_dict
-         tinyBasic.s:185    .text:00000000000000bc cold_init
-         tinyBasic.s:197    .text:00000000000000e4 src_addr
-         tinyBasic.s:229    .rodata:00000000000000d0 ulast
-         tinyBasic.s:204    .rodata:0000000000000000 uzero
-         tinyBasic.s:198    .text:00000000000000e4 $d
-         tinyBasic.s:377    .fs:0000000000000000 FILE_SYSTEM
-         tinyBasic.s:226    .rodata:0000000000000054 $d
-         tinyBasic.s:236    *ABS*:0000000000000000 link
-         tinyBasic.s:237    .rodata.dictionary:0000000000000000 kword_end
-         tinyBasic.s:346    .rodata.dictionary:00000000000005f0 LINK
-         tinyBasic.s:241    .rodata.dictionary:000000000000000c $d
-         tinyBasic.s:343    .rodata.dictionary:00000000000005e8 first_link
-         tinyBasic.s:347    .rodata.dictionary:00000000000005f0 kword_dict
-         tinyBasic.s:353    .rodata.dictionary:00000000000005f4 code_addr
+         tinyBasic.s:118    .text:0000000000000050 strcpy
+         tinyBasic.s:144    .text:0000000000000064 cp_cstr
+         tinyBasic.s:175    .text:0000000000000090 syntax_error
+         tinyBasic.s:190    .text:0000000000000098 tb_error
+         tinyBasic.s:198    .text:00000000000000b0 err_msg
+         tinyBasic.s:524    .text:00000000000002e8 warm_start
+         tinyBasic.s:199    .text:00000000000000b0 $d
+         tinyBasic.s:205    .rodata.tb_error:0000000000000000 err_mem_full
+         tinyBasic.s:206    .rodata.tb_error:000000000000000d err_syntax
+         tinyBasic.s:207    .rodata.tb_error:000000000000001b err_math_ovf
+         tinyBasic.s:208    .rodata.tb_error:0000000000000034 err_div0
+         tinyBasic.s:209    .rodata.tb_error:0000000000000043 err_no_line
+         tinyBasic.s:210    .rodata.tb_error:0000000000000059 err_run_only
+         tinyBasic.s:211    .rodata.tb_error:000000000000006f err_cmd_only
+         tinyBasic.s:212    .rodata.tb_error:0000000000000089 err_duplicate
+         tinyBasic.s:213    .rodata.tb_error:000000000000009a err_not_file
+         tinyBasic.s:214    .rodata.tb_error:00000000000000ab err_bad_value
+         tinyBasic.s:215    .rodata.tb_error:00000000000000b7 err_no_access
+         tinyBasic.s:216    .rodata.tb_error:00000000000000ea err_no_data
+         tinyBasic.s:217    .rodata.tb_error:00000000000000fa err_no_prog
+         tinyBasic.s:218    .rodata.tb_error:000000000000010e err_no_fspace
+         tinyBasic.s:219    .rodata.tb_error:0000000000000121 err_buf_full
+         tinyBasic.s:221    .rodata.tb_error:000000000000012e rt_msg
+         tinyBasic.s:222    .rodata.tb_error:0000000000000140 comp_msg
+         tinyBasic.s:223    .rodata.tb_error:0000000000000151 tk_id
+         tinyBasic.s:240    .text:00000000000000f0 $t
+         tinyBasic.s:240    .text:00000000000000f0 arg_list
+ARM GAS  tinyBasic.s 			page 38
 
-NO UNDEFINED SYMBOLS
+
+         tinyBasic.s:258    .text:00000000000000fc BSET
+         tinyBasic.s:288    .text:0000000000000134 BRES
+         tinyBasic.s:304    .text:0000000000000138 BTGL
+         tinyBasic.s:322    .text:000000000000013c search_dict
+         tinyBasic.s:355    .text:000000000000017c prt_version
+         tinyBasic.s:379    .text:00000000000001e2 version_msg
+         tinyBasic.s:381    .text:0000000000000202 version
+         tinyBasic.s:380    .text:00000000000001e2 $d
+         tinyBasic.s:396    .text:0000000000000204 cold_start
+         tinyBasic.s:415    .text:000000000000024c dstack_empty
+         tinyBasic.s:413    .text:0000000000000248 src_addr
+         tinyBasic.s:561    .rodata:00000000000000d0 ulast
+         tinyBasic.s:536    .rodata:0000000000000000 uzero
+         tinyBasic.s:464    .text:000000000000028c warm_init
+         tinyBasic.s:487    .text:00000000000002a8 cmd_line
+         tinyBasic.s:414    .text:0000000000000248 $d
+         tinyBasic.s:428    .text:0000000000000250 $t
+         tinyBasic.s:428    .text:0000000000000250 clear_vars
+         tinyBasic.s:444    .text:0000000000000270 clear_basic
+         tinyBasic.s:511    .text:00000000000002e4 tib
+         tinyBasic.s:530    .text:00000000000002ee compile
+         tinyBasic.s:498    .text:00000000000002d4 interpreter
+         tinyBasic.s:508    .text:00000000000002e4 interp_loop
+         tinyBasic.s:503    .text:00000000000002dc next_line
+         tinyBasic.s:511    .text:00000000000002e4 $d
+         tinyBasic.s:524    .text:00000000000002e8 $t
+         tinyBasic.s:709    .fs:0000000000000000 FILE_SYSTEM
+         tinyBasic.s:558    .rodata:0000000000000054 $d
+         tinyBasic.s:568    *ABS*:0000000000000000 link
+         tinyBasic.s:569    .rodata.dictionary:0000000000000000 kword_end
+         tinyBasic.s:678    .rodata.dictionary:00000000000005f0 LINK
+         tinyBasic.s:573    .rodata.dictionary:000000000000000c $d
+         tinyBasic.s:675    .rodata.dictionary:00000000000005e8 first_link
+         tinyBasic.s:679    .rodata.dictionary:00000000000005f0 kword_dict
+         tinyBasic.s:685    .rodata.dictionary:00000000000005f4 code_addr
+         tinyBasic.s:533    .text:00000000000002ee $d
+         tinyBasic.s:709    .text:00000000000002f0 $d
+         tinyBasic.s:383    .text:0000000000000203 $d
+         tinyBasic.s:383    .text:0000000000000204 $t
+
+UNDEFINED SYMBOLS
+uart_putsz
+uart_putc
+_dstack
+readln
+_tib
