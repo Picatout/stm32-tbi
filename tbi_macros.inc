@@ -208,3 +208,12 @@
 	.p2align 2 
 	.endm 
 
+  // pop parameter in register 
+  .macro _POP  reg 
+  ldmia  r12!,{\reg}
+  .endm 
+
+  // push register on parameter stack 
+  .macro _PUSH reg 
+  stmdb r12!,{\reg}
+  .endm 

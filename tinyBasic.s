@@ -243,51 +243,23 @@ tk_id: .asciz "last token id: "
      pop {r8}      
      _RET 
 
+/************************************
+    func_args 
+    get and stack function parameters
+  input:
+    none 
+  output:
+    r0    parameter count 
+  use:
 
-/*********************************
-   BASIC: BSET adr, mask   
-   set bits [adr]=[adr] | mask  
-   input:
-     r0    adr 
-     r1    mask 
-    output;
-      none 
-    use:
-      r8   temp
-*******************************/     
-    _FUNC BSET 
-    push {r8,r9}
-    sub sp,#8 
-    _CALL arg_list 
-    cmp r0,#2 
-    beq 1f 
-    mov r0,#ERR_SYNTAX
-    b syntax_error 
-1:  pop {r0,r1}
-    ldr r8,[r0]
-    mov r9,#1 
-    lsl r9,r1 
-    orr r8,r9,r8 
-    str r8,[r0]
-    pop {r8,r9}
+************************************/
+    _FUNC func_args 
+
+  
     _RET 
 
 
-/*********************************
-   BASIC: BRES adr, mask   
-   reset bits [adr]= [adr] & ~mask  
-   input:
-     r0    adr 
-     r1    mask 
-    output;
-      none 
-    use:
-      r8   temp
-      r9   temp  
-*******************************/     
-    _FUNC BRES 
 
-    _RET 
 
 /*********************************
    BASIC: BTGL adr, mask   
@@ -521,17 +493,17 @@ interp_loop:
   beq next_line 
   cmp r0,#TK_CMD 
   bne 2f
-  BLX r1
+  BX r1
   b interp_loop 
 2: 
   cmp r0,#TK_VAR 
   bne 3f 
-  BLX let_var 
+  b let_var 
   b interp_loop
 3: 
   cmp r0,#TK_ARRAY 
   bne 4f
-  BLX let_array 
+  b let_array 
   b interp_loop
 4: 
   cmp r0,#TK_COLON
@@ -574,8 +546,37 @@ tib: .word _tib
 
     b warm_start 
 
-compile:
+/***********************************
+    get_array_element 
+    return index of array element 
+  input:
+    none 
+  output:
+    r0   address of element 
+  use:
 
+************************************/
+    _FUNC get_array_element 
+
+    _RET 
+
+    _FUNC relation 
+
+    _RET 
+
+/*********************************
+    compile 
+    tokenize source line 
+  input:
+    none 
+  output:
+    r0 
+  use:
+
+***********************************/
+    _FUNC compile
+
+    _RET 
 
   .section .rodata 
 
@@ -730,7 +731,6 @@ kword_dict: // first name field
 
 //comands and fonctions address table 	
 code_addr:
-/*
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
 	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
 	.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
@@ -744,8 +744,429 @@ code_addr:
 	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
 	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
 	.word wait,words,write,bit_xor,transmit,receive // 96..103 
-*/ 
 	.word 0 
+
+/**********************************
+    BASIC commands and functions 
+**********************************/
+
+/*******************************
+  BASIC:  ABS expr 
+  input:
+    none 
+  output:
+    r0    token type 
+    r1    abs(expr)
+  use:
+    none 
+******************************/
+    _FUNC abs 
+    _CALL arg_list
+    cmp r0,#1 
+    beq 1f 
+    b syntax_error 
+1:  _POP r1 
+    tst r1,#(1<<31)
+    beq 9f
+    rsb r1,#0 
+9:  mov r0,#TK_INTGR
+   _RET 
+
+    _FUNC power_adc
+    _RET
+
+    _FUNC analog_read
+    _RET
+
+    _FUNC bit_and
+    _RET
+
+    _FUNC ascii
+    _RET
+
+    _FUNC autorun
+    _RET
+
+    _FUNC awu
+    _RET
+
+    _FUNC bitmask
+    _RET 
+
+  
+  /*********************************
+   BASIC: BRES adr, mask   
+   reset bits [adr]= [adr] & ~mask  
+   input:
+     none 
+    output;
+      none 
+    use:
+      r8   temp
+      r9   temp 
+*******************************/     
+  _FUNC bit_reset
+    _CALL arg_list 
+    cmp r0,#2 
+    beq 1f 
+    b syntax_error 
+1:  _POP r1 //mask 
+    _POP r0 //address 
+    ldr r9,[r0] 
+    eor r1,#-1 // ~mask 
+    and r1,r9
+    str r1,[r0]
+    b interp_loop 
+
+
+/*********************************
+   BASIC: BSET adr, mask   
+   reset bits [adr]= [adr] & ~mask  
+   input:
+      none 
+    output;
+      none 
+    use:
+      r8   temp
+      r9   temp  
+*******************************/     
+    _FUNC bit_set
+    _CALL arg_list 
+    cmp r0,#2 
+    beq 1f 
+    b syntax_error 
+1:  _POP r1 //mask 
+    _POP r0 //address 
+    ldr r9,[r0] 
+    orr r1,r9
+    str r1,[r0]
+    b interp_loop 
+
+  /*********************************
+   BASIC: BTOGL adr, mask   
+   reset bits [adr]= [adr] & ~mask  
+   input:
+     r0    adr 
+     r1    mask 
+    output;
+      none 
+    use:
+      r8   temp
+      r9   temp  
+*******************************/     
+  _FUNC bit_toggle
+    _CALL arg_list 
+    cmp r0,#2 
+    beq 1f 
+    b syntax_error 
+1:  _POP r1 //mask 
+    _POP r0 //address 
+    ldr r9,[r0] 
+    eor r1,r9
+    str r1,[r0]
+    b interp_loop 
+
+    _FUNC bit_test
+    b interp_loop
+
+    _FUNC bye
+    b interp_loop
+
+    _FUNC char
+    b interp_loop
+
+    _FUNC const_cr2
+    b interp_loop 
+
+    _FUNC const_cr1
+    b interp_loop
+
+    _FUNC data
+    b interp_loop
+
+    _FUNC data_line
+    b interp_loop
+
+    _FUNC const_ddr
+    b interp_loop
+
+    _FUNC dec_base
+    b interp_loop
+
+    _FUNC directory
+    b interp_loop
+
+    _FUNC do_loop
+    b interp_loop
+
+    _FUNC digital_read
+    b interp_loop
+
+    _FUNC digital_write
+    b interp_loop 
+
+    _FUNC cmd_end
+    b interp_loop
+
+    _FUNC const_eeprom_base
+    b interp_loop
+
+    _FUNC fcpu
+    b interp_loop
+
+    _FUNC for
+    b interp_loop
+
+    _FUNC forget
+    b interp_loop
+
+    _FUNC gosub
+    b interp_loop
+
+    _FUNC goto
+    b interp_loop
+
+    _FUNC gpio
+    b interp_loop 
+
+    _FUNC hex_base
+    b interp_loop
+
+    _FUNC const_idr
+    b interp_loop
+
+    _FUNC if
+    b interp_loop
+
+    _FUNC input_var
+    b interp_loop
+
+    _FUNC invert
+    b interp_loop
+
+    _FUNC enable_iwdg
+    b interp_loop
+
+    _FUNC refresh_iwdg
+    b interp_loop
+
+    _FUNC key
+    b interp_loop 
+
+/******************************
+  BASIC: [let] var=expr 
+         [let] @(expr)=expr
+  input:
+    none 
+  output:
+    none 
+  use:
+
+****************************/         
+    _FUNC let
+    _CALL next_token 
+    cmp r0,#TK_VAR
+    beq let_var 
+    cmp r0,#TK_ARRAY 
+    beq let_array 
+    b syntax_error 
+let_var:
+    _CALL get_array_element
+let_array: 
+    _PUSH r0 
+    _CALL next_token 
+    cmp r0,#TK_EQUAL 
+    beq 1f 
+    b syntax_error 
+1:  _CALL relation  
+    cmp r0,#TK_INTGR
+    beq 2f 
+    b syntax_error 
+2:  _POP r0 
+    str r1,[r0]
+    mov r0,#TK_NONE 
+    b interp_loop 
+
+    _FUNC list
+    b interp_loop
+
+    _FUNC load
+    b interp_loop
+
+    _FUNC log2
+    b interp_loop
+
+    _FUNC lshift
+    b interp_loop
+
+    _FUNC muldiv
+    b interp_loop
+
+    _FUNC next
+    b interp_loop
+
+    _FUNC new
+    b interp_loop 
+
+    _FUNC func_not
+    b interp_loop
+
+    _FUNC const_odr
+    b interp_loop
+
+    _FUNC bit_or
+    b interp_loop
+
+    _FUNC pad_ref
+    b interp_loop
+
+    _FUNC pause
+    b interp_loop
+
+    _FUNC pin_mode
+    b interp_loop
+
+    _FUNC peek
+    b interp_loop
+
+    _FUNC const_input
+    b interp_loop 
+
+    _FUNC poke
+    b interp_loop
+
+    _FUNC const_output
+    b interp_loop
+
+    _FUNC print
+    b interp_loop
+
+    _FUNC const_porta
+    b interp_loop
+
+    _FUNC const_portb
+    b interp_loop
+
+    _FUNC const_portc
+    b interp_loop
+
+    _FUNC const_portd
+    b interp_loop
+
+    _FUNC const_porte
+    b interp_loop 
+
+    _FUNC const_portf
+    b interp_loop
+
+    _FUNC const_portg
+    b interp_loop
+
+    _FUNC const_porth
+    b interp_loop
+
+    _FUNC const_porti
+    b interp_loop
+
+    _FUNC qkey
+    b interp_loop
+
+    _FUNC read
+    b interp_loop
+
+    _FUNC remark
+    b interp_loop 
+
+    _FUNC restore
+    b interp_loop
+
+    _FUNC return
+    b interp_loop
+
+    _FUNC  random
+    b interp_loop
+
+    _FUNC rshift
+    b interp_loop
+
+    _FUNC run
+    b interp_loop
+
+    _FUNC save
+    b interp_loop
+
+    _FUNC show
+    b interp_loop
+
+    _FUNC size
+    b interp_loop 
+
+    _FUNC sleep
+    b interp_loop
+
+    _FUNC spi_read
+    b interp_loop
+
+    _FUNC spi_enable
+    b interp_loop
+
+    _FUNC spi_select
+    b interp_loop
+
+    _FUNC spi_write
+    b interp_loop
+
+    _FUNC step
+    b interp_loop
+
+    _FUNC stop
+    b interp_loop
+
+    _FUNC get_ticks
+    b interp_loop 
+
+    _FUNC set_timer
+    b interp_loop
+
+    _FUNC timeout
+    b interp_loop
+
+    _FUNC to
+    b interp_loop
+
+    _FUNC tone
+    b interp_loop
+
+    _FUNC ubound
+    b interp_loop
+
+    _FUNC uflash
+    b interp_loop
+
+    _FUNC until
+    b interp_loop
+
+    _FUNC usr
+    b interp_loop 
+
+    _FUNC wait
+    b interp_loop
+
+    _FUNC words
+    b interp_loop
+
+    _FUNC write
+    b interp_loop
+
+    _FUNC bit_xor
+    b interp_loop
+
+    _FUNC transmit
+    b interp_loop
+
+    _FUNC receive
+    b interp_loop 
+
 
 /*************************************************
    extra FLASH memory not used by Tiny BASIC
