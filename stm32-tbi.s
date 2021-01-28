@@ -245,10 +245,6 @@ reset_handler:
   b .  
 
     _FUNC test
-    add r0,r3,FREE_RAM+1 
-    ldr r1,[r0]
-    mov r1,#129
-    str r1,[r0]
 /*
   // page erase test 
     _MOV32 r0,0x800fff0 

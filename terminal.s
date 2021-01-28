@@ -150,6 +150,96 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
 9:  pop {r8}
     _RET 
 
+/***********************************
+   digit  
+   convert least digit of uint32 to ASCII 
+    input:
+        r0    uint32
+        r1    base   
+    output:
+        r0    r0%base+'0'  
+        r1    quotient 
+    use:
+        r8 
+***********************************/
+    _FUNC digit
+    push {r8}
+    push {r0}
+    mov r8,r1  
+    udiv r0,r8
+    mov r1,r0  
+    mul  r0,r8 
+    pop {r8}
+    sub r0,r8,r0
+    cmp r0,#10  
+    bmi 1f 
+    add r0,#7
+1:  add r0,#'0'  
+    pop {r8}
+    _RET 
+
+/**********************************
+    itoa 
+    convert integer to string
+    input:
+      r0   integer 
+      r1   base 
+    output:
+      r0   *string 
+    use: 
+      r7   integer 
+      R8   base 
+      r9   *pad 
+*********************************/ 
+    _FUNC itoa
+    push {r7,r8,r9}
+    mov r7,r0
+    mov r8,r1  
+    ldr r9,pad 
+    add r9,#PAD_SIZE 
+    eor r0,r0 
+    strb r0,[r9,#-1]!
+    add r0,#SPACE 
+    strb r0,[r9,#-1]!
+    eor r0,r0 
+    cmp r8,#10 
+    bne 0f 
+    ands r0,r7,#(1<<31)
+    beq 0f 
+    rsb r7,#0 
+0:  push {r0}
+1:  mov r0,r7 
+    mov r1,r8 
+    _CALL digit 
+    strb r0,[r9,#-1]!
+    ands r1,r1 
+    beq  2f   
+    mov r7,r1 
+    b 1b 
+2:  pop {r0} 
+    ands r0,r0 
+    beq 3f 
+    mov r0,#'-'
+    strb r0,[r9,#-1]!
+3:  mov r0,r9 
+    pop {r7,r8,r9} 
+    _RET  
+pad: .word _pad 
+
+/*****************************
+    print_int 
+  input:
+    r0   integer to print 
+    r1   conversion base 
+  output:
+    none 
+  use:
+    none 
+*****************************/
+    _GBL_FUNC print_int 
+    _CALL itoa
+    _CALL uart_putsz 
+    _RET 
 
 /*****************************
     cursor_shape 
@@ -234,30 +324,6 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
 	pop {r0}
     _RET 
 
-/***********************************
-   digit10  
-   get decimal digit from uint32 
-    input:
-        r0    uint32  
-    output:
-        r0    r0%10+'0'  
-        r1    quotient 
-    use:
-        r8 
-***********************************/
-    _FUNC digit10 
-    push {r8}
-    push {r0}
-    mov r8,#10 
-    udiv r0,r8
-    mov r1,r0  
-    mul  r0,r8 
-    pop {r8}
-    sub r0,r8,r0
-    add r0,#'0'  
-    pop {r8}
-    _RET 
-
 
 /*****************************
  send ANSI parameter value
@@ -276,8 +342,9 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
 ***************************/
     _FUNC send_parameter
     push {r8}
-    mov r8,#0 
-1:  _CALL digit10 
+    mov r8,#0
+1:  mov r1,#10  
+    _CALL digit 
     add r8,#1 
     push {r0}
     mov r0,r1 
