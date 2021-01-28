@@ -47,21 +47,21 @@
 // 0x1n -> +|- operators 
 // 0x2n -> *|/|% operators
 // 0x3n -> relational operators 
-  .equ TK_CMD,128      // BASIC command   
-  .equ TK_IFUNC,129    // BASIC integer function
-  .equ TK_CFUNC,130    // BASIC character function
-  .equ TK_CONST,131    // BASIC constant 
-  .equ TK_INTGR,132
-  .equ TK_VAR,133
   .equ TK_NONE,0       // not a token 
   .equ TK_COLON,1      // command separator ':' 
   .equ TK_QSTR,2     // quoted string  
   .equ TK_CHAR,3       // ASCII character 
+  .equ TK_VAR,5      // variable index 
   .equ TK_ARRAY,6     // array variable '@' 
   .equ TK_LPAREN,7     // left parenthesis '('
   .equ TK_RPAREN,8     // right parenthesis ')'
   .equ TK_COMMA,9     // item separator ',' 
   .equ TK_SHARP,0xa     // print colon width '#' 
+  .equ TK_CMD,0xb      // BASIC command   
+  .equ TK_IFUNC,0xc    // BASIC integer function
+  .equ TK_CFUNC,0xd    // BASIC character function
+  .equ TK_CONST,0xe    // BASIC constant 
+  .equ TK_INTGR,0xf    // 32 bits integer 
   .equ TK_PLUS,0x10    // addition operator '+'
   .equ TK_MINUS,0x11   // subtraction operator '-'
   .equ TK_MULT,0x20    // multiplication operator '*'

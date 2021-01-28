@@ -151,16 +151,14 @@ upp:
   .global default_handler
 default_handler:
 	ldr r0,exception_msg 
-	_CALL uart_puts 
+	_CALL uart_putsz 
   mov r0,#0x8000
 1: subs r0,#1 
   bne 1b 
 	b reset_mcu    
   .p2align 2 
 exception_msg:
-	.word .+4 
-	.byte 18
-	.ascii "\nexeption reboot!\n"
+	.asciz "\nexeption reboot!\n"
 
 /*********************************
 	system milliseconds counter
@@ -178,7 +176,6 @@ systick_handler:
   str r0,[r3,#TIMER]
 systick_exit:
   _RET 
-
 
 /**************************
 	UART RX handler
@@ -206,7 +203,7 @@ uart_rx_handler:
   .global user_reboot 
 user_reboot:
 	ldr r0,user_reboot_msg
-	_CALL uart_puts
+	_CALL uart_putsz
 // delay 
   mov r0,#0x8000
 1: subs r0,#1  
@@ -222,9 +219,7 @@ reset_mcu:
 scb_adr:
 	.word SCB_BASE_ADR 
 user_reboot_msg:
-	.word .+4
-	.byte  14 
-	.ascii "\nuser reboot!\n"
+	.asciz "\nuser reboot!\n"
 	.p2align 2 
 
 /**************************************

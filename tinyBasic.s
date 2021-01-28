@@ -512,19 +512,76 @@ interp_loop:
 
 /*****************************
   next_token 
-  extract next token 
+  extract next token from token list 
   input:
     none 
   output:
-    r0    token type 
-    r1    token value 
+    r0    token attribute
+    r1    token value if there is one 
   use:
-
+    r8   IN  
+    r9   BASICPTR 
 ****************************/
   _FUNC next_token 
+  push {r8,r9}
+  ldr r8,[r3,#IN]
+  ldr r9,[r3,#COUNT]
+  cmp r8,r9 
+  bmi 0f 
+  eor r0,r0 
+  b 9f  
+0: 
+  str r8,[r3,#IN_SAVED]
+  ldr r9,[r3,#BASICPTR ]
+  ldrb r0,[r9,r8] // token attribute 
+  and r0,#0x3f // limit mask 
+  add r8,#1
+  ldr r1,=tbb_ofs 
+  tbb [r1,r0]
+1: // pc reference point 
+2: // .byte param
+  ldrb r1,[r9,r8]
+  add r8,#1 
+  b 9f 
+3: // .hword param 
+  ldrh r1,[r9,r8]
+  add r8,#2 
+  b 9f 
+4: // .word param  
+  ldr r1,[r9,r8]
+  add r8,#4
+  b 9f 
+5: // .asciz param 
+  add r1,r9,r8
+  mov r0,r1  
+  _CALL strlen 
+  add r8,r0
+  add r8,#1
+  mov r0,#TK_QSTR
+  b 9f  
+8: // syntax error 
+   b syntax_error 
+9:
+   str r8,[r3,#IN]
+   pop {r8,r9}
+  _RET
 
-  _RET 
+  .p2align 2
+tbb_ofs: // offsets table for tbb instruction 
+  .byte (9b-1b)/2,(9b-1b)/2
+  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(3b-1b)/2
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2
+  .byte (4b-1b)/2,(4b-1b)/2,(4b-1b)/2,(4b-1b)/2,(4b-1b)/2
+  .byte (9b-1b)/2,(9b-1b)/2  
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2   
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
 
+  .p2align 2 
 
 tib: .word _tib 
 
