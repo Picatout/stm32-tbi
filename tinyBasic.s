@@ -26,25 +26,12 @@
   .include "tbi_macros.inc"
   .include "cmd_index.inc"
 
-    .section  .text , "ax", %progbits 
-
-/* flags used by BASIC interpreter */ 
-	.equ FRUN,0 // flags run code in variable flags
-	.equ FTRAP,1 // inside trap handler 
-	.equ FLOOP,2 // FOR loop in preparation 
-	.equ FSLEEP,3 // halt produit par la commande SLEEP 
-	.equ FBREAK,4 // break point flag 
-	.equ FCOMP,5  // compiling flags 
-
-	.equ FAUTORUN,6// auto start program running 
-	.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
-  
-    .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
-	.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+  .section  .text , "ax", %progbits 
 
 
-
-
+/********************************
+    HELPER FUNCTIONS 
+********************************/
 
 /**********************************
    strlen 
@@ -54,18 +41,18 @@
    output:
       r0   length 
    use:
-      r8   counter 
-      r1   temp 
+      r1   string length 
+      r2   char 
 *********************************/
     _GBL_FUNC strlen 
-    push {r1,r8}
-    eor r8,r8 
-1:  ldrb r1,[r0],#1 
-    cbz r1,9f  
-    add r8,#1 
+    push {r1,r2}
+    eor r1,r1  // strlen 
+1:  ldrb r2,[r0],#1 
+    cbz r2,9f  
+    add r1,#1 
     b 1b 
-9:  mov r0,r8 
-    pop {r1,r8}
+9:  mov r0,r1 
+    pop {r1,r2}
     _RET     
 
 
@@ -75,32 +62,32 @@
    input:
     r0      src 
     r1      dest 
-    r8      count 
+    r2      count 
   output:
     none:
   use: 
-    r6     temp   
+    T1    temp   
 ******************************/
     _GBL_FUNC cmove
-    push {r6} 
-1:  ands r8,r8
+    push {T1} 
+    ands r2,r2
     beq 9f 
     cmp r0,r1 
     bmi move_from_end 
 move_from_low: // move from low address toward high 
-    ldrb r6,[r0],#1
-    strb r6,[r1],#1
-    subs r8,#1
+    ldrb T1,[r0],#1
+    strb T1,[r1],#1
+    subs r2,#1
     bne move_from_low
     b 9f 
 move_from_end: // move from high address toward low 
-    add r0,r0,r8 
-    add r1,r1,r8     
-3:  ldrb r6,[r0,#-1]!
-    strb r6,[r1,#-1]!
-    subs r8,#1
-    bne 3b 
-9:  pop {r6}
+    add r0,r0,r2 
+    add r1,r1,r2     
+1:  ldrb T1,[r0,#-1]!
+    strb T1,[r1,#-1]!
+    subs r2,#1
+    bne 1b 
+9:  pop {T1}
     _RET
 
 /*********************************
@@ -113,50 +100,46 @@ move_from_end: // move from high address toward low
     r0   *string
     r1   *dest_buffer 
   use:
-    r7   temp
+    r2   char
 **********************************/
     _GBL_FUNC strcpy 
-    push {r0,r1,r7}
-1:  ldrb r7,[r0],#1
-    cbz  r7, 9f 
-    strb r7,[r1],#1
+    push {r0,r1,r2}
+1:  ldrb r2,[r0],#1
+    cbz  r2, 9f 
+    strb r2,[r1],#1
     b 1b 
-9:  strb r7,[r1] 
-    pop {r0,r1,r7}
+9:  strb r2,[r1] 
+    pop {r0,r1,r2}
     _RET 
 
 /*********************************
-  cp_cstr 
-  compare 2 counted strings 
+  cpstr 
+  compare 2  .asciz strings 
   input:
     r0  *str1 
     r1  *str2
-    r8  length 
   output:
     r0  <0 str1<str2 
         0  str1==str2 
         >0  str1>str2  
   use:
-    r9  *str1
-    r10 temp
-    r11 temp    
+    r2  *str1
+    r3 char 1 
+    r4 char 2  
 *********************************/
-  _FUNC cp_cstr
-  push {r9,r10,r11}
-  mov r9, r0 
-  ldrb r10,[r9],#1 // length 
-  subs r0,r8,r10 
-  bne 2f 
+  _FUNC cpstr
+    push {r2,r3,r4}
+    mov r2, r0
 1:
-  ldrb r10,[r9],#1
-  ldrb r11,[r1],#1 
-  subs r0,r10,r11  
-  bne 2f // not same length       
-  subs r8,#1 
-  bne 1b 
-2: 
-  pop {r9,r10,r11}
-  _RET 
+    ldrb r3,[r2],#1  
+    ldrb r4,[r1],#1
+    cbz r3, 2f 
+    cbz r4, 2f 
+    subs r0,r3,r4 
+    beq 1b
+2:  sub r0,r3,r4 
+    pop {r2,r3,r4}
+    _RET 
 
 /**********************************
       BASIC commands 
@@ -192,7 +175,9 @@ move_from_end: // move from high address toward low
     lsl r0,#2 
     add r0,r1 
     ldr r0,[r0]
-    _CALL uart_putsz
+    _CALL uart_puts
+    ldr r0,dstack_empty
+    mov sp,r0 
     b  warm_start  
     _RET 
 err_msg:
@@ -235,12 +220,12 @@ tk_id: .asciz "last token id: "
        r0  arguments count found
        args on dstack in order left to right 
     use:
-       r8   arguments counter  
+       T1   arguments counter  
 ********************************/
      _FUNC arg_list 
-     push {r8}
+     push {T1}
 
-     pop {r8}      
+     pop {T1}      
      _RET 
 
 /************************************
@@ -270,8 +255,8 @@ tk_id: .asciz "last token id: "
     output;
       none 
     use:
-      r8   temp
-      r9   temp  
+      T1   temp
+      T2   temp  
 *******************************/     
     _FUNC BTGL 
 
@@ -284,35 +269,33 @@ tk_id: .asciz "last token id: "
 // dictionary search 
 // input:
 //	 r0   target name
-//   r1		dictionary first link address  
+//   r1		dictionary first name field address  
 // output:
-//  r0 		TK_CMD|TK_IFUNC|TK_CONST|TK_NONE 
+//  r0 		token attribute 
 //  r1		cmd_index if r0!=TK_NONE  
 // use:
-//  r8   length dictionary name 
+//  r2   length dictionary name 
 //---------------------------------
   _FUNC search_dict
-  push {r8}
+  push {r2}
   push {r0,r1}
 1:
   ldrb r0,[r1],#1 
   orrs r0,r0
-  beq 9f // end of dictinary 
-  and r8,r0,#0x1f 
+  beq 9f // null byte  -> end of dictinary 
   ldr r0,[sp]  
-  _CALL cp_cstr 
+  _CALL cpstr 
   beq 2f 
   ldr r1,[sp,#4]
-  ldr r1,[r1,#-8]
+  ldr r1,[r1,#-12]
   str r1,[sp,#4]
   b 1b   
 2: // found
   ldr r1,[sp,#4]
-  ldrb r0,[r1]
-  lsr r0,#5    // token type 
-  ldr r1,[r1,#-4]  // command index 
+  ldrb r0,[r1,#-4] // token attribute 
+  ldr r1,[r1,#-8]  // command index 
 9: add sp,#8  // drop pushed r0,r1
-   pop {r8}
+   pop {r2}
    _RET 
 
 /************************************
@@ -325,8 +308,8 @@ tk_id: .asciz "last token id: "
       r0 
 ***********************************/
     _FUNC prt_version 
-    ldr r0,=version_msg 
-    _CALL uart_putsz 
+    ldr r0,version_msg 
+    _CALL uart_puts
     ldrb r0,version 
     lsr r0,#4 
     add r0,#'0' 
@@ -359,31 +342,34 @@ version:
    cold_start 
    initialize BASIC interpreter 
    input:
-     r1    destination address 
+     none 
    output:
     none 
    use:
-     r0,r1,r8 
+     r0,r1,r2,r3 
 *********************************/
     _GBL_FUNC cold_start 
-    push {r0,r1,r8}
+    push {r0,r1,r2,r3}
 // initialise parameters stack
-   ldr r12,dstack_empty     
+   ldr DSP,dstack_empty     
 //copy system variables to ram 
     ldr r0,src_addr 
-    mov r3,r1 // UPP  
-    sub r8,r0,r1 
-    push {r8} // map offset 
-    mov r8,#ulast-uzero
+    ldr r1,dest_addr 
+    mov UPP,r1 // system variables base address   
+    mov r2,#ulast-uzero
     _CALL cmove  
-    pop {r8}
     _CALL prt_version 
-    pop {r0,r1,r8}
+    pop {r0,r1,r2,r3}
     _RET
     _CALL warm_init 
     b cmd_line   
 src_addr:
   .word uzero
+dest_addr:
+  .word (RAM_ADR /*+ (isr_end - isr_vectors)*/)
+test:
+  .word isr_vectors, isr_end 
+
 dstack_empty:
    .word _dstack 
 
@@ -395,17 +381,17 @@ dstack_empty:
   output:
     none 
   use:
-    r8   counter 
+    r0,r1,r2 
 *****************************/
     _FUNC clear_vars 
-    push {r0,r1,r8}
+    push {r0,r1,r2}
     eor r0,r0 
-    add r1,r3,#VARS
-    mov r8,#26
+    add r1,UPP,#VARS
+    mov r2,#26
 1:  str r0,[r1],#4 
-    subs r8,#1
+    subs r2,#1
     bne 1b  
-    pop {r0,r1,r8}
+    pop {r0,r1,r2}
     _RET 
 
 /*****************************
@@ -414,14 +400,14 @@ dstack_empty:
    and clear variables 
 *****************************/
     _FUNC clear_basic
-	eor r0,r0 
-  str r0,[r3,#COUNT]
-  str r0,[r3,#IN]
-  add r0,r3,#FREE_RAM
-  str r0,[r3,#TXTBGN]
-  str r0,[r3,#TXTEND]
-	_CALL clear_vars 
-	_RET  
+  	eor r0,r0 
+    str r0,[UPP,#COUNT]
+    str r0,[UPP,#IN_SAVED]
+    add r0,UPP,#FREE_RAM
+    str r0,[UPP,#TXTBGN]
+    str r0,[UPP,#TXTEND]
+    _CALL clear_vars 
+    _RET  
 
 /***********************************
    warm_init 
@@ -434,17 +420,20 @@ dstack_empty:
     r0 
 ***********************************/
 warm_init:
+	mov IN,#0 // BASIC line index 
+  mov BPTR,#0 // BASIC line address 
   eor r0,r0 
-	str r0,[r3,FLAGS]
-  str r0,[r3,LOOP_DEPTH] 
+  str r0,[UPP,#BASICPTR]
+  str r0,[UPP,#IN_SAVED]
+  str r0,[UPP,#COUNT]  
+	str r0,[UPP,#FLAGS]
+  str r0,[UPP,#LOOP_DEPTH] 
   mov r0, #DEFAULT_TAB_WIDTH
-  str r0,[r3,#TAB_WIDTH]
+  str r0,[UPP,#TAB_WIDTH]
 	mov r0,#10 // default base decimal 
-	str r0,[r3,#BASE]
-  str r0,[r3,#BASICPTR]
-  str r0,[r3,#IN]
-  str r0,[r3,COUNT]  
-	_RET  
+	str r0,[UPP,#BASE]
+  _RET  
+
 
 /**********************************
    cmd_line 
@@ -461,32 +450,34 @@ warm_init:
     _CALL uart_putc 
 1:  ldr r0,tib
     _CALL readln 
-    ands r0,r0 
+    ands r0,r0 // empty line 
     beq 1b 
-    _CALL compile 
+    _CALL compile // tokenize BASIC text
     ands r0,r0 
-    beq 1b  
-// interpret 
+    beq 1b  // tokens stored in text area 
+// interpret tokenized line 
 interpreter:
-   ldr r0,[r3,#IN]
-   ldr r1,[r3,#COUNT]
-   cmp r0,r1 
-   bmi interp_loop 
+   eor IN,#3 
+   ldr BPTR,[UPP,#BASICPTR]
+   ldr r0,[UPP,#COUNT]
+   cmp IN,r0  
+   bmi interp_loop
+// end of line reached     
 next_line:
-  ldr r0,[r3,#FLAGS]
+  ldr r0,[UPP,#FLAGS]
   tst r0,#(1<<FRUN)
   beq cmd_line 
-  ldr r0,[r3,#BASICPTR]
-  ldr r1,[r3,#IN]
-  add r0,r1 
-  ldr r1,[r3,#TXTEND]
+  ldr IN,[UPP,#IN_SAVED]
+  ldr BPTR,[UPP,#BASICPTR]
+  add r0,IN,BPTR  
+  ldr r1,[UPP,#TXTEND]
   cmp r0,r1 
   bmi 1f 
   _CALL warm_start 
   b cmd_line
 1:
-  mov r0,#3 
-  str r0,[r3,IN] 
+  mov IN,#3 
+  str IN,[UPP,#IN_SAVED] 
 interp_loop:
   _CALL next_token 
   cmp r0,#TK_NONE 
@@ -519,51 +510,46 @@ interp_loop:
     r0    token attribute
     r1    token value if there is one 
   use:
-    r8   IN  
-    r9   BASICPTR 
+    none 
 ****************************/
   _FUNC next_token 
-  push {r8,r9}
-  ldr r8,[r3,#IN]
-  ldr r9,[r3,#COUNT]
-  cmp r8,r9 
+  ldr r0,[UPP,#COUNT]
+  cmp IN,r0 
   bmi 0f 
   eor r0,r0 
   b 9f  
 0: 
-  str r8,[r3,#IN_SAVED]
-  ldr r9,[r3,#BASICPTR ]
-  ldrb r0,[r9,r8] // token attribute 
+  str IN,[UPP,#IN_SAVED]
+  ldrb r0,[BPTR,IN] // token attribute 
   and r0,#0x3f // limit mask 
-  add r8,#1
+  add T1,#1
   ldr r1,=tbb_ofs 
   tbb [r1,r0]
 1: // pc reference point 
 2: // .byte param
-  ldrb r1,[r9,r8]
-  add r8,#1 
+  ldrb r1,[T2,T1]
+  add T1,#1 
   b 9f 
 3: // .hword param 
-  ldrh r1,[r9,r8]
-  add r8,#2 
+  ldrh r1,[T2,T1]
+  add T1,#2 
   b 9f 
 4: // .word param  
-  ldr r1,[r9,r8]
-  add r8,#4
+  ldr r1,[T2,T1]
+  add T1,#4
   b 9f 
 5: // .asciz param 
-  add r1,r9,r8
+  add r1,T2,T1
   mov r0,r1  
   _CALL strlen 
-  add r8,r0
-  add r8,#1
+  add T1,r0
+  add T1,#1
   mov r0,#TK_QSTR
   b 9f  
 8: // syntax error 
    b syntax_error 
 9:
-   str r8,[r3,#IN]
-   pop {r8,r9}
+   str T1,[UPP,#IN_SAVED]
   _RET
 
   .p2align 2
@@ -599,7 +585,7 @@ tib: .word _tib
 **********************************/
     _FUNC warm_start 
 // initialise parameters stack
-   ldr r12,dstack_empty     
+   ldr DSP,dstack_empty     
 
     b warm_start 
 
@@ -672,118 +658,115 @@ ulast:
 
 	.equ link, 0
 kword_end:
-  .word link,0
-  .equ LINK, .
-  .word 0
-  .p2align 2  
-  _dict_entry 5+F_CMD,XTRMT,XTRMT_IDX // xmodem transmit
-  _dict_entry 4+F_CMD,XRCV,XRCV_IDX // xmodem receive
-  _dict_entry 3+F_IFUNC,XOR,XOR_IDX //bit_xor
-  _dict_entry 5+F_CMD,WRITE,WRITE_IDX //write  
-  _dict_entry 5+F_CMD,WORDS,WORDS_IDX //words 
-  _dict_entry 4+F_CMD,WAIT,WAIT_IDX //wait 
-  _dict_entry 3+F_IFUNC,USR,USR_IDX //usr
-  _dict_entry 5+F_CMD,UNTIL,UNTIL_IDX //until 
-  _dict_entry 6+F_IFUNC,UFLASH,UFLASH_IDX //uflash 
-  _dict_entry 6+F_IFUNC,UBOUND,UBOUND_IDX //ubound
-  _dict_entry 4+F_CMD,TONE,TONE_IDX //tone  
-  _dict_entry 2+F_CMD,TO,TO_IDX //to
-  _dict_entry 5+F_CMD,TIMER,TIMER_IDX //set_timer
-  _dict_entry 7+F_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
-  _dict_entry 5+F_IFUNC,TICKS,TICKS_IDX //get_ticks
-  _dict_entry 4+F_CMD,STOP,STOP_IDX //stop 
-  _dict_entry 4+F_CMD,STEP,STEP_IDX //step 
-  _dict_entry 5+F_CMD,SPIWR,SPIWR_IDX //spi_write
-  _dict_entry 6+F_CMD,SPISEL,SPISEL_IDX //spi_select
-  _dict_entry 5+F_IFUNC,SPIRD,SPIRD_IDX // spi_read 
-  _dict_entry 5+F_CMD,SPIEN,SPIEN_IDX //spi_enable 
-  _dict_entry 5+F_CMD,SLEEP,SLEEP_IDX //sleep 
-  _dict_entry 4+F_IFUNC,SIZE,SIZE_IDX //size
-  _dict_entry 4+F_CMD,SHOW,SHOW_IDX //show 
-  _dict_entry 4+F_CMD,SAVE,SAVE_IDX //save
-  _dict_entry 3+F_CMD,RUN,RUN_IDX //run
-  _dict_entry 6+F_IFUNC,RSHIFT,RSHIFT_IDX //rshift
-  _dict_entry 3+F_IFUNC,RND,RND_IDX //random 
-  _dict_entry 6+F_CMD,RETURN,RET_IDX //return 
-  _dict_entry 7+F_CMD,RESTORE,REST_IDX //restore 
-  _dict_entry 6+F_CMD,REMARK,REM_IDX //remark 
-  _dict_entry 6+F_CMD,REBOOT,RBT_IDX //cold_start
-  _dict_entry 4+F_IFUNC,READ,READ_IDX //read  
-  _dict_entry 4+F_IFUNC,QKEY,QKEY_IDX //qkey  
-  _dict_entry 4+F_IFUNC,PRTI,PRTI_IDX //const_porti 
-  _dict_entry 4+F_IFUNC,PRTH,PRTH_IDX //const_porth 
-  _dict_entry 4+F_IFUNC,PRTG,PRTG_IDX //const_portg 
-  _dict_entry 4+F_IFUNC,PRTF,PRTF_IDX //const_portf
-  _dict_entry 4+F_IFUNC,PRTE,PRTE_IDX //const_porte
-  _dict_entry 4+F_IFUNC,PRTD,PRTD_IDX //const_portd
-  _dict_entry 4+F_IFUNC,PRTC,PRTC_IDX //const_portc
-  _dict_entry 4+F_IFUNC,PRTB,PRTB_IDX //const_portb
-  _dict_entry 4+F_IFUNC,PRTA,PRTA_IDX //const_porta 
-  _dict_entry 5+F_CMD,PRINT,PRT_IDX //print 
-  _dict_entry 4+F_IFUNC,POUT,POUT_IDX //const_output
-  _dict_entry 4+F_CMD,POKE,POKE_IDX //poke 
-  _dict_entry 5+F_CMD,PMODE,PMODE_IDX //pin_mode 
-  _dict_entry 4+F_IFUNC,PINP,PINP_IDX //const_input
-  _dict_entry 4+F_IFUNC,PEEK,PEEK_IDX //peek 
-  _dict_entry 5+F_CMD,PAUSE,PAUSE_IDX //pause 
-  _dict_entry 3+F_IFUNC,PAD,PAD_IDX //pad_ref 
-  _dict_entry 2+F_IFUNC,OR,OR_IDX //bit_or
-  _dict_entry 3+F_IFUNC,ODR,ODR_IDX //const_odr 
-  _dict_entry 3+F_IFUNC,NOT,NOT_IDX //func_not 
-  _dict_entry 4+F_CMD,NEXT,NEXT_IDX //next 
-  _dict_entry 3+F_CMD,NEW,NEW_IDX //new
-  _dict_entry 6+F_IFUNC,MULDIV,MULDIV_IDX //muldiv 
-  _dict_entry 6+F_IFUNC,LSHIFT,LSHIFT_IDX //lshift
-  _dict_entry 3+F_IFUNC,LOG,LOG_IDX //log2 
-  _dict_entry 4+F_CMD,LOAD,LOAD_IDX //load 
-  _dict_entry 4+F_CMD,LIST,LIST_IDX //list
-  _dict_entry 3+F_CMD,LET,LET_IDX //let 
-  _dict_entry 3+F_IFUNC,KEY,KEY_IDX //key 
-  _dict_entry 7+F_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
-  _dict_entry 6+F_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
-  _dict_entry 6+F_IFUNC,INVERT,INVERT_IDX //invert 
-  _dict_entry 5+F_CMD,INPUT,INPUT_IDX //input_var  
-  _dict_entry 2+F_CMD,IF,IF_IDX //if 
-  _dict_entry 3+F_IFUNC,IDR,IDR_IDX //const_idr 
-  _dict_entry 3+F_CMD,HEX,HEX_IDX //hex_base
-  _dict_entry 4+F_IFUNC,GPIO,GPIO_IDX //gpio 
-  _dict_entry 4+F_CMD,GOTO,GOTO_IDX //goto 
-  _dict_entry 5+F_CMD,GOSUB,GOSUB_IDX //gosub 
-  _dict_entry 6+F_CMD,FORGET,FORGET_IDX //forget 
-  _dict_entry 3+F_CMD,FOR,FOR_IDX //for 
-  _dict_entry 4+F_CMD,FCPU,FCPU_IDX //fcpu 
-  _dict_entry 3+F_CMD,END,END_IDX //cmd_end  
-  _dict_entry 6+F_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
-  _dict_entry 6+F_CMD,DWRITE,DWRITE_IDX //digital_write
-  _dict_entry 5+F_IFUNC,DREAD,DREAD_IDX //digital_read
-  _dict_entry 2+F_CMD,DO,DO_IDX //do_loop
-  _dict_entry 3+F_CMD,DIR,DIR_IDX //directory 
-  _dict_entry 3+F_CMD,DEC,DEC_IDX //dec_base
-  _dict_entry 3+F_IFUNC,DDR,DDR_IDX //const_ddr 
-  _dict_entry 6+F_CMD,DATALN,DATALN_IDX //data_line  
-  _dict_entry 4+F_CMD,DATA,DATA_IDX //data  
-  _dict_entry 3+F_IFUNC,CRL,CRL_IDX //const_cr1 
-  _dict_entry 3+F_IFUNC,CRH,CRH_IDX //const_cr2 
-  _dict_entry 4+F_CFUNC,CHAR,CHAR_IDX //char
-  _dict_entry 3+F_CMD,BYE,BYE_IDX //bye 
-  _dict_entry 5+F_CMD,BTOGL,BTOGL_IDX //bit_toggle
-  _dict_entry 5+F_IFUNC,BTEST,BTEST_IDX //bit_test 
-  _dict_entry 4+F_CMD,BSET,BSET_IDX //bit_set 
-  _dict_entry 4+F_CMD,BRES,BRES_IDX //bit_reset
-  _dict_entry 3+F_IFUNC,BIT,BIT_IDX //bitmask
-  _dict_entry 3+F_CMD,AWU,AWU_IDX //awu 
-  _dict_entry 7+F_CMD,AUTORUN,AUTORUN_IDX //autorun
-  _dict_entry 3+F_IFUNC,ASC,ASC_IDX //ascii
-  _dict_entry 3+F_IFUNC,AND,AND_IDX //bit_and
-  _dict_entry 7+F_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
-  _dict_entry 5+F_CMD,ADCON,ADCON_IDX //power_adc 
+  _dict_entry TK_NONE,"",0 
+  _dict_entry TK_CMD,XTRMT,XTRMT_IDX // xmodem transmit
+  _dict_entry TK_CMD,XRCV,XRCV_IDX // xmodem receive
+  _dict_entry TK_IFUNC,XOR,XOR_IDX //bit_xor
+  _dict_entry TK_CMD,WRITE,WRITE_IDX //write  
+  _dict_entry TK_CMD,WORDS,WORDS_IDX //words 
+  _dict_entry TK_CMD,WAIT,WAIT_IDX //wait 
+  _dict_entry TK_IFUNC,USR,USR_IDX //usr
+  _dict_entry TK_CMD,UNTIL,UNTIL_IDX //until 
+  _dict_entry TK_IFUNC,UFLASH,UFLASH_IDX //uflash 
+  _dict_entry TK_IFUNC,UBOUND,UBOUND_IDX //ubound
+  _dict_entry TK_CMD,TONE,TONE_IDX //tone  
+  _dict_entry TK_CMD,TO,TO_IDX //to
+  _dict_entry TK_CMD,TIMER,TIMER_IDX //set_timer
+  _dict_entry TK_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
+  _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
+  _dict_entry TK_CMD,STOP,STOP_IDX //stop 
+  _dict_entry TK_CMD,STEP,STEP_IDX //step 
+  _dict_entry TK_CMD,SPIWR,SPIWR_IDX //spi_write
+  _dict_entry TK_CMD,SPISEL,SPISEL_IDX //spi_select
+  _dict_entry TK_IFUNC,SPIRD,SPIRD_IDX // spi_read 
+  _dict_entry TK_CMD,SPIEN,SPIEN_IDX //spi_enable 
+  _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
+  _dict_entry TK_IFUNC,SIZE,SIZE_IDX //size
+  _dict_entry TK_CMD,SHOW,SHOW_IDX //show 
+  _dict_entry TK_CMD,SAVE,SAVE_IDX //save
+  _dict_entry TK_CMD,RUN,RUN_IDX //run
+  _dict_entry TK_IFUNC,RSHIFT,RSHIFT_IDX //rshift
+  _dict_entry TK_IFUNC,RND,RND_IDX //random 
+  _dict_entry TK_CMD,RETURN,RET_IDX //return 
+  _dict_entry TK_CMD,RESTORE,REST_IDX //restore 
+  _dict_entry TK_CMD,REMARK,REM_IDX //remark 
+  _dict_entry TK_CMD,REBOOT,RBT_IDX //cold_start
+  _dict_entry TK_IFUNC,READ,READ_IDX //read  
+  _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey  
+  _dict_entry TK_IFUNC,PRTI,PRTI_IDX //const_porti 
+  _dict_entry TK_IFUNC,PRTH,PRTH_IDX //const_porth 
+  _dict_entry TK_IFUNC,PRTG,PRTG_IDX //const_portg 
+  _dict_entry TK_IFUNC,PRTF,PRTF_IDX //const_portf
+  _dict_entry TK_IFUNC,PRTE,PRTE_IDX //const_porte
+  _dict_entry TK_IFUNC,PRTD,PRTD_IDX //const_portd
+  _dict_entry TK_IFUNC,PRTC,PRTC_IDX //const_portc
+  _dict_entry TK_IFUNC,PRTB,PRTB_IDX //const_portb
+  _dict_entry TK_IFUNC,PRTA,PRTA_IDX //const_porta 
+  _dict_entry TK_CMD,PRINT,PRT_IDX //print 
+  _dict_entry TK_IFUNC,POUT,POUT_IDX //const_output
+  _dict_entry TK_CMD,POKE,POKE_IDX //poke 
+  _dict_entry TK_CMD,PMODE,PMODE_IDX //pin_mode 
+  _dict_entry TK_IFUNC,PINP,PINP_IDX //const_input
+  _dict_entry TK_IFUNC,PEEK,PEEK_IDX //peek 
+  _dict_entry TK_CMD,PAUSE,PAUSE_IDX //pause 
+  _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref 
+  _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
+  _dict_entry TK_IFUNC,ODR,ODR_IDX //const_odr 
+  _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
+  _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
+  _dict_entry TK_CMD,NEW,NEW_IDX //new
+  _dict_entry TK_IFUNC,MULDIV,MULDIV_IDX //muldiv 
+  _dict_entry TK_IFUNC,LSHIFT,LSHIFT_IDX //lshift
+  _dict_entry TK_IFUNC,LOG,LOG_IDX //log2 
+  _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
+  _dict_entry TK_CMD,LIST,LIST_IDX //list
+  _dict_entry TK_CMD,LET,LET_IDX //let 
+  _dict_entry TK_IFUNC,KEY,KEY_IDX //key 
+  _dict_entry TK_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
+  _dict_entry TK_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
+  _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
+  _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var  
+  _dict_entry TK_CMD,IF,IF_IDX //if 
+  _dict_entry TK_IFUNC,IDR,IDR_IDX //const_idr 
+  _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
+  _dict_entry TK_IFUNC,GPIO,GPIO_IDX //gpio 
+  _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
+  _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
+  _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
+  _dict_entry TK_CMD,FOR,FOR_IDX //for 
+  _dict_entry TK_CMD,FCPU,FCPU_IDX //fcpu 
+  _dict_entry TK_CMD,END,END_IDX //cmd_end  
+  _dict_entry TK_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
+  _dict_entry TK_CMD,DWRITE,DWRITE_IDX //digital_write
+  _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
+  _dict_entry TK_CMD,DO,DO_IDX //do_loop
+  _dict_entry TK_CMD,DIR,DIR_IDX //directory 
+  _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
+  _dict_entry TK_IFUNC,DDR,DDR_IDX //const_ddr 
+  _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
+  _dict_entry TK_CMD,DATA,DATA_IDX //data  
+  _dict_entry TK_IFUNC,CRL,CRL_IDX //const_cr1 
+  _dict_entry TK_IFUNC,CRH,CRH_IDX //const_cr2 
+  _dict_entry TK_CFUNC,CHAR,CHAR_IDX //char
+  _dict_entry TK_CMD,BYE,BYE_IDX //bye 
+  _dict_entry TK_CMD,BTOGL,BTOGL_IDX //bit_toggle
+  _dict_entry TK_IFUNC,BTEST,BTEST_IDX //bit_test 
+  _dict_entry TK_CMD,BSET,BSET_IDX //bit_set 
+  _dict_entry TK_CMD,BRES,BRES_IDX //bit_reset
+  _dict_entry TK_IFUNC,BIT,BIT_IDX //bitmask
+  _dict_entry TK_CMD,AWU,AWU_IDX //awu 
+  _dict_entry TK_CMD,AUTORUN,AUTORUN_IDX //autorun
+  _dict_entry TK_IFUNC,ASC,ASC_IDX //ascii
+  _dict_entry TK_IFUNC,AND,AND_IDX //bit_and
+  _dict_entry TK_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
+  _dict_entry TK_CMD,ADCON,ADCON_IDX //power_adc 
 first_link: 
   .word LINK 
   .word ABS_IDX 
-  .equ LINK,. 
+  .byte TK_IFUNC
 kword_dict: // first name field 
-  .byte 3+F_IFUNC
-  .ascii "ABS" 
+  .equ LINK,. 
+  .asciz "ABS" 
   .p2align 2 
 
 //comands and fonctions address table 	
@@ -859,8 +842,8 @@ code_addr:
     output;
       none 
     use:
-      r8   temp
-      r9   temp 
+      T1   temp
+      T2   temp 
 *******************************/     
   _FUNC bit_reset
     _CALL arg_list 
@@ -869,9 +852,9 @@ code_addr:
     b syntax_error 
 1:  _POP r1 //mask 
     _POP r0 //address 
-    ldr r9,[r0] 
+    ldr T2,[r0] 
     eor r1,#-1 // ~mask 
-    and r1,r9
+    and r1,T2
     str r1,[r0]
     b interp_loop 
 
@@ -884,8 +867,8 @@ code_addr:
     output;
       none 
     use:
-      r8   temp
-      r9   temp  
+      T1   temp
+      T2   temp  
 *******************************/     
     _FUNC bit_set
     _CALL arg_list 
@@ -894,8 +877,8 @@ code_addr:
     b syntax_error 
 1:  _POP r1 //mask 
     _POP r0 //address 
-    ldr r9,[r0] 
-    orr r1,r9
+    ldr T2,[r0] 
+    orr r1,T2
     str r1,[r0]
     b interp_loop 
 
@@ -908,8 +891,8 @@ code_addr:
     output;
       none 
     use:
-      r8   temp
-      r9   temp  
+      T1   temp
+      T2   temp  
 *******************************/     
   _FUNC bit_toggle
     _CALL arg_list 
@@ -918,8 +901,8 @@ code_addr:
     b syntax_error 
 1:  _POP r1 //mask 
     _POP r0 //address 
-    ldr r9,[r0] 
-    eor r1,r9
+    ldr T2,[r0] 
+    eor r1,T2
     str r1,[r0]
     b interp_loop 
 

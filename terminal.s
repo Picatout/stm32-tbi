@@ -101,35 +101,8 @@
 
 convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
 
-/*******************************
-    uart_puts 
- send counted string to uart 
-
- input: 
-    r0 *string to send 
- output:
-    none 
- use:  
-    r0 char to send 
-    r10 counter
-    r11 *string  
-******************************/
-    _GBL_FUNC uart_puts
-    push {r10,r11}
-    ldrb r10,[r0],#1 
-    ands r10,r10 
-    beq 9f 
-    mov r11,r0 
-1:
-    ldrb r0,[r11],#1 
-    _CALL uart_putc   
-    subs r10,#1 
-    bne 1b 
-9:  pop {r10,r11}
-    _RET  
-
 /******************************
-    uart_putsz 
+    uart_puts 
     print zero terminate string 
  
   input:
@@ -138,16 +111,16 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
     none 
   use:
     r0  char to send 
-    r8  *asciz 
+    T1  *asciz 
 ******************************/
-    _GBL_FUNC uart_putsz 
-    push {r8}
-    mov r8,r0 
-1:  ldrb r0,[r8],#1
+    _GBL_FUNC uart_puts 
+    push {T1}
+    mov T1,r0 
+1:  ldrb r0,[T1],#1
     cbz r0,9f 
     _CALL uart_putc 
     b 1b 
-9:  pop {r8}
+9:  pop {T1}
     _RET 
 
 /***********************************
@@ -160,22 +133,22 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
         r0    r0%base+'0'  
         r1    quotient 
     use:
-        r8 
+        T1 
 ***********************************/
     _FUNC digit
-    push {r8}
+    push {T1}
     push {r0}
-    mov r8,r1  
-    udiv r0,r8
+    mov T1,r1  
+    udiv r0,T1
     mov r1,r0  
-    mul  r0,r8 
-    pop {r8}
-    sub r0,r8,r0
+    mul  r0,T1 
+    pop {T1}
+    sub r0,T1,r0
     cmp r0,#10  
     bmi 1f 
     add r0,#7
 1:  add r0,#'0'  
-    pop {r8}
+    pop {T1}
     _RET 
 
 /**********************************
@@ -188,30 +161,30 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
       r0   *string 
     use: 
       r7   integer 
-      R8   base 
-      r9   *pad 
+      T1   base 
+      T2   *pad 
 *********************************/ 
     _FUNC itoa
-    push {r7,r8,r9}
+    push {r7,T1,T2}
     mov r7,r0
-    mov r8,r1  
-    ldr r9,pad 
-    add r9,#PAD_SIZE 
+    mov T1,r1  
+    ldr T2,pad 
+    add T2,#PAD_SIZE 
     eor r0,r0 
-    strb r0,[r9,#-1]!
+    strb r0,[T2,#-1]!
     add r0,#SPACE 
-    strb r0,[r9,#-1]!
+    strb r0,[T2,#-1]!
     eor r0,r0 
-    cmp r8,#10 
+    cmp T1,#10 
     bne 0f 
     ands r0,r7,#(1<<31)
     beq 0f 
     rsb r7,#0 
 0:  push {r0}
 1:  mov r0,r7 
-    mov r1,r8 
+    mov r1,T1 
     _CALL digit 
-    strb r0,[r9,#-1]!
+    strb r0,[T2,#-1]!
     ands r1,r1 
     beq  2f   
     mov r7,r1 
@@ -220,9 +193,9 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
     ands r0,r0 
     beq 3f 
     mov r0,#'-'
-    strb r0,[r9,#-1]!
-3:  mov r0,r9 
-    pop {r7,r8,r9} 
+    strb r0,[T2,#-1]!
+3:  mov r0,T2 
+    pop {r7,T1,T2} 
     _RET  
 pad: .word _pad 
 
@@ -238,7 +211,7 @@ pad: .word _pad
 *****************************/
     _GBL_FUNC print_int 
     _CALL itoa
-    _CALL uart_putsz 
+    _CALL uart_puts
     _RET 
 
 /*****************************
@@ -250,17 +223,17 @@ pad: .word _pad
   output:
     none 
   use:
-    r8    shape
+    T1    shape
 *******************************/
     _GBL_FUNC cursor_shape
-    push {r8}
+    push {T1}
     _CALL send_escape
     _CALL send_parameter 
     mov r0,#SPACE 
     _CALL uart_putc 
     mov r0,#'q' 
     _CALL uart_putc 
-    pop {r8}
+    pop {T1}
     _RET 
 
 
@@ -338,23 +311,23 @@ pad: .word _pad
  output:
    none 
  use:
-    r8   digit counter 
+    T1   digit counter 
 ***************************/
     _FUNC send_parameter
-    push {r8}
-    mov r8,#0
+    push {T1}
+    mov T1,#0
 1:  mov r1,#10  
     _CALL digit 
-    add r8,#1 
+    add T1,#1 
     push {r0}
     mov r0,r1 
     ands r0,r0
     bne 1b 
 2:  pop {r0}
     _CALL uart_putc  
-    subs r8,#1
+    subs T1,#1
     bne 2b 
-	pop {r8}
+	pop {T1}
     _RET 
 
 /**********************************
@@ -398,17 +371,17 @@ pad: .word _pad
 // output:
 //	none
 // use:
-     r8    counter  
+     T1    counter  
 ********************************/
     _GBL_FUNC spaces
-	push {r8}
+	push {T1}
     cbz r0,9f 
-    mov r8,r0 
+    mov T1,r0 
 1:	mov r0,#SPACE 
 	_CALL  uart_putc 
-	subs r8,#1
+	subs T1,#1
 	bne 1b 
-9:  pop {r8}
+9:  pop {T1}
 	_RET 
 
 
@@ -419,8 +392,8 @@ pad: .word _pad
 // input:
 //   r0      character to insert 
 //   r1      line length
-//   r8      insert position 
-//   r9      line pointer 
+//   T1      insert position 
+//   T2      line pointer 
 // output:
 //   r0       updated insertion point  
 **********************************/
@@ -449,7 +422,7 @@ pad: .word _pad
     ld a,(IPOS,sp)
     _CALL  move_left
     _MOV32 r0,tib 
-    _CALL  uart_putsz 
+    _CALL  uart_puts
     ld a,(LLEN,sp)
     sub a,(IPOS,sp) 
     _CALL  move_left 
@@ -462,7 +435,7 @@ pad: .word _pad
 // input:
 //   R0       line length   
 //   R1      delete position
-//   R8       line pointer 
+//   T1       line pointer 
 **************************************/
     _FUNC delete_under
 /*
@@ -562,7 +535,7 @@ pad: .word _pad
 *************************************/
     _FUNC update_line 
     _CALL delete_line
-    _CALL uart_putsz
+    _CALL uart_puts
     _RET 
 
 /*************************************
@@ -584,20 +557,20 @@ pad: .word _pad
     r1  line length  
   use:
     r7  cursor position 
-    r8  ovwr|insert flag 
-    r9  buffer size -1 
+    T1  ovwr|insert flag 
+    T2  buffer size -1 
     r10 line length 
     r11 *buffer   
 *************************************/
   _GBL_FUNC readln
-  push {r7,r8,r9,r10,r11}
+  push {r7,T1,T2,r10,r11}
   eor r7,r7  // cursor position 
-  eor r8,r8 // overwrite mode 
+  eor T1,T1 // overwrite mode 
   mov r11,r0 
-  sub r9,r1,#1  // buffer size -1
+  sub T2,r1,#1  // buffer size -1
   eor r10,r10  // 0 line length 
   eor r0,r0
-  strb r0,[r11,r9]  
+  strb r0,[r11,T2]  
   _CALL cursor_shape
 readln_loop:
   _CALL uart_getc 
@@ -615,10 +588,10 @@ readln_loop:
 // in mol 
   add r0,r11,r7 
   sub r1,r0,#1 
-  push {r8}
-  sub r8,r10,r7 
+  push {T1}
+  sub T1,r10,r7 
   _CALL cmove
-  pop {r8} 
+  pop {T1} 
   sub r10,#1 
   sub r7,#1
   eor r0,r0
@@ -650,12 +623,12 @@ readln_loop:
   mov r10,r0
   mov r7,r0 
   mov r0,r11  
-  _CALL uart_putsz
+  _CALL uart_puts
   b readln_loop     
 4: cmp r0,#CTRL_O 
    bne 5f 
-   rsb r8,#5  
-   mov r0,r8 
+   rsb T1,#5  
+   mov r0,T1 
    _CALL cursor_shape
    b readln_loop 
 5: cmp r0,#ESC 
@@ -699,10 +672,10 @@ try_suprim:
    beq readln_loop 
    add r1,r7,r11 
    add r0,r1,#1 
-   push {r8}
-   sub r8,r10,r7
+   push {T1}
+   sub T1,r10,r7
    _CALL cmove 
-   pop {r8}
+   pop {T1}
    sub r10,#1 
    eor r0,r0 
    strb r0,[r11,r10]
@@ -716,17 +689,17 @@ character:
    beq 5f // cursor at eol 
 // cursor in middle of line 
 // action depend on edit mode 
-  ands r8,r8  //check edit mode 
+  ands T1,T1  //check edit mode 
   beq 2f 
 // insert mode
-  cmp r9,r10 
+  cmp T2,r10 
   beq readln_loop // buffer full  
-  push {r0,r8}
+  push {r0,T1}
   add r0,r11,r7  // src 
   add r1,r0,#1   // dest 
-  sub r8,r10,r7  // move count 
+  sub T1,r10,r7  // move count 
   _CALL cmove   
-  pop {r0,r8}
+  pop {r0,T1}
   strb r0,[r11,r7] 
   add r7,#1
   add r10,#1 
@@ -748,7 +721,7 @@ character:
   _CALL cursor_x 
   b readln_loop 
 5: // cursor at eol, mode doesn't matter 
-   cmp r10,r9 
+   cmp r10,T2 
    bmi 6f 
    b readln_loop  // buffer full
 6: // only accept char>=32  
@@ -765,7 +738,7 @@ readln_exit:
   strb r0,[r11,r10]
   mov r1,r10  // line length
   mov r0,r11  // *buffer  
-  pop {r7,r8,r9,r10,r11}
+  pop {r7,T1,T2,r10,r11}
   _RET 
 
 

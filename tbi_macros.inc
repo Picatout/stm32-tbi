@@ -26,11 +26,6 @@
 
 .equ DEFAULT_TAB_WIDTH,4 // default tabulation width 
 .equ EOF,0xff // end of file marker 
-// keyword types 
-  .equ F_CMD,0x20     // command keyword
-  .equ F_IFUNC,0x40 // integer function keyword
-  .equ F_CFUNC,0x80 // character function keyword
-  .equ F_CONST,0xC0 // function keyword that return a constant
 
 //--------------------------------------
 //   constantes related to Arduino 
@@ -121,12 +116,22 @@
 //-------------------------------
   .equ DEBUG,0
 
+    UPP .req r4  // base address system variables 
+    VADR .req r5  // address FOR loop variable 
+    LIMIT .req r6   // LOOP limit 
+    INCR  .req  r7  // LOOP increment 
+    T1  .req r8     // temporary register 
+    T2  .req r9     // temporary register 
+    IN  .req r10    //  index in text line or token list 
+    BPTR .req r11   //  buffer address or BASIC line address 
+    DSP  .req r12   //  parameter stack pointer 
+
 /***************************
   SYSTEM variables offset 
   from UPP  
 ***************************/ 
-  .equ IN,0    // low byte of in.w 
-  .equ IN_SAVED,IN+4 // set by get_token before parsing next token, used by unget_token
+
+  .equ IN_SAVED,0 // set by get_token before parsing next token, used by unget_token
   .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
   .equ BASICPTR,COUNT+4 // point to current BASIC line address.
   .equ DATAPTR, BASICPTR+4 // point to DATA address
@@ -152,6 +157,20 @@
   .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
   .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
 
+/* flags used by BASIC interpreter */ 
+	.equ FRUN,0 // programm running
+	.equ FTRAP,1 // inside trap handler 
+	.equ FLOOP,2 // FOR loop in preparation 
+	.equ FSLEEP,3 // in halt mode SLEEP 
+	.equ FBREAK,4 // break point flag 
+	.equ FCOMP,5  // compiling flags 
+	.equ FAUTORUN,6// auto start program running 
+
+	.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
+  
+  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
+	.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+
 /***********************************************
 *       MACROS
 ***********************************************/
@@ -170,12 +189,7 @@
 	MOVT \REG, #\LITERAL>>16
 	.endm
 
- 	.macro	_DOLIT  value /*long literals */
-	BL	DOLIT
-	.word \value 
-	.endm
-
-// function header 
+// local function header 
   .macro _FUNC label 
   .p2align 2 
   .type \label, %function  
@@ -198,22 +212,21 @@
    cmd_name: 31 characters max 
    cmd_index: 2 bytes 
 **********************************/
-	.macro _dict_entry len,name,cmd_idx 
-	.p2align 2 
+	.macro _dict_entry tok_type,name,cmd_idx 
   .word LINK 
   .word \cmd_idx 
+	.word \tok_type  	
 	.equ LINK,.
-	.byte \len 	
-	.ascii "\name"
+	.asciz "\name"
 	.p2align 2 
 	.endm 
 
   // pop parameter in register 
   .macro _POP  reg 
-  ldmia  r12!,{\reg}
+  ldmia  DSP!,{\reg}
   .endm 
 
   // push register on parameter stack 
   .macro _PUSH reg 
-  stmdb r12!,{\reg}
+  stmdb DSP!,{\reg}
   .endm 

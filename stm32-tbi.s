@@ -19,15 +19,14 @@
 /*****************************************
     REGISTERS USAGE 
 
- R0   ACCA  //  arithmetic operator A 
- R1   ACCB  //  arithmetic operator B 
- R2   VPC   //  virtual machine program counter  
- R3   UPP   //  system variables base address 
- R4   VPP   //  BASIC variables base address 
- R5         //  FOR loop counter 
+ R0-R3      // function parameters 
+ R4         //  system variables base address 
+ R5         //  FOR loop variable address 
  R6         //  FOR loop limit 
  R7         //  FOR loop increment 
- R8-R11     //  temporary registers
+ R8-R9      //  temporary registers
+ R10        //  interpreter line index 
+ R11        //  interpreter BASIC line address 
  R12        //  parameters stack pointer 
 *****************************************/
 
@@ -53,6 +52,7 @@
    .section  .isr_vector,"a",%progbits
   .type  isr_vectors, %object
 
+  .global isr_vectors 
 isr_vectors:
   .word    _mstack          /* main return stack address */
   .word    reset_handler    /* startup address */
@@ -133,8 +133,8 @@ isr_vectors:
   .word      default_handler /* IRQ57, DMA2 CH2 */                   
   .word      default_handler /* IRQ58, DMA2 CH3 */                   
   .word      default_handler /* IRQ59, DMA2 CH4 & CH5 */                   
+  .global isr_end 
 isr_end:
-  .global isr_table_size 
 upp:
 
 /*************************************
@@ -145,99 +145,86 @@ upp:
   default isr handler called on unexpected interrupt
 *****************************************************/
    .section  .text , "ax", %progbits 
-   
-  .type default_handler, %function
-  .p2align 2 
-  .global default_handler
-default_handler:
-	ldr r0,exception_msg 
-	_CALL uart_putsz 
-  mov r0,#0x8000
-1: subs r0,#1 
-  bne 1b 
-	b reset_mcu    
-  .p2align 2 
+    _GBL_FUNC default_handler 
+    ldr r0,exception_msg 
+    _CALL uart_puts 
+// delay
+    mov r0,#0x8000
+    1: subs r0,#1 
+    bne 1b 
+    b reset_mcu    
+    .p2align 2 
 exception_msg:
-	.asciz "\nexeption reboot!\n"
+  	.asciz "\nexeption reboot!\n"
 
 /*********************************
 	system milliseconds counter
 *********************************/	
-  .p2align 2 
-  .type systick_handler, %function
-  .global systick_handler
-systick_handler:
-  ldr r0,[r3,#TICKS]  
+    _GBL_FUNC systick_handler
+  ldr r0,[r4,#TICKS]  
   add r0,#1
-  str r0,[r3,#TICKS]
-  ldr r0,[r3,#TIMER]
-  cbz r0, systick_exit
+  str r0,[r4,#TICKS]
+  ldr r0,[r4,#TIMER]
+  cbz r0, 9f
   sub r0,#1
-  str r0,[r3,#TIMER]
-systick_exit:
+  str r0,[r4,#TIMER]
+9:
   _RET 
 
 /**************************
 	UART RX handler
 **************************/
-	.p2align 2
-	.type uart_rx_handler, %function
-  .global uart_rx_handler 
-uart_rx_handler:
-	_MOV32 r0,UART 
-	ldr r1,[r0,#USART_SR]
-	ldrh r2,[r0,#USART_DR]
-	tst r1,#(1<<5) // RXNE 
-	beq 2f // no char received 
-	cmp r2,#3
-	beq user_reboot // received CTRL-C then reboot MCU 
-	add r0,r3,#RX_QUEUE
-  ldr r1,[r3,#RX_TAIL]
-	strb r2,[r0,r1]
-	add r1,#1 
-	and r1,#(RX_QUEUE_SIZE-1)
-	str r1,[r3,#RX_TAIL]
+    _GBL_FUNC uart_rx_handler
+    _MOV32 r0,UART 
+    ldr r1,[r0,#USART_SR]
+    ldrh r2,[r0,#USART_DR]
+    tst r1,#(1<<5) // RXNE 
+    beq 2f // no char received 
+    cmp r2,#3
+    beq user_reboot // received CTRL-C then reboot MCU 
+    add r0,r3,#RX_QUEUE
+    ldr r1,[r3,#RX_TAIL]
+    strb r2,[r0,r1]
+    add r1,#1 
+    and r1,#(RX_QUEUE_SIZE-1)
+    str r1,[r3,#RX_TAIL]
 2:	
-	_RET 
+  	_RET 
 
-  .global user_reboot 
-user_reboot:
-	ldr r0,user_reboot_msg
-	_CALL uart_putsz
+    _GBL_FUNC user_reboot   
+    ldr r0,user_reboot_msg
+    _CALL uart_puts 
 // delay 
-  mov r0,#0x8000
+    mov r0,#0x8000
 1: subs r0,#1  
-   bne 1b 
+    bne 1b 
 reset_mcu: 
-	ldr r0,scb_adr 
-	ldr r1,[r0,#SCB_AIRCR]
-	orr r1,#(1<<2)
-	movt r1,#SCB_VECTKEY
-	str r1,[r0,#SCB_AIRCR]
-	b . 
-	.p2align 2 
+    ldr r0,scb_adr 
+    ldr r1,[r0,#SCB_AIRCR]
+    orr r1,#(1<<2)
+    movt r1,#SCB_VECTKEY
+    str r1,[r0,#SCB_AIRCR]
+    b . 
+    .p2align 2 
 scb_adr:
-	.word SCB_BASE_ADR 
+  	.word SCB_BASE_ADR 
 user_reboot_msg:
-	.asciz "\nuser reboot!\n"
-	.p2align 2 
+	  .asciz "\nuser reboot!\n"
+	  .p2align 2 
 
 /**************************************
   reset_handler execute at MCU reset
 ***************************************/
-  .p2align 2
-  .type  reset_handler, %function 
-  .global reset_handler 
-reset_handler:   
-  _MOV32 r0,RAM_END 
-  mov sp,r0 
-  bl remap  
-	bl	init_devices	 	/* RCC, GPIOs */
-	bl  uart_init
-  _MOV32 r1,(RAM_ADR + (isr_end-isr_vectors))
-	bl  cold_start  /* initialize BASIC SYSTEM */ 
-  bl  test 
-  b .  
+    _GBL_FUNC reset_handler
+    _MOV32 r0,RAM_END 
+    mov sp,r0 
+    bl remap  
+    bl	init_devices	 	/* RCC, GPIOs */
+    bl  uart_init
+//    _MOV32 r0,(RAM_ADR + (isr_end-isr_vectors))
+    bl  cold_start  /* initialize BASIC SYSTEM */ 
+    bl  test 
+    b .  
 
     _FUNC test
 /*
@@ -248,7 +235,7 @@ reset_handler:
     ldr r1,[r1]
     cmp r1,#-1 
     beq 0f
-    ldr r0,=per_error
+    ldr r0,per_error
     _CALL uart_puts
     b 1f 
   0:     
@@ -261,14 +248,14 @@ reset_handler:
     _MOV32 r0,0X01020304
     cmp r0,r1 
     beq 1f
-    ldr r0,=wr_error 
+    ldr r0,wr_error 
     _CALL uart_puts 
 */
   1: // readln test 
     ldr r0,tib_addr   
     mov r1,#80
     _CALL readln
-    _CALL uart_putsz
+    _CALL uart_puts
     mov r0,#CR 
     _CALL uart_putc 
     b 1b   
@@ -277,12 +264,10 @@ reset_handler:
     .word _tib
 /*
   wr_error:
-    .byte 19
-    .ascii "flash write error!\r"
+    .asciz "flash write error!\r"
     .p2align 2
   per_error:
-    .byte 11
-    .ascii "per error!\r"
+    .asciz "per error!\r"
     .p2align 2 
 */
 
@@ -406,16 +391,16 @@ wait_sws:
     R8 status  
     R9 UART address
 *****************************/
-  _GBL_FUNC uart_putc
-  push {r8,r9}
-  _MOV32 R9,UART
+    _GBL_FUNC uart_putc
+    push {r8,r9}
+    _MOV32 R9,UART
 1: 
-  ldr r8,[r9,#USART_SR]
-  ands r8,#0x80
-  beq 1b // UART_DR full,wait  
-  strb r0,[r9,#USART_DR]
-  pop {r8,r9}
-  _RET  
+    ldr r8,[r9,#USART_SR]
+    ands r8,#0x80
+    beq 1b // UART_DR full,wait  
+    strb r0,[r9,#USART_DR]
+    pop {r8,r9}
+    _RET  
 
 
 /**********************************
@@ -430,13 +415,13 @@ wait_sws:
     r8  RX_HEAD  
     r9  RX_TAIL   
 ***********************************/
-  _GBL_FUNC uart_qkey
-  push {r8,r9}
-  ldr r8,[r3,#RX_HEAD]
-  ldr r9,[r3,#RX_TAIL]
-  eor r0,r8,r9 
-  pop {r8,r9}
-  _RET 
+    _GBL_FUNC uart_qkey
+    push {r8,r9}
+    ldr r8,[r3,#RX_HEAD]
+    ldr r9,[r3,#RX_TAIL]
+    eor r0,r8,r9 
+    pop {r8,r9}
+    _RET 
 
 /**********************************
   UART_GETC 
@@ -449,20 +434,20 @@ wait_sws:
     r8  rx_queue 
     r9  rx_head  
 **********************************/
-  _GBL_FUNC uart_getc
-  push {r8,r9}
+    _GBL_FUNC uart_getc
+    push {r8,r9}
 1:
-  _CALL uart_qkey 
-  orrs r0,r0
-  beq 1b  
-  add r8,r3,#RX_QUEUE
-  ldr r9, [r3,#RX_HEAD]
-  ldrb r0,[r8,r9]
-  add r9,#1
-  and r9,#(RX_QUEUE_SIZE-1)
-  str r9,[r3,#RX_HEAD]
-  pop {r8,r9}
-  _RET  
+    _CALL uart_qkey 
+    orrs r0,r0
+    beq 1b  
+    add r8,r3,#RX_QUEUE
+    ldr r9, [r3,#RX_HEAD]
+    ldrb r0,[r8,r9]
+    add r9,#1
+    and r9,#(RX_QUEUE_SIZE-1)
+    str r9,[r3,#RX_HEAD]
+    pop {r8,r9}
+    _RET  
 
 
 /***************************
@@ -496,11 +481,12 @@ wait_sws:
     b 9f 
 // lock flash memory
 lock: 
-  _MOV32 r0,FLASH_BASE_ADR
-	mov r6,#(1<<7)
-	str r6,[r0,#FLASH_CR]
-9: pop {r6}
-	_RET  
+    _MOV32 r0,FLASH_BASE_ADR
+    mov r6,#(1<<7)
+    str r6,[r0,#FLASH_CR]
+9:  pop {r6}
+  	_RET  
+
 
 /*********************************
    wait_busy 
@@ -550,8 +536,7 @@ lock:
 9:	pop {r6,r7}
     _RET  
 write_error:	
-    .byte 13
-    .ascii " write error!"
+    .asciz " write error!"
     .p2align 2
 
 /****************************************
@@ -609,15 +594,14 @@ write_error:
     ldr r9,[r0,#FLASH_SR]
     ands r9,#(5<<2)
     beq 9f
-    ldr r0,=erase_error
+    ldr r0,erase_error
     _CALL uart_puts 
 9:  eor r0,r0 
     _CALL unlock 
     pop {r8,r9}
     _RET 
 erase_error:
-    .byte 14
-    .ascii " erase error!\r"
+    .asciz " erase error!\r"
     .p2align 2
 
 
