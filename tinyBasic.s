@@ -259,8 +259,8 @@ move_from_end: // move from high address toward low
     input:
       r0   line# 
     output: 
-      r0   address | 0 
-      r1   line# | insert address if not found 
+      r0   adr where found || adr new to be inserted 
+      r1   0 found || !0 not found  
     use:
       r0   scan address 
       r1   temp   
@@ -272,19 +272,114 @@ move_from_end: // move from high address toward low
     mov r3,r0 // target 
     ldr r0,[UPP,#TXTBGN] // search start adr 
     ldr r2,[UPP,#TXTEND] // search area end adr
-1:  
-    cmp r0,r2 
-    beq  7f
+1:  cmp r0,r2 
+    beq  8f
     ldrh r1,[r0]
-    cmp r1,r3 
-    beq 9f 
-    bpl 7f 
+    subs r1,r3 
+    bpl 9f 
     ldrb r1,[r0,#2]
     add r0,r1
     b 1b 
-7:  mov r1,r0 
-    eor r0,r0   
+8:  mov r1,#-1 
 9:  pop {r2,r3}
+    _RET 
+
+
+/********************************************
+    delete_line 
+    delete BASIC line at addr 
+    input:
+      r0    address 
+    output:
+      r0    address  
+    use: 
+      r1    dest adr
+      r2    bytes to move 
+      T1    length line to delete 
+      T2    txtend 
+********************************************/
+    _FUNC delete_line 
+    push {r0,r1,r2,T1,T2}
+    mov r1,r0 // dest 
+    ldrb T1,[r1,#2] // line length 
+    add r0,T1  // src
+    ldr T2,[UPP,#TXTEND]
+    sub r2,T2,r0 // bytes to move 
+    _CALL cmove
+    sub T2,T1 // txtend-count 
+    str T1,[UPP,#TXTEND] 
+    pop {r0,r1,r2,T1,T2}
+    _RET 
+
+/******************************************
+    create_gap 
+    create a gap in text area to insert new line 
+    input:
+      r0    adr 
+      r1    length 
+    output:
+      r0    adr 
+    use:
+      T1    length 
+      T2    txtend 
+************************************************/
+    _FUNC create_gap 
+    push {r0,r2,T1,T2}
+    mov T1,R1
+    add r1,r0  // dest 
+    ldr T2,[UPP,#TXTEND]
+    sub r2,T2,r0 
+    _CALL cmove
+    add T2,T1 
+    str T2,[UPP,#TXTEND]
+    pop {r0,r2,T1,T2}
+    _RET 
+
+/************************************************
+    insert_line 
+    insert BASIC line in text area 
+    first search if line with same number exist 
+    replace if so. 
+    input:
+      r0    *buffer to insert 
+    output:
+      none 
+    use: 
+      T1     *buffer
+      T2     temp  
+************************************************/ 
+    _FUNC insert_line 
+    push {r1,T1,T2}
+    mov T1,r0 
+    ldrh r0,[T1]
+    _CALL search_lineno 
+    cbnz  r1, 1f // line# doesn't exist
+// already exist 
+    _CALL delete_line // delete old one 
+    ldrb T2,[T1,#2] // buffer line length 
+    cmp T2,#3 
+    beq 9f
+1: //insert new line 
+    ldrb r1,[T1,#2]
+    _CALL create_gap 
+    mov r1,T1 
+    ldrb r2,[r1,#2]
+    _CALL cmove 
+9:  pop {r1,T1,T2}
+    _RET 
+
+/*********************************
+    compile 
+    tokenize source line 
+  input:
+    none 
+  output:
+    r0 
+  use:
+
+***********************************/
+    _FUNC compile
+
     _RET 
 
 
@@ -751,20 +846,6 @@ tib: .word _tib
     _RET 
 
     _FUNC relation 
-
-    _RET 
-
-/*********************************
-    compile 
-    tokenize source line 
-  input:
-    none 
-  output:
-    r0 
-  use:
-
-***********************************/
-    _FUNC compile
 
     _RET 
 

@@ -146,7 +146,7 @@ vectors_size: .word isr_end - isr_vectors
 *****************************************************/
    .section  .text , "ax", %progbits 
     _GBL_FUNC default_handler 
-    ldr r0,exception_msg 
+    ldr r0,=exception_msg 
     _CALL uart_puts 
 // delay
     mov r0,#0x8000
@@ -192,7 +192,7 @@ exception_msg:
   	_RET 
 
     _GBL_FUNC user_reboot   
-    ldr r0,user_reboot_msg
+    ldr r0,=user_reboot_msg
     _CALL uart_puts 
 // delay 
     mov r0,#0x8000

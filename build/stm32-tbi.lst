@@ -781,7 +781,7 @@ ARM GAS  stm32-tbi.s 			page 1
 ARM GAS  stm32-tbi.s 			page 14
 
 
- 149 0000 0548     	    ldr r0,exception_msg 
+ 149 0000 EE48     	    ldr r0,=exception_msg 
  150 0002 00B5FFF7 	    _CALL uart_puts 
  150      FEFF5DF8 
  150      04EB
@@ -834,7 +834,7 @@ ARM GAS  stm32-tbi.s 			page 1
  192 006a 7047     	  	_RET 
  193              	
  194              	    _GBL_FUNC user_reboot   
- 195 006c 0948     	    ldr r0,user_reboot_msg
+ 195 006c D448     	    ldr r0,=user_reboot_msg
  196 006e 00B5FFF7 	    _CALL uart_puts 
  196      FEFF5DF8 
  196      04EB
@@ -1234,7 +1234,7 @@ ARM GAS  stm32-tbi.s 			page 1
  534 02dc F768     	    ldr r7,[r6,#FLASH_SR]
  535 02de 17F01407 	    ands r7,r7,#(5<<2) 
  536 02e2 05D0     	    beq 9f
- 537 02e4 3548     	    ldr r0,=write_error
+ 537 02e4 3748     	    ldr r0,=write_error
  538 02e6 00B5FFF7 	    _CALL uart_puts   
  538      FEFF5DF8 
  538      04EB
@@ -1338,7 +1338,9 @@ ARM GAS  stm32-tbi.s 			page 1
  609              	
  610              	
  611              	
- 612 03bc F4020000 	
+ 612 03bc 18000000 	
+ 612      94000000 
+ 612      F4020000 
 ARM GAS  stm32-tbi.s 			page 24
 
 
