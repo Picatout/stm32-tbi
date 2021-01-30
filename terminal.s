@@ -214,6 +214,46 @@ pad: .word _pad
     _CALL uart_puts
     _RET 
 
+/********************************
+// print byte  in hexadecimal 
+// on console
+// input:
+//   r0		byte to print
+// output:
+     none 
+   use:
+     none 
+******************************/
+    _GBL_FUNC print_hex
+	push {r0} 
+	lsr r0,#4  
+	_CALL  digit_to_char 
+	_CALL  uart_putc 
+    pop {r0} 
+	_CALL  digit_to_char
+	_CALL  uart_putc
+	mov r0,#SPACE 
+	_CALL  uart_putc  
+	_RET 
+
+/***********************************
+// convert digit to character  
+// input:
+//   r0       digit to convert 
+// output:
+//   r0      hexdecimal character 
+   use:
+     none 
+***********************************/
+    _GBL_FUNC digit_to_char 
+	and r0,#15 
+	cmp r0,#10 
+	bmi 1f  
+	add r0,#7
+1:  add r0,#'0'  
+	_RET 
+
+
 /*****************************
     cursor_shape 
     change cursor shape 
@@ -740,45 +780,5 @@ readln_exit:
   mov r0,r11  // *buffer  
   pop {r7,T1,T2,r10,r11}
   _RET 
-
-
-/********************************
-// print byte  in hexadecimal 
-// on console
-// input:
-//   r0		byte to print
-// output:
-     to console 
-   use:
-     none 
-******************************/
-    _GBL_FUNC print_hex
-	push {r0} 
-	lsr r0,#4  
-	_CALL  digit_to_char 
-	_CALL  uart_putc 
-    pop {r0} 
-	_CALL  digit_to_char
-	_CALL  uart_putc
-	mov r0,#SPACE 
-	_CALL  uart_putc  
-	_RET 
-
-/***********************************
-// convert digit to character  
-// input:
-//   r0       digit to convert 
-// output:
-//   r0      hexdecimal character 
-   use:
-     none 
-***********************************/
-    _GBL_FUNC digit_to_char 
-	and r0,#15 
-	cmp r0,#10 
-	bmi 1f  
-	add r0,#7
-1:  add r0,#'0'  
-	_RET 
 
 

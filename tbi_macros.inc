@@ -124,7 +124,7 @@
     T2  .req r9     // temporary register 
     IN  .req r10    //  index in text line or token list 
     BPTR .req r11   //  buffer address or BASIC line address 
-    DSP  .req r12   //  parameter stack pointer 
+    DP   .req r12   //  parameter stack pointer 
 
 /***************************
   SYSTEM variables offset 
@@ -223,10 +223,16 @@
 
   // pop parameter in register 
   .macro _POP  reg 
-  ldmia  DSP!,{\reg}
+  ldmia  DP!,{\reg}
   .endm 
 
   // push register on parameter stack 
   .macro _PUSH reg 
-  stmdb DSP!,{\reg}
+  stmdb DP!,{\reg}
   .endm 
+
+ // create a text data 
+ .macro _TEXT label,text
+ \label: .asciz "\text"
+ .p2align 2 
+ .endm 

@@ -66,28 +66,28 @@
   output:
     none:
   use: 
-    T1    temp   
+    r3    temp   
 ******************************/
     _GBL_FUNC cmove
-    push {T1} 
+    push {r3} 
     ands r2,r2
     beq 9f 
     cmp r0,r1 
     bmi move_from_end 
 move_from_low: // move from low address toward high 
-    ldrb T1,[r0],#1
-    strb T1,[r1],#1
+    ldrb r3,[r0],#1
+    strb r3,[r1],#1
     subs r2,#1
     bne move_from_low
     b 9f 
 move_from_end: // move from high address toward low 
     add r0,r0,r2 
     add r1,r1,r2     
-1:  ldrb T1,[r0,#-1]!
-    strb T1,[r1,#-1]!
+1:  ldrb r3,[r0,#-1]!
+    strb r3,[r1,#-1]!
     subs r2,#1
     bne 1b 
-9:  pop {T1}
+9:  pop {r3}
     _RET
 
 /*********************************
@@ -113,7 +113,7 @@ move_from_end: // move from high address toward low
     _RET 
 
 /*********************************
-  cpstr 
+  strcmp 
   compare 2  .asciz strings 
   input:
     r0  *str1 
@@ -125,21 +125,168 @@ move_from_end: // move from high address toward low
   use:
     r2  *str1
     r3 char 1 
-    r4 char 2  
+    r7 char 2  
 *********************************/
-  _FUNC cpstr
-    push {r2,r3,r4}
+  _FUNC strcmp
+    push {r2,r3,r7}
     mov r2, r0
 1:
     ldrb r3,[r2],#1  
-    ldrb r4,[r1],#1
+    ldrb r7,[r1],#1
     cbz r3, 2f 
-    cbz r4, 2f 
-    subs r0,r3,r4 
+    cbz r7, 2f 
+    subs r0,r3,r7 
     beq 1b
-2:  sub r0,r3,r4 
-    pop {r2,r3,r4}
+2:  sub r0,r3,r7 
+    pop {r2,r3,r7}
     _RET 
+
+/**********************************
+    prt_tok 
+    print token id and value 
+  input:
+    r0    id 
+    r1    value 
+  output:
+    none
+  use:
+
+***********************************/
+    _FUNC prt_tok 
+    push {r0,r1}
+    ldr r0,tok_msg 
+    _CALL uart_puts 
+    pop {r0}
+    mov r1,#16 
+    _CALL print_int 
+    mov r0,#SPACE 
+    _CALL uart_putc 
+    pop {r0}
+    mov r1,#16 
+    _CALL print_int
+    mov r0,#CR 
+    _CALL uart_putc  
+    _RET 
+    _TEXT tok_msg,"token: " 
+
+/******************************************
+    prt_row 
+    print memory content in byte format 
+    input:
+      r0    address 
+      r1    count 
+    output:
+      r0    address+count 
+    use:
+      r2    address 
+      r3    count 
+****************************************/
+    _FUNC prt_row 
+    push {r0,r1,r2,r3}
+    mov r2,r0
+    mov r3,r1  
+    mov r1,#16 
+    _CALL print_int 
+    mov r0,#3
+    _CALL spaces  
+// print bytes values in hexadecimal 
+1:  ldrb r0,[r2],#1 
+    _CALL print_hex
+    subs r3,#1 
+    bne 1b 
+    mov r0,#2 
+    _CALL spaces
+// print characters      
+    pop {r0,r1}
+    _CALL prt_chars 
+    mov r0,#CR 
+    _CALL uart_putc 
+    mov r0,r2
+    pop {r2,r3}      
+    _RET 
+
+/************************************
+    prt_chars 
+    print n ascii character starting 
+    at address 
+    input: 
+      r0    address 
+      r1    count 
+    output:
+      r0    address + count
+    use:
+      r2    address 
+***********************************/
+    _FUNC prt_chars 
+    push {r2}
+    mov r2,r0
+1:  ldrb r0,[r2],#1 
+    cmp r0,#SPACE 
+    bpl 2f 
+    mov r0,#'_' 
+2:  _CALL uart_putc
+    subs r1,#1 
+    bne 1b 
+    mov r0,r2 
+    pop {r2}
+    _RET 
+
+/****************************************
+    dump 
+    print memory content in hexadecimal 
+    16 bytes per row 
+    input:
+      r0  address 
+      r1  count 
+    ouput:
+      none 
+    use:
+
+****************************************/
+    _FUNC dump 
+    push {r2}
+    mov r2,r1 
+1:  mov r1,#16
+    _CALL prt_row 
+    subs r2,#16 
+    bpl 1b 
+2:  pop {r2}
+    _RET 
+
+/***************************************
+    search_lineno 
+    localize BASIC line from its number 
+    input:
+      r0   line# 
+    output: 
+      r0   address | 0 
+      r1   line# | insert address if not found 
+    use:
+      r0   scan address 
+      r1   temp   
+      r2   address end of text
+      r3   target line#
+****************************************/    
+    _FUNC search_lineno
+    push {r2,r3} 
+    mov r3,r0 // target 
+    ldr r0,[UPP,#TXTBGN] // search start adr 
+    ldr r2,[UPP,#TXTEND] // search area end adr
+1:  
+    cmp r0,r2 
+    beq  7f
+    ldrh r1,[r0]
+    cmp r1,r3 
+    beq 9f 
+    bpl 7f 
+    ldrb r1,[r0,#2]
+    add r0,r1
+    b 1b 
+7:  mov r1,r0 
+    eor r0,r0   
+9:  pop {r2,r3}
+    _RET 
+
 
 /**********************************
       BASIC commands 
@@ -147,7 +294,7 @@ move_from_end: // move from high address toward low
 
 /*********************************
     syntax_error 
-    display error message and 
+    display syntax error message and 
     abort program 
   input:
     none  
@@ -284,7 +431,7 @@ tk_id: .asciz "last token id: "
   orrs r0,r0
   beq 9f // null byte  -> end of dictinary 
   ldr r0,[sp]  
-  _CALL cpstr 
+  _CALL strcmp 
   beq 2f 
   ldr r1,[sp,#4]
   ldr r1,[r1,#-12]
@@ -308,7 +455,7 @@ tk_id: .asciz "last token id: "
       r0 
 ***********************************/
     _FUNC prt_version 
-    ldr r0,version_msg 
+    ldr r0,=version_msg 
     _CALL uart_puts
     ldrb r0,version 
     lsr r0,#4 
@@ -351,11 +498,14 @@ version:
     _GBL_FUNC cold_start 
     push {r0,r1,r2,r3}
 // initialise parameters stack
-   ldr DSP,dstack_empty     
+   ldr DP,dstack_empty     
 //copy system variables to ram 
+    _MOV32 UPP,RAM_ADR 
     ldr r0,src_addr 
-    ldr r1,dest_addr 
-    mov UPP,r1 // system variables base address   
+    ldr r1,dest_addr
+    ldr r1,[r1] 
+    add UPP,r1 // system variables base address   
+    mov r1,UPP 
     mov r2,#ulast-uzero
     _CALL cmove  
     _CALL prt_version 
@@ -366,10 +516,7 @@ version:
 src_addr:
   .word uzero
 dest_addr:
-  .word (RAM_ADR /*+ (isr_end - isr_vectors)*/)
-test:
-  .word isr_vectors, isr_end 
-
+  .word vectors_size
 dstack_empty:
    .word _dstack 
 
@@ -585,7 +732,7 @@ tib: .word _tib
 **********************************/
     _FUNC warm_start 
 // initialise parameters stack
-   ldr DSP,dstack_empty     
+   ldr DP,dstack_empty     
 
     b warm_start 
 

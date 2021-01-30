@@ -24,7 +24,7 @@
  R5         //  FOR loop variable address 
  R6         //  FOR loop limit 
  R7         //  FOR loop increment 
- R8-R9      //  temporary registers
+ T1-T2      //  temporary registers
  R10        //  interpreter line index 
  R11        //  interpreter BASIC line address 
  R12        //  parameters stack pointer 
@@ -52,7 +52,6 @@
    .section  .isr_vector,"a",%progbits
   .type  isr_vectors, %object
 
-  .global isr_vectors 
 isr_vectors:
   .word    _mstack          /* main return stack address */
   .word    reset_handler    /* startup address */
@@ -133,9 +132,10 @@ isr_vectors:
   .word      default_handler /* IRQ57, DMA2 CH2 */                   
   .word      default_handler /* IRQ58, DMA2 CH3 */                   
   .word      default_handler /* IRQ59, DMA2 CH4 & CH5 */                   
-  .global isr_end 
 isr_end:
-upp:
+  .global vectors_size 
+vectors_size: .word isr_end - isr_vectors 
+
 
 /*************************************
     EXCEPTIONS & INTERRUPTS HANDLERS 
@@ -161,14 +161,14 @@ exception_msg:
 	system milliseconds counter
 *********************************/	
     _GBL_FUNC systick_handler
-  ldr r0,[r4,#TICKS]  
+  ldr r0,[UPP,#TICKS]  
   add r0,#1
-  str r0,[r4,#TICKS]
-  ldr r0,[r4,#TIMER]
+  str r0,[UPP,#TICKS]
+  ldr r0,[UPP,#TIMER]
   cbz r0, 9f
   sub r0,#1
-  str r0,[r4,#TIMER]
-9:
+  str r0,[UPP,#TIMER]
+9: 
   _RET 
 
 /**************************
@@ -182,13 +182,13 @@ exception_msg:
     beq 2f // no char received 
     cmp r2,#3
     beq user_reboot // received CTRL-C then reboot MCU 
-    add r0,r3,#RX_QUEUE
-    ldr r1,[r3,#RX_TAIL]
+    add r0,UPP,#RX_QUEUE
+    ldr r1,[UPP,#RX_TAIL]
     strb r2,[r0,r1]
     add r1,#1 
     and r1,#(RX_QUEUE_SIZE-1)
-    str r1,[r3,#RX_TAIL]
-2:	
+    str r1,[UPP,#RX_TAIL]
+2:
   	_RET 
 
     _GBL_FUNC user_reboot   
@@ -221,7 +221,6 @@ user_reboot_msg:
     bl remap  
     bl	init_devices	 	/* RCC, GPIOs */
     bl  uart_init
-//    _MOV32 r0,(RAM_ADR + (isr_end-isr_vectors))
     bl  cold_start  /* initialize BASIC SYSTEM */ 
     bl  test 
     b .  
@@ -250,6 +249,10 @@ user_reboot_msg:
     beq 1f
     ldr r0,wr_error 
     _CALL uart_puts 
+
+    _MOV32 r0,RAM_ADR 
+    mov r1,#0x130 
+    _CALL dump  
 */
   1: // readln test 
     ldr r0,tib_addr   
@@ -275,7 +278,7 @@ user_reboot_msg:
     _FUNC remap 
 	eor r0,r0 // src 
 	_MOV32 r1,RAM_ADR // dest 
-	mov r8,#(isr_end-isr_vectors) // count 
+	mov r2,#(isr_end-isr_vectors) // count 
   _CALL cmove  
 // set new vector table address
 	_MOV32 r0,SCB_BASE_ADR
@@ -388,18 +391,18 @@ wait_sws:
   input: 
     R0 character to send 
   use:
-    R8 status  
-    R9 UART address
+    T1 status  
+    T2 UART address
 *****************************/
     _GBL_FUNC uart_putc
-    push {r8,r9}
-    _MOV32 R9,UART
+    push {T1,T2}
+    _MOV32 T2,UART
 1: 
-    ldr r8,[r9,#USART_SR]
-    ands r8,#0x80
+    ldr T1,[T2,#USART_SR]
+    ands T1,#0x80
     beq 1b // UART_DR full,wait  
-    strb r0,[r9,#USART_DR]
-    pop {r8,r9}
+    strb r0,[T2,#USART_DR]
+    pop {T1,T2}
     _RET  
 
 
@@ -411,16 +414,17 @@ wait_sws:
     none
   output:
     r0 flag = RX_HEAD^REX_TAIL 
+    flags 
   use:
-    r8  RX_HEAD  
-    r9  RX_TAIL   
+    r0  RX_HEAD  
+    r1  RX_TAIL   
 ***********************************/
     _GBL_FUNC uart_qkey
-    push {r8,r9}
-    ldr r8,[r3,#RX_HEAD]
-    ldr r9,[r3,#RX_TAIL]
-    eor r0,r8,r9 
-    pop {r8,r9}
+    push {r1}
+    ldr r0,[UPP,#RX_HEAD]
+    ldr r1,[UPP,#RX_TAIL]
+    eors r0,r1
+    pop {r1} 
     _RET 
 
 /**********************************
@@ -431,22 +435,21 @@ wait_sws:
   output:
     r0  character 
   use:
-    r8  rx_queue 
-    r9  rx_head  
+    T1  rx_queue 
+    T2  rx_head  
 **********************************/
     _GBL_FUNC uart_getc
-    push {r8,r9}
+    push {T1,T2}
 1:
     _CALL uart_qkey 
-    orrs r0,r0
     beq 1b  
-    add r8,r3,#RX_QUEUE
-    ldr r9, [r3,#RX_HEAD]
-    ldrb r0,[r8,r9]
-    add r9,#1
-    and r9,#(RX_QUEUE_SIZE-1)
-    str r9,[r3,#RX_HEAD]
-    pop {r8,r9}
+    add T1,UPP,#RX_QUEUE
+    ldr T2, [UPP,#RX_HEAD]
+    ldrb r0,[T1,T2]
+    add T2,#1
+    and T2,#(RX_QUEUE_SIZE-1)
+    str T2,[UPP,#RX_HEAD]
+    pop {T1,T2}
     _RET  
 
 
@@ -549,24 +552,24 @@ write_error:
     output: 
       none 
     use:
-      r8 data 
-      r9 adr 
+      T1 data 
+      T2 adr 
 *****************************************/ 
     _GBL_FUNC flash_store 
-    push {r8,r9}
-    mov r8,r0
-    mov r9,r1  
+    push {T1,T2}
+    mov T1,r0
+    mov T2,r1  
     mov r0,#1
     _CALL unlock 
-    mov r0,r8 
-    mov r1,r9 
+    mov r0,T1 
+    mov r1,T2 
     _CALL hword_write
-    mov r0,r8,lsr #16 
-    add r1,r9,#2
+    mov r0,T1,lsr #16 
+    add r1,T2,#2
     _CALL hword_write
     eor r0,r0 
     _CALL unlock  
-    pop {r8,r9}
+    pop {T1,T2}
     _RET 
 
 /********************************************
@@ -577,28 +580,28 @@ write_error:
     output:
        None 
     use:
-      r8    adr
-      r9    temp   
+      T1    adr
+      T2    temp   
 **********************************************/
     _GBL_FUNC erase_page 
-    push {r8,r9}
-    mov r8,r0 
+    push {T1,T2}
+    mov T1,r0 
     mov r0,#1 
     _CALL unlock 
     _MOV32 r0,FLASH_BASE_ADR
-    mov r9,#2 // PER bit in FLASH_CR 
-    str r9,[r0,#FLASH_CR]
-    str r8,[r0,#FLASH_AR]
-    orr r9,#0x40 
-    str r9,[r0,#FLASH_CR]
-    ldr r9,[r0,#FLASH_SR]
-    ands r9,#(5<<2)
+    mov T2,#2 // PER bit in FLASH_CR 
+    str T2,[r0,#FLASH_CR]
+    str T1,[r0,#FLASH_AR]
+    orr T2,#0x40 
+    str T2,[r0,#FLASH_CR]
+    ldr T2,[r0,#FLASH_SR]
+    ands T2,#(5<<2)
     beq 9f
     ldr r0,erase_error
     _CALL uart_puts 
 9:  eor r0,r0 
     _CALL unlock 
-    pop {r8,r9}
+    pop {T1,T2}
     _RET 
 erase_error:
     .asciz " erase error!\r"
