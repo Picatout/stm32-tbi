@@ -370,15 +370,256 @@ move_from_end: // move from high address toward low
 
 /*********************************
     compile 
-    tokenize source line 
+    tokenize source line save it 
+    in pas buffer.
+    compiled line format: 
+      line_no  2 bytes {0...32767}
+      count    1 byte  
+      tokens   variable length 
   input:
-    none 
+    source text in tib  
   output:
-    r0 
+    r0    0 stored | -1 immediate 
   use:
-
+    r3    tib index   
+    T1    tib
+    T2    pad
 ***********************************/
     _FUNC compile
+    push  {r2,r3,T1,T2}
+    ldr T1,tib 
+    ldr T2,pad 
+    ldr r0,[UPP,#flags]
+    orr r0,#FCOMP
+    str r0,[UPP,#flags]
+    eor r3,r3     
+    strh r3,[T2]    // line no 
+    strb r3,[T2,#2] // length 
+    _CALL get_token 
+    cmp r0,#TK_INTGR
+    bne 1f 
+    cmp r1,#1 
+    bpl 1f 
+    ldr r0,#ERR_BAD_VALUE 
+    str r3,[UPP,#IN]
+    str T1,[UPP,#BASICPTR]
+    b tb_error  
+1:  strh r1,[T2],#3 
+2:  cmp T2,T1 
+    blt 3f 
+    ldr r0,#ERR_BUF_FULL 
+    b tb_error 
+3:  _CALL get_token 
+    cmp r0,#TK_NONE 
+    bne 2b 
+// compilation completed 
+    ldr r3,pad 
+    sub T2,r3 // line length 
+    strb T2,[r3,#2]
+    ldrh T2,[r3]
+    cmp T2,#0 
+    beq 8f 
+// insert line in text buffer 
+    mov r0,r3 
+    _CALL insert_line 
+    eor r0,r0 
+    b 9f 
+8:  str r3,[UPP,#BASICPTR]
+    mov r0,#-1 
+9:  pop {r2,r3,T1,T2}
+    _RET 
+
+/*********************************************
+    scan text for next token
+   input: 
+	  r3 		tib index  
+	  T1    tib adr
+    T2    insert point in pad  
+ output:
+   r0     token attribute 
+   r1 		token value
+   r3     tib index updated    
+   T2     updated 
+   use:
+**********************************************/
+    .macro _case c, next  
+    cmp r0,#\c 
+    bne \next
+    .endm 
+
+    _FUNC get_token 
+    push {r6}
+    ldrb r0,[T1,r3]
+    beq token_exit  
+    ldr r0,#SPACE 
+    _CALL skip 
+    ldrb r0,[T1,r3]
+    cbnz r0,1f 
+    b token_exit
+1:  add r3,#1 
+    _CALL upper 
+    _CALL is_special
+    ldr r6,=token_ofs
+    tbh [r6,r1] 
+tok_idx0:     
+//  not in list 
+    b try_other 
+// single char token with no value 
+single: 
+    ldr r0,=tok_single 
+    ldrb r0,[r0,r1] 
+    strb r0,[T2],#1 
+    b token_exit 
+binary_nbr:
+
+hex_nbr:
+
+decimal_nbr:
+
+compare: 
+
+qmark: 
+
+quote:
+
+comment: 
+
+try_other: 
+    _CALL is_alpha 
+    cbz r1,syntax_error  
+    _CALL parse_keyword 
+    cmp r1,#REM_IDX 
+    beq comment 
+
+token_exit:
+  pop {r6}
+   _RET 
+
+char_list:
+  .asciz " ,@():#-+*/%=<>\\?'\"$&"
+
+tok_single:
+  .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
+  .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
+  
+token_ofs:
+  .word  0, // not found 
+  .word  hex_nbr-tok_idx0 // $ 
+  .word  binary_nbr-tok_idx0 // &
+  .word  single-tok_idx0 // ( 
+  
+
+/****************************
+    is_other 
+    check for non alphanum
+    input:
+      r0    character to scan 
+    output:
+      r1    0 || index 
+    use: 
+      r2    scan index 
+      r3    char_list 
+*****************************/
+    _FUNC is_special 
+    push {r2,r3}
+    mov r2,#1
+    ldr r3,=char_list 
+1:  ldrb r1,[r3,r2]
+    cbz r1,9f 
+    cmp r0,r1 
+    beq 8f 
+    add r2,#1 
+    b 1b
+8:  mov r1,r2 
+9:  pop {r2,r3}
+    _RET 
+
+
+
+/*********************************************
+   skip character in TIB 
+   input:
+      r0    character to skip 
+      r3    tib index 
+      T1    tib adr
+    output: 
+      r3    updated 
+**********************************************/   
+    _FUNC skip 
+1:  ldrb r1,[T1,r3]
+    add r3,#1
+    cmp r1,r0
+    beq 1b 
+    str r3,[UPP,#IN_SAVED]
+    _RET
+
+/********************************************
+    upper
+    convert character in upper case 
+    input: 
+      r0   character 
+    output:
+      r0   upper case character 
+*********************************************/
+    _FUNC upper 
+    cmp r0,#'a' 
+    blt 9f 
+    cmp r0,#'z' 
+    bgt 9f 
+    and r0,#0x5f 
+9:  _RET 
+
+/***************************************
+   is_digit 
+   check if char is decimal digit.
+   input:
+      r0    char 
+   output:
+      r0     0|-1 
+***************************************/
+    _FUNC is_digit 
+    push {r1}
+    eor r1,r1 
+    cmp r0,#'0' 
+    blt 9f
+    cmp r0,'9'
+    bgt 9f 
+    mov r1,#-1 
+9:  mov r0,r1 
+    pop {r1}     
+    _RET 
+
+/***************************************
+    is_alpha 
+    check if character is alphabetic 
+  input:
+    r0   character 
+  output: 
+    r0    character 
+    r1    0|-1 
+****************************************
+    _FUNC is_alpha 
+    eor r1,r1 
+    cmp r0,#'A' 
+    blt 9f 
+    cmp r0,#'Z' 
+    bgt 9f 
+    mov r1,#-1 
+9:  _RET 
+
+
+/*****************************************
+    parse_word 
+    parse work and ckeck if in dictionary 
+    input:
+
+    output:
+
+    use:
+    
+*****************************************/
+    _FUNC parse_keyword 
+
 
     _RET 
 
@@ -812,7 +1053,7 @@ tbb_ofs: // offsets table for tbb instruction
   .p2align 2 
 
 tib: .word _tib 
-
+pad: .word _pad 
 
 /**********************************
     warm_start 

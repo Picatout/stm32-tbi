@@ -158,13 +158,13 @@
   .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
 
 /* flags used by BASIC interpreter */ 
-	.equ FRUN,0 // programm running
-	.equ FTRAP,1 // inside trap handler 
-	.equ FLOOP,2 // FOR loop in preparation 
-	.equ FSLEEP,3 // in halt mode SLEEP 
-	.equ FBREAK,4 // break point flag 
-	.equ FCOMP,5  // compiling flags 
-	.equ FAUTORUN,6// auto start program running 
+	.equ FRUN,(1<<0) // programm running
+	.equ FTRAP,(1<<1) // inside trap handler 
+	.equ FLOOP,(1<<2) // FOR loop in preparation 
+	.equ FSLEEP,(1<<3) // in halt mode SLEEP 
+	.equ FBREAK,(1<<4) // break point flag 
+	.equ FCOMP,(1<<5)  // compiling flags 
+	.equ FAUTORUN,(1<<6) // auto start program running 
 
 	.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
   
