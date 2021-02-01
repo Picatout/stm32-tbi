@@ -70,10 +70,10 @@
 // bits 5:4 identify group 
 // bits 3:0 token identifier inside group  
   .equ TK_GT,0x31      // relation operator '>'
-  .equ TK_EQUAL,0x32   // assignment or relation operator ','
-  .equ TK_GE,0x33      // relation operator '>,'
+  .equ TK_EQUAL,0x32   // assignment or relation operator '='
+  .equ TK_GE,0x33      // relation operator '>='
   .equ TK_LT,0x34      // relation operator '<'
-  .equ TK_LE,0x36      // relation operator '<,'
+  .equ TK_LE,0x36      // relation operator '<='
   .equ TK_NE,0x35      // relation operator '<>' not equal 
 // token groups 
   .equ TK_GRP_MASK,0x30 // groups bits selector 

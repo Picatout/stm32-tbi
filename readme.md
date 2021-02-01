@@ -1,4 +1,4 @@
-#  Tiny BASIC stamp on blue pill 
+#  [Tiny BASIC](https://en.wikipedia.org/wiki/Tiny_BASIC) stamp on blue pill 
 
 This is an implementation of a Tiny BASIC stamp on blue pill.  
 

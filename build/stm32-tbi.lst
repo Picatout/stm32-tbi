@@ -357,13 +357,13 @@ ARM GAS  stm32-tbi.s 			page 1
   70              	// bits 5:4 identify group 
   71              	// bits 3:0 token identifier inside group  
   72              	  .equ TK_GT,0x31      // relation operator '>'
-  73              	  .equ TK_EQUAL,0x32   // assignment or relation operator ','
+  73              	  .equ TK_EQUAL,0x32   // assignment or relation operator '='
 ARM GAS  stm32-tbi.s 			page 7
 
 
-  74              	  .equ TK_GE,0x33      // relation operator '>,'
+  74              	  .equ TK_GE,0x33      // relation operator '>='
   75              	  .equ TK_LT,0x34      // relation operator '<'
-  76              	  .equ TK_LE,0x36      // relation operator '<,'
+  76              	  .equ TK_LE,0x36      // relation operator '<='
   77              	  .equ TK_NE,0x35      // relation operator '<>' not equal 
   78              	// token groups 
   79              	  .equ TK_GRP_MASK,0x30 // groups bits selector 
@@ -451,13 +451,13 @@ ARM GAS  stm32-tbi.s 			page 1
  158              	  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
  159              	
  160              	/* flags used by BASIC interpreter */ 
- 161              		.equ FRUN,0 // programm running
- 162              		.equ FTRAP,1 // inside trap handler 
- 163              		.equ FLOOP,2 // FOR loop in preparation 
- 164              		.equ FSLEEP,3 // in halt mode SLEEP 
- 165              		.equ FBREAK,4 // break point flag 
- 166              		.equ FCOMP,5  // compiling flags 
- 167              		.equ FAUTORUN,6// auto start program running 
+ 161              		.equ FRUN,(1<<0) // programm running
+ 162              		.equ FTRAP,(1<<1) // inside trap handler 
+ 163              		.equ FLOOP,(1<<2) // FOR loop in preparation 
+ 164              		.equ FSLEEP,(1<<3) // in halt mode SLEEP 
+ 165              		.equ FBREAK,(1<<4) // break point flag 
+ 166              		.equ FCOMP,(1<<5)  // compiling flags 
+ 167              		.equ FAUTORUN,(1<<6) // auto start program running 
  168              	
  169              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
  170              	  
@@ -1606,13 +1606,13 @@ DEFINED SYMBOLS
       tbi_macros.inc:156    *ABS*:0000000000000004 CELLL
       tbi_macros.inc:157    *ABS*:0000000000000068 VARS_SIZE
       tbi_macros.inc:158    *ABS*:00000000000000c8 FREE_RAM
-      tbi_macros.inc:161    *ABS*:0000000000000000 FRUN
-      tbi_macros.inc:162    *ABS*:0000000000000001 FTRAP
-      tbi_macros.inc:163    *ABS*:0000000000000002 FLOOP
-      tbi_macros.inc:164    *ABS*:0000000000000003 FSLEEP
-      tbi_macros.inc:165    *ABS*:0000000000000004 FBREAK
-      tbi_macros.inc:166    *ABS*:0000000000000005 FCOMP
-      tbi_macros.inc:167    *ABS*:0000000000000006 FAUTORUN
+      tbi_macros.inc:161    *ABS*:0000000000000001 FRUN
+      tbi_macros.inc:162    *ABS*:0000000000000002 FTRAP
+      tbi_macros.inc:163    *ABS*:0000000000000004 FLOOP
+      tbi_macros.inc:164    *ABS*:0000000000000008 FSLEEP
+      tbi_macros.inc:165    *ABS*:0000000000000010 FBREAK
+      tbi_macros.inc:166    *ABS*:0000000000000020 FCOMP
+      tbi_macros.inc:167    *ABS*:0000000000000040 FAUTORUN
       tbi_macros.inc:169    *ABS*:0000000008001c00 AUTORUN_NAME
       tbi_macros.inc:171    *ABS*:0000000000000006 FIRST_DATA_ITEM
       tbi_macros.inc:172    *ABS*:0000000000007fff MAX_LINENO

@@ -15,6 +15,9 @@
 //     You should have received a copy of the GNU General Public License
 //     along with stm32-tbi.  If not, see <http://www.gnu.org/licenses/>.
 *****************************************************************************/
+/************************************************************************
+REF: https://en.wikipedia.org/wiki/Tiny_BASIC
+************************************************************************/
 
 .syntax unified
   .cpu cortex-m3
@@ -389,27 +392,27 @@ move_from_end: // move from high address toward low
     push  {r2,r3,T1,T2}
     ldr T1,tib 
     ldr T2,pad 
-    ldr r0,[UPP,#flags]
+    ldr r0,[UPP,#FLAGS]
     orr r0,#FCOMP
-    str r0,[UPP,#flags]
+    str r0,[UPP,#FLAGS]
     eor r3,r3     
     strh r3,[T2]    // line no 
     strb r3,[T2,#2] // length 
-    _CALL get_token 
+    _CALL comp_token 
     cmp r0,#TK_INTGR
     bne 1f 
     cmp r1,#1 
     bpl 1f 
-    ldr r0,#ERR_BAD_VALUE 
-    str r3,[UPP,#IN]
+    mov r0,#ERR_BAD_VALUE 
+    str r3,[UPP,#IN_SAVED]
     str T1,[UPP,#BASICPTR]
     b tb_error  
 1:  strh r1,[T2],#3 
 2:  cmp T2,T1 
     blt 3f 
-    ldr r0,#ERR_BUF_FULL 
+    mov r0,#ERR_BUF_FULL 
     b tb_error 
-3:  _CALL get_token 
+3:  _CALL comp_token 
     cmp r0,#TK_NONE 
     bne 2b 
 // compilation completed 
@@ -430,28 +433,28 @@ move_from_end: // move from high address toward low
     _RET 
 
 /*********************************************
-    scan text for next token
-   input: 
-	  r3 		tib index  
-	  T1    tib adr
-    T2    insert point in pad  
- output:
-   r0     token attribute 
-   r1 		token value
-   r3     tib index updated    
-   T2     updated 
-   use:
+    compile next token from source 
+    input: 
+      r3 		tib index  
+      T1    tib adr
+      T2    insert point in pad  
+    output:
+      r0     token attribute 
+      r1 		token value
+      r3     tib index updated    
+      T2     updated 
+      use:
 **********************************************/
     .macro _case c, next  
     cmp r0,#\c 
     bne \next
     .endm 
 
-    _FUNC get_token 
+    _FUNC comp_token 
     push {r6}
     ldrb r0,[T1,r3]
     beq token_exit  
-    ldr r0,#SPACE 
+    mov r0,#SPACE 
     _CALL skip 
     ldrb r0,[T1,r3]
     cbnz r0,1f 
@@ -466,31 +469,119 @@ tok_idx0:
     b try_other 
 // single char token with no value 
 single: 
-    ldr r0,=tok_single 
-    ldrb r0,[r0,r1] 
-    strb r0,[T2],#1 
+    mov r0,r1 
     b token_exit 
 binary_nbr:
-
+    eor r6,r6 
+    ldrb r0,[t1,r3]
+    add r3,#1
+    _CALL is_bit 
+    beq 1f 
+    b syntax_error 
+1:  lsl r6,#1
+    orr r6,r0 
+    ldrb r0,[T1,r3]
+    add r3,#1 
+    _CALL is_bit 
+    beq 1b 
+    sub r3,#1 
+    mov r0,#TK_INTGR
+    mov r1,r6 
+    strb r0,[T2],#1 
+    str r1,[T2],#4 
+    b token_exit 
 hex_nbr:
-
-decimal_nbr:
-
-compare: 
-
-qmark: 
-
+    eor r6,r6 
+    ldrb r0,[T1,r3]
+    add r3,#1 
+    _CALL is_hex 
+    beq 1f 
+    b syntax_error 
+1:  lsl r6,#4 
+    add r6,r0 
+    ldrb r0,[T1,r3]
+    add r3,#1
+    _CALL is_hex 
+    beq 1b 
+    sub r3,#1
+    mov r0,#TK_INTGR
+    mov r1,r6 
+    strb r0,[T2],#1 
+    str r1,[T2],#4 
+    b token_exit 
+lt:
+    mov r1,#TK_LT 
+    ldrb r0,[T1,r3]
+    cmp r0,#'>'
+    bne 1f
+    add r1,#1 
+    b 2f 
+gt: 
+    mov r1,#TK_GT 
+    ldrb r0,[T1,r3]
+    cmp r0,#'<'
+    bne 1f  
+    add r1,#1 
+    b 2f 
+1:  cmp r0,#'=' 
+    bne 3f   
+    add r1,#2
+2:  add r3,#1 
+3:  strb r1,[T2],#1
+    b token_exit 
+bkslash:
+    ldrb r1,[T1,r3]
+    add r3,#1
+    mov r0,#TK_CHAR 
+    b token_exit 
+prt_cmd: 
+    mov r0,#TK_CMD 
+    mov r1,#PRT_IDX 
+    b token_exit 
 quote:
+   _CALL parse_quote
+   b token_exit
+tick: 
+   mov r0,T2 
+   add r1,T1,r3 
+   _CALL strlen 
+   mov r2,r0 
+   mov r0,T2 
+   push {r2} 
+   _CALL cmove 
+   pop {r2}
+   add r2,#1
+   add r3,r2 
+   add T2,r2 
+   mov r0,#TK_CMD 
+   mov r1,#REM_IDX 
+   b token_exit  
 
-comment: 
-
-try_other: 
+try_other:
+    _CALL is_digit 
+    beq decimal_nbr 
     _CALL is_alpha 
-    cbz r1,syntax_error  
-    _CALL parse_keyword 
+    cbnz r1,1f 
+    b syntax_error 
+1:  _CALL parse_keyword 
     cmp r1,#REM_IDX 
-    beq comment 
-
+    beq tick  
+    b token_exit 
+decimal_nbr:
+    mov r2,#10 
+    eor r6,r6 
+1:  mul r6,r6,r2 
+    add r6,r0 
+    ldrb r0,[T1,r3]
+    add r3,#1 
+    _CALL is_digit 
+    beq 1b 
+    sub r3,#1 
+    mov r0,#TK_INTGR 
+    mov r1,r6 
+    strb r0,[T2],#1
+    str  r1,[T2],#4
+    b token_exit 
 token_exit:
   pop {r6}
    _RET 
@@ -503,10 +594,27 @@ tok_single:
   .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
   
 token_ofs:
-  .word  0, // not found 
-  .word  hex_nbr-tok_idx0 // $ 
-  .word  binary_nbr-tok_idx0 // &
-  .word  single-tok_idx0 // ( 
+  .word  0 // not found
+  // TK_COMMA...TK_EQUAL , 13 
+  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
+  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
+  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2     
+  .word  (single-tok_idx0)/2 // TK_EQUAL 
+  // '<'|'>'
+  .word  (lt-tok_idx0)/2,(gt-tok_idx0)/2
+  // '\'
+  .word  (bkslash-tok_idx0)/2
+  // '?' 
+  .word  (prt_cmd-tok_idx0)/2 
+  // "'" tick 
+  .word  (tick-tok_idx0)/2 
+  // '"' quote 
+  .word (quote-tok_idx0)/2
+  // '$' hex_nbr  
+  .word  (hex_nbr-tok_idx0)/2
+  // '&' binary_nbr 
+  .word  (binary_nbr-tok_idx0)/2 
+
   
 
 /****************************
@@ -530,11 +638,79 @@ token_ofs:
     beq 8f 
     add r2,#1 
     b 1b
-8:  mov r1,r2 
+8:  mov r1,r2
+    cmp r1,#'<'
+    bpl 9f 
+    ldr r2,=tok_single 
+    ldr r1,[r2,r1]
 9:  pop {r2,r3}
     _RET 
 
 
+/*********************************************
+    parse_quote 
+    parse quoted string 
+    input: 
+      r3 		tib index  
+      T1    tib adr
+      T2    insert point in pad  
+    output:
+      r0     token attribute 
+      r1 		token value
+      r3     tib index updated    
+      T2     updated 
+      use:
+*********************************************/
+    _FUNC parse_quote
+    add T2,#1
+    push {T2} 
+1:  ldrb r0,[T1,r3]
+    add r3,#1 
+    cmp r0,#'"'
+    beq 9f 
+    cmp r0,#'\\'
+    bne 2f 
+    _CALL get_escaped_char 
+    b 1b 
+2:  strb r0,[T2],#1
+    b 1b 
+9:  mov r0,#TK_QSTR
+    pop {r1}
+    strb r0,[r1,#-1]
+    _RET 
+
+/**********************************************
+    get_escaped_char 
+    convert "\c" in quoted string 
+    input:
+      r0 
+      r3   index 
+      T1   tib 
+      T2   pad 
+    output:
+      r3   updated 
+      T1   updated 
+      T2   updated 
+**********************************************/
+    _FUNC get_escaped_char 
+    ldrb r0,[T1,r3]
+    add r3,#1
+    cmp r0,#'"' 
+    bne 1f 
+    strb r0,[T2],#1
+    b 9f 
+1:  ldr r1,=escaped 
+2:  ldrb r2,[r1],#1
+    cbz r2,8f 
+    cmp r2,r0 
+    beq 7f 
+    b 2b
+7:  add r0,r2,#7
+8:  strb r0,[T2],#1    
+9:     
+    _RET
+
+escaped: .asciz "abtnvfr"
 
 /*********************************************
    skip character in TIB 
@@ -572,39 +748,128 @@ token_ofs:
 /***************************************
    is_digit 
    check if char is decimal digit.
+   convert to decimal digit.
    input:
       r0    char 
    output:
-      r0     0|-1 
+      r0    if Z then converted digit 
+      Z     0 true | 1 false  
 ***************************************/
     _FUNC is_digit 
-    push {r1}
+    push {r1} 
     eor r1,r1 
-    cmp r0,#'0' 
+    subs r0,#'0' 
     blt 9f
-    cmp r0,'9'
-    bgt 9f 
+    cmp r0,'9'+1
+    bmi 9f 
     mov r1,#-1 
-9:  mov r0,r1 
-    pop {r1}     
+9:   
+    ands r1,r1
+    pop {r1} 
+    _RET 
+
+/***************************************
+    is_hex 
+    check for hexadecimal digit 
+    convert to hex digit.
+    input:
+      r0    
+    output:
+      r0     if Z then converted digit 
+      Z      0 true | 1 false         
+***************************************/
+    _FUNC is_hex 
+    push {r1}
+    mov r1,#-1 
+    cmp r0,#'A' 
+    bmi 1f 
+    sub r0,#7 
+1:  sub r0,#'0'
+    bmi 2f 
+    cmp r0,#16
+    bmi 9f 
+2:  eor r1,r1  
+9:  ands r1,r1 
+    pop {r1}
+    _RET 
+
+/***************************************
+    is_bit 
+    check if char is '0'|'1' 
+    convert to binary digit. 
+    input:
+      r0    
+    output:
+      r0     if Z then converted digit 
+      Z      0 true | 1 false         
+***************************************/
+    _FUNC is_bit
+    push  {r1}
+    mov r1,#-1 
+    sub r0,#'0' 
+    bmi 2f 
+    cmp r1,#2
+    bmi 9f 
+2:  eor r1,r1 
+9:  ands r1,r1 
+    pop {r1}
     _RET 
 
 /***************************************
     is_alpha 
-    check if character is alphabetic 
+    check if character is {A..Z} 
   input:
     r0   character 
   output: 
-    r0    character 
-    r1    0|-1 
-****************************************
-    _FUNC is_alpha 
-    eor r1,r1 
-    cmp r0,#'A' 
-    blt 9f 
-    cmp r0,#'Z' 
-    bgt 9f 
+    r0    same character 
+    Z    0 true | 1 false  
+****************************************/
+    _FUNC is_alpha
+    push {r1} 
     mov r1,#-1 
+    cmp r0,#'A' 
+    blt 8f 
+    cmp r0,#'Z'+1 
+    bmi 9f 
+8:  eor r1,r1  
+9:  ands r1,r1 
+    pop {r1}
+    _RET 
+
+/***************************************
+    is_num 
+    check if character is {0..9} 
+  input:
+    r0   character 
+  output: 
+    r0    same character 
+    Z    0 true | 1 false  
+****************************************/
+    _FUNC is_num 
+    push {r1} 
+    mov r1,#-1 
+    cmp r0,#'0' 
+    blt 8f 
+    cmp r0,#'9'+1 
+    bmi 9f 
+8:  eor r1,r1  
+9:  ands r1,r1 
+    pop {r1}
+    _RET 
+
+/*****************************************
+    is_alnum 
+    check if character is alphanumeric 
+    input:
+      r0 
+    output:
+      r0     same 
+      Z      1 false | 0 true 
+*****************************************/
+    _FUNC is_alnum 
+    _CALL is_alpha 
+    beq 9f 
+    _CALL is_num 
 9:  _RET 
 
 
@@ -612,15 +877,37 @@ token_ofs:
     parse_word 
     parse work and ckeck if in dictionary 
     input:
-
+      r0    first character 
+      r3    tib index 
+      t1    tib 
+      t2    pad 
     output:
-
+      r3    updated 
+      t1    updated 
+      t2    updated   
     use:
     
 *****************************************/
     _FUNC parse_keyword 
-
-
+    push {T2}
+    strb r0,[T2],#1
+1:  ldrb r0,[T1,r3]
+    add r3,#1
+    _CALL is_alnum
+    bne 2f 
+    strb r0,[T2],#1
+    b 1b 
+2:  sub r3,#1
+    eor r0,r0 
+    strb r0,[T2] 
+    ldr r0,[sp]
+    ldr r1,=kword_dict  
+    _CALL search_dict 
+    cbnz r0,9f 
+    b syntax_error 
+9:  pop {T2}
+    strb r0,[T2],#1
+    strb r1,[T2],#1
     _RET 
 
 
@@ -967,7 +1254,9 @@ interp_loop:
   beq next_line 
   cmp r0,#TK_CMD 
   bne 2f
-  BX r1
+  ldr r0,=fn_table
+  ldr r0,[r0,r1,lsl #2]
+  bx r0
   b interp_loop 
 2: 
   cmp r0,#TK_VAR 
@@ -1006,7 +1295,7 @@ interp_loop:
   ldrb r0,[BPTR,IN] // token attribute 
   and r0,#0x3f // limit mask 
   add T1,#1
-  ldr r1,=tbb_ofs 
+  ldr r1,=tok_jmp 
   tbb [r1,r0]
 1: // pc reference point 
 2: // .byte param
@@ -1036,13 +1325,15 @@ interp_loop:
   _RET
 
   .p2align 2
-tbb_ofs: // offsets table for tbb instruction 
-  .byte (9b-1b)/2,(9b-1b)/2
-  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(3b-1b)/2
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2
-  .byte (4b-1b)/2,(4b-1b)/2,(4b-1b)/2,(4b-1b)/2,(4b-1b)/2
-  .byte (9b-1b)/2,(9b-1b)/2  
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+tok_jmp: // token id  tbb offset 
+  .byte (9b-1b)/2,(9b-1b)/2   // TK_NONE, TK_COLON
+  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(3b-1b)/2 // TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SHARP 
+  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
+  .byte (4b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_INTGR, TK_PLUS,TK_MINUS  
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // TK_MULT,TK_DIV,TK_MOD 
+// the following are not used 
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
   .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2   
@@ -1239,7 +1530,7 @@ kword_dict: // first name field
   .p2align 2 
 
 //comands and fonctions address table 	
-code_addr:
+fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
 	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
 	.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
