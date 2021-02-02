@@ -471,44 +471,6 @@ tok_idx0:
 single: 
     mov r0,r1 
     b token_exit 
-binary_nbr:
-    eor r6,r6 
-    ldrb r0,[t1,r3]
-    add r3,#1
-    _CALL is_bit 
-    beq 1f 
-    b syntax_error 
-1:  lsl r6,#1
-    orr r6,r0 
-    ldrb r0,[T1,r3]
-    add r3,#1 
-    _CALL is_bit 
-    beq 1b 
-    sub r3,#1 
-    mov r0,#TK_INTGR
-    mov r1,r6 
-    strb r0,[T2],#1 
-    str r1,[T2],#4 
-    b token_exit 
-hex_nbr:
-    eor r6,r6 
-    ldrb r0,[T1,r3]
-    add r3,#1 
-    _CALL is_hex 
-    beq 1f 
-    b syntax_error 
-1:  lsl r6,#4 
-    add r6,r0 
-    ldrb r0,[T1,r3]
-    add r3,#1
-    _CALL is_hex 
-    beq 1b 
-    sub r3,#1
-    mov r0,#TK_INTGR
-    mov r1,r6 
-    strb r0,[T2],#1 
-    str r1,[T2],#4 
-    b token_exit 
 lt:
     mov r1,#TK_LT 
     ldrb r0,[T1,r3]
@@ -556,38 +518,21 @@ tick:
    mov r0,#TK_CMD 
    mov r1,#REM_IDX 
    b token_exit  
-
 try_other:
-    _CALL is_digit 
-    beq decimal_nbr 
-    _CALL is_alpha 
-    cbnz r1,1f 
-    b syntax_error 
+    add r0,T1,r3 
+    sub r0,#1 
+    _CALL parse_int  
+    beq 1f // not an int 
 1:  _CALL parse_keyword 
     cmp r1,#REM_IDX 
     beq tick  
-    b token_exit 
-decimal_nbr:
-    mov r2,#10 
-    eor r6,r6 
-1:  mul r6,r6,r2 
-    add r6,r0 
-    ldrb r0,[T1,r3]
-    add r3,#1 
-    _CALL is_digit 
-    beq 1b 
-    sub r3,#1 
-    mov r0,#TK_INTGR 
-    mov r1,r6 
-    strb r0,[T2],#1
-    str  r1,[T2],#4
-    b token_exit 
 token_exit:
   pop {r6}
    _RET 
 
+
 char_list:
-  .asciz " ,@():#-+*/%=<>\\?'\"$&"
+  .asciz " ,@():#-+*/%=<>\\?'\""
 
 tok_single:
   .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
@@ -610,12 +555,62 @@ token_ofs:
   .word  (tick-tok_idx0)/2 
   // '"' quote 
   .word (quote-tok_idx0)/2
-  // '$' hex_nbr  
-  .word  (hex_nbr-tok_idx0)/2
-  // '&' binary_nbr 
-  .word  (binary_nbr-tok_idx0)/2 
 
   
+/****************************
+    parse_int 
+    parse an integer from text
+    if not valid integer 
+    r1 return *buffer else 
+    *buffer is incremented after integer 
+  input:
+    r0   *buffer 
+  output:
+    r0   integer
+    r1   *buffer+||0   
+  use:
+    r0   char 
+    r2   int  
+    T1   *buffer+
+    T2   digit count 
+*****************************/
+    _GBL_FUNC parse_int 
+    push {r2,T1,T2}
+    mov T1,r0 // *buffer 
+    eor T2,T2 // digit count 
+    eor r2,r2 // int 
+    mov r1,#10 // default base 
+    ldrb r0,[T1],#1
+    _CALL upper 
+    cmp r0,'$' 
+    bne 2f 
+    mov r1,#16 // hexadecimal number 
+    b 3f  
+2:  cmp r0,#'&' 
+    bne 4f
+    mov r1,#2 //binary number  
+3:  ldrb r0,[T1],#1
+4:  _CALL upper 
+    cmp r0,#'A'
+    bmi 5f
+    subs r0,#7  
+5:  subs r0,#'0' 
+    bmi 6f // not digit   
+    cmp r0,r1 
+    bpl 6f // not digit 
+    mul r2,r1 
+    add r2,r0
+    add T2,#1  
+    ldrb r0,[T1],#1
+    b 4b
+6:  mov r0,r2 
+    subs r1,T1,#1 
+    cmp T2,#0
+    bne 9f   
+    eors r1,r1
+9:  pop {r2,T1,T2}
+    _RET 
+
 
 /****************************
     is_other 
@@ -874,7 +869,7 @@ escaped: .asciz "abtnvfr"
 
 
 /*****************************************
-    parse_word 
+    parse_keyword 
     parse work and ckeck if in dictionary 
     input:
       r0    first character 
@@ -908,6 +903,38 @@ escaped: .asciz "abtnvfr"
 9:  pop {T2}
     strb r0,[T2],#1
     strb r1,[T2],#1
+    _RET 
+
+
+/*******************
+    DECOMPILER 
+*******************/
+
+/**********************************
+    cmd_name 
+    reverse dictionary search 
+    from CMD_IDX to NAME 
+  input:
+    r0    CMD_IDX 
+  output:
+    r0    *NAME | 0 
+  use:
+    r1    dictionary link
+    r2    tmp 
+**********************************/
+    _GBL_FUNC cmd_name
+    push {r1,r2}
+    ldr r1,=kword_dict  
+1:  ldrb r2,[r1]
+    cbz r2,3f 
+    ldr r2,[r1,#-8] // cmd_idx field 
+    cmp r0,r2 
+    beq 2f 
+    ldr r1,[r1,#-12] // link field 
+    b 1b
+2:  mov r2,r1
+3:  mov r0,r2 
+    pop {r1,r2}
     _RET 
 
 
@@ -1523,7 +1550,7 @@ kword_end:
 first_link: 
   .word LINK 
   .word ABS_IDX 
-  .byte TK_IFUNC
+  .word TK_IFUNC
 kword_dict: // first name field 
   .equ LINK,. 
   .asciz "ABS" 
