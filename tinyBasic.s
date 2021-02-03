@@ -970,11 +970,8 @@ escaped: .asciz "abtnvfr"
     _FUNC tb_error 
     ldr r1,=err_msg 
     lsl r0,#2 
-    add r0,r1 
-    ldr r0,[r0]
+    ldr r0,[r1,r0]
     _CALL uart_puts
-    ldr r0,dstack_empty
-    mov sp,r0 
     b  warm_start  
     _RET 
 err_msg:
@@ -1064,18 +1061,16 @@ tk_id: .asciz "last token id: "
 /*********************************
    cold_start 
    initialize BASIC interpreter 
+   never leave 
    input:
      none 
    output:
     none 
-   use:
-     r0,r1,r2,r3 
 *********************************/
-    _GBL_FUNC cold_start 
-    push {r0,r1,r2,r3}
-// initialise parameters stack
-   ldr DP,dstack_empty     
-//copy system variables to ram 
+  .type cold_start, %function 
+  .global cold_start 
+cold_start: 
+//copy initialized system variables to ram 
     _MOV32 UPP,RAM_ADR 
     ldr r0,src_addr 
     ldr r1,dest_addr
@@ -1084,17 +1079,13 @@ tk_id: .asciz "last token id: "
     mov r1,UPP 
     mov r2,#ulast-uzero
     _CALL cmove  
-    _CALL prt_version 
-    pop {r0,r1,r2,r3}
-    _RET
-    _CALL warm_init 
-    b cmd_line   
+    _CALL prt_version
+    _CALL clear_basic  
+    b warm_start    
 src_addr:
   .word uzero
 dest_addr:
   .word vectors_size
-dstack_empty:
-   .word _dstack 
 
 /************************************
     print firmware version 
@@ -1159,13 +1150,18 @@ version:
 
 /*****************************
    clear_basic 
-   reset BASIC text pointers 
+   reset BASIC system variables 
    and clear variables 
 *****************************/
     _FUNC clear_basic
-  	eor r0,r0 
+  	eor r0,r0
+    str r0,[UPP,#FLAGS] 
     str r0,[UPP,#COUNT]
     str r0,[UPP,#IN_SAVED]
+    str r0,[UPP,#BASICPTR]
+    str r0,[UPP,#DATAPTR]
+    str r0,[UPP,#DATA]
+    str r0,[UPP,#DATALEN]
     add r0,UPP,#FREE_RAM
     str r0,[UPP,#TXTBGN]
     str r0,[UPP,#TXTEND]
@@ -1183,37 +1179,45 @@ version:
     r0 
 ***********************************/
 warm_init:
-	mov IN,#0 // BASIC line index 
-  mov BPTR,#0 // BASIC line address 
-  eor r0,r0 
-  str r0,[UPP,#BASICPTR]
-  str r0,[UPP,#IN_SAVED]
-  str r0,[UPP,#COUNT]  
-	str r0,[UPP,#FLAGS]
-  str r0,[UPP,#LOOP_DEPTH] 
-  mov r0, #DEFAULT_TAB_WIDTH
-  str r0,[UPP,#TAB_WIDTH]
-	mov r0,#10 // default base decimal 
-	str r0,[UPP,#BASE]
-  _RET  
+// reset main stack 
+    ldr r0,mstack
+    mov sp,r0 
+// reset data stack       
+    ldr DP,dstack 
+    mov IN,#0 // BASIC line index 
+    mov BPTR,#0 // BASIC line address 
+    eor r0,r0 
+    str r0,[UPP,#COUNT]  
+    str r0,[UPP,#FLAGS]
+    str r0,[UPP,#LOOP_DEPTH] 
+    mov r0, #DEFAULT_TAB_WIDTH
+    str r0,[UPP,#TAB_WIDTH]
+    mov r0,#10 // default base decimal 
+    str r0,[UPP,#BASE]
+    _RET  
+
+mstack: .word _mstack 
+dstack: .word _dstack 
+tib: .word _tib 
+pad: .word _pad 
+array: .word _pad - 4 
+ready: .asciz "READY" 
 
 /**********************************
     warm_start 
-    start BASIC interpreter without 
+    start BASIC interpreter doesn't  
     reset variables and code space 
   input:
     none 
   output:
     none 
-  use:
-
 **********************************/
     _FUNC warm_start 
 // initialise parameters stack
-   ldr DP,dstack_empty     
-
-    b warm_start 
-
+    bl warm_init
+    ldr r0,=ready 
+    _CALL uart_puts 
+// fall in cmd_line 
 
 /**********************************
    cmd_line 
@@ -1229,8 +1233,9 @@ warm_init:
     mov r0,#CR 
     _CALL uart_putc 
 1:  ldr r0,tib
+    mov r1,#TIB_SIZE 
     _CALL readln 
-    ands r0,r0 // empty line 
+    ands r1,r1 // empty line 
     beq 1b 
     _CALL compile // tokenize BASIC text
     ands r0,r0 
@@ -1266,13 +1271,13 @@ interp_loop:
   bne 2f
   ldr r0,=fn_table
   ldr r0,[r0,r1,lsl #2]
-  bx r0
-  b interp_loop 
+  blx r0
+  b interp_loop   
 2: 
   cmp r0,#TK_VAR 
   bne 3f 
   b let_var 
-  b interp_loop
+  b interp_loop 
 3: 
   cmp r0,#TK_ARRAY 
   bne 4f
@@ -1292,48 +1297,50 @@ interp_loop:
     r0    token attribute
     r1    token value if there is one 
   use:
-    none 
+    T1    exit token type  
 ****************************/
-  _FUNC next_token 
-  ldr r0,[UPP,#COUNT]
-  cmp IN,r0 
-  bmi 0f 
-  eor r0,r0 
-  b 9f  
+    _FUNC next_token 
+    push {T1}
+    eor T1,T1 // TK_NONE 
+    ldr r0,[UPP,#COUNT]
+    cmp IN,r0 
+    bmi 0f 
+    b 9f  
 0: 
-  str IN,[UPP,#IN_SAVED]
-  str BPTR,[UPP,#BASICPTR]
-  ldrb r0,[BPTR,IN] // token attribute 
-  and r0,#0x3f // limit mask 
-  add T1,#1
-  ldr r1,=tok_jmp 
-  tbb [r1,r0]
+    str IN,[UPP,#IN_SAVED]
+    str BPTR,[UPP,#BASICPTR]
+    ldrb r0,[BPTR,IN] // token attribute
+    add IN,#1  
+    mov T1,r0 
+    and r0,#0x3f // limit mask 
+    ldr r1,=tok_jmp 
+    tbb [r1,r0]
 1: // pc reference point 
+    b 9f 
 2: // .byte param
-  ldrb r1,[T2,T1]
-  add T1,#1 
-  b 9f 
+    ldrb r1,[BPTR,IN]
+    add IN,#1 
+    b 9f 
 3: // .hword param 
-  ldrh r1,[T2,T1]
-  add T1,#2 
-  b 9f 
+    ldrh r1,[BPTR,IN]
+    add IN,#2 
+    b 9f 
 4: // .word param  
-  ldr r1,[T2,T1]
-  add T1,#4
-  b 9f 
+    ldr r1,[BPTR,IN]
+    add IN,#4
+    b 9f 
 5: // .asciz param 
-  add r1,T2,T1
-  mov r0,r1  
-  _CALL strlen 
-  add T1,r0
-  add T1,#1
-  mov r0,#TK_QSTR
-  b 9f  
+    add r1,BPTR,IN 
+    mov r0,r1  
+    _CALL strlen 
+    add IN,r0
+    add IN,#1
+    b 9f  
 8: // syntax error 
-   b syntax_error 
-9:
-   str T1,[UPP,#IN_SAVED]
-  _RET
+    b syntax_error 
+9:  mov r0,T1  
+    pop {T1}
+    _RET
 
   .p2align 2
 tok_jmp: // token id  tbb offset 
@@ -1353,9 +1360,6 @@ tok_jmp: // token id  tbb offset
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
 
   .p2align 2 
-
-tib: .word _tib 
-pad: .word _pad 
 
 /*********************************
     expect 
@@ -1458,10 +1462,7 @@ pad: .word _pad
     b 8f 
 3:  cmp r0,#TK_VAR 
     bne 4f 
-    ldr r0,[UPP,#VARS]
-    lsl r1,#2 
-    add r0,r1 
-    ldr [r1,r0]
+    _CALL get_var 
     b 8f 
 4:  cmp r0,#TK_IFUNC 
     beq 5f 
@@ -1469,7 +1470,8 @@ pad: .word _pad
     bne 6f 
 5:  lsl r1,#2 
     ldr r0,=fn_table
-    ldr r1,[r0,r1]    
+    ldr r1,[r0,r1]
+    blx r1 
 6:  
 8:  mul r1,T1 
     mov r0,T2 
@@ -1685,7 +1687,7 @@ relop_jmp:
     ldr r0,[UPP,#VARS]
     lsl r1,#2 
     ldr r1,[r0,r1]
-    ldr r0,#TK_INTGR
+    mov r0,#TK_INTGR
     _RET 
 
 /*********************************
@@ -1962,7 +1964,7 @@ fn_table:
     eor r1,#-1 // ~mask 
     and r1,T2
     str r1,[r0]
-    b interp_loop 
+    _RET  
 
 
 /*********************************
@@ -1986,7 +1988,7 @@ fn_table:
     ldr T2,[r0] 
     orr r1,T2
     str r1,[r0]
-    b interp_loop 
+    _RET 
 
   /*********************************
    BASIC: BTOGL adr, mask   
@@ -2010,94 +2012,94 @@ fn_table:
     ldr T2,[r0] 
     eor r1,T2
     str r1,[r0]
-    b interp_loop 
+    _RET  
 
     _FUNC bit_test
-    b interp_loop
+    _RET 
 
     _FUNC bye
-    b interp_loop
+    _RET 
 
     _FUNC char
-    b interp_loop
+    _RET 
 
     _FUNC const_cr2
-    b interp_loop 
+    _RET  
 
     _FUNC const_cr1
-    b interp_loop
+    _RET 
 
     _FUNC data
-    b interp_loop
+    _RET 
 
     _FUNC data_line
-    b interp_loop
+    _RET 
 
     _FUNC const_ddr
-    b interp_loop
+    _RET 
 
     _FUNC dec_base
-    b interp_loop
+    _RET 
 
     _FUNC directory
-    b interp_loop
+    _RET 
 
     _FUNC do_loop
-    b interp_loop
+    _RET 
 
     _FUNC digital_read
-    b interp_loop
+    _RET 
 
     _FUNC digital_write
-    b interp_loop 
+    _RET  
 
     _FUNC cmd_end
-    b interp_loop
+    _RET 
 
     _FUNC const_eeprom_base
-    b interp_loop
+    _RET 
 
     _FUNC fcpu
-    b interp_loop
+    _RET 
 
     _FUNC for
-    b interp_loop
+    _RET 
 
     _FUNC forget
-    b interp_loop
+    _RET 
 
     _FUNC gosub
-    b interp_loop
+    _RET 
 
     _FUNC goto
-    b interp_loop
+    _RET 
 
     _FUNC gpio
-    b interp_loop 
+    _RET  
 
     _FUNC hex_base
-    b interp_loop
+    _RET 
 
     _FUNC const_idr
-    b interp_loop
+    _RET 
 
     _FUNC if
-    b interp_loop
+    _RET 
 
     _FUNC input_var
-    b interp_loop
+    _RET 
 
     _FUNC invert
-    b interp_loop
+    _RET 
 
     _FUNC enable_iwdg
-    b interp_loop
+    _RET 
 
     _FUNC refresh_iwdg
-    b interp_loop
+    _RET 
 
     _FUNC key
-    b interp_loop 
+    _RET  
 
 /******************************
   BASIC: [let] var=expr 
@@ -2131,187 +2133,187 @@ let_array:
 2:  _POP r0 
     str r1,[r0]
     mov r0,#TK_NONE 
-    b interp_loop 
+    _RET  
 
     _FUNC list
-    b interp_loop
+    _RET 
 
     _FUNC load
-    b interp_loop
+    _RET 
 
     _FUNC log2
-    b interp_loop
+    _RET 
 
     _FUNC lshift
-    b interp_loop
+    _RET 
 
     _FUNC muldiv
-    b interp_loop
+    _RET 
 
     _FUNC next
-    b interp_loop
+    _RET 
 
     _FUNC new
-    b interp_loop 
+    _RET  
 
     _FUNC func_not
-    b interp_loop
+    _RET 
 
     _FUNC const_odr
-    b interp_loop
+    _RET 
 
     _FUNC bit_or
-    b interp_loop
+    _RET 
 
     _FUNC pad_ref
-    b interp_loop
+    _RET 
 
     _FUNC pause
-    b interp_loop
+    _RET 
 
     _FUNC pin_mode
-    b interp_loop
+    _RET 
 
     _FUNC peek
-    b interp_loop
+    _RET 
 
     _FUNC const_input
-    b interp_loop 
+    _RET  
 
     _FUNC poke
-    b interp_loop
+    _RET 
 
     _FUNC const_output
-    b interp_loop
+    _RET 
 
     _FUNC print
-    b interp_loop
+    _RET 
 
     _FUNC const_porta
-    b interp_loop
+    _RET 
 
     _FUNC const_portb
-    b interp_loop
+    _RET 
 
     _FUNC const_portc
-    b interp_loop
+    _RET 
 
     _FUNC const_portd
-    b interp_loop
+    _RET 
 
     _FUNC const_porte
-    b interp_loop 
+    _RET  
 
     _FUNC const_portf
-    b interp_loop
+    _RET 
 
     _FUNC const_portg
-    b interp_loop
+    _RET 
 
     _FUNC const_porth
-    b interp_loop
+    _RET 
 
     _FUNC const_porti
-    b interp_loop
+    _RET 
 
     _FUNC qkey
-    b interp_loop
+    _RET 
 
     _FUNC read
-    b interp_loop
+    _RET 
 
     _FUNC remark
-    b interp_loop 
+    _RET  
 
     _FUNC restore
-    b interp_loop
+    _RET 
 
     _FUNC return
-    b interp_loop
+    _RET 
 
     _FUNC  random
-    b interp_loop
+    _RET 
 
     _FUNC rshift
-    b interp_loop
+    _RET 
 
     _FUNC run
-    b interp_loop
+    _RET 
 
     _FUNC save
-    b interp_loop
+    _RET 
 
     _FUNC show
-    b interp_loop
+    _RET 
 
     _FUNC size
-    b interp_loop 
+    _RET  
 
     _FUNC sleep
-    b interp_loop
+    _RET 
 
     _FUNC spi_read
-    b interp_loop
+    _RET 
 
     _FUNC spi_enable
-    b interp_loop
+    _RET 
 
     _FUNC spi_select
-    b interp_loop
+    _RET 
 
     _FUNC spi_write
-    b interp_loop
+    _RET 
 
     _FUNC step
-    b interp_loop
+    _RET 
 
     _FUNC stop
-    b interp_loop
+    _RET 
 
     _FUNC get_ticks
-    b interp_loop 
+    _RET  
 
     _FUNC set_timer
-    b interp_loop
+    _RET 
 
     _FUNC timeout
-    b interp_loop
+    _RET 
 
     _FUNC to
-    b interp_loop
+    _RET 
 
     _FUNC tone
-    b interp_loop
+    _RET 
 
     _FUNC ubound
-    b interp_loop
+    _RET 
 
     _FUNC uflash
-    b interp_loop
+    _RET 
 
     _FUNC until
-    b interp_loop
+    _RET 
 
     _FUNC usr
-    b interp_loop 
+    _RET  
 
     _FUNC wait
-    b interp_loop
+    _RET 
 
     _FUNC words
-    b interp_loop
+    _RET 
 
     _FUNC write
-    b interp_loop
+    _RET 
 
     _FUNC bit_xor
-    b interp_loop
+    _RET 
 
     _FUNC transmit
-    b interp_loop
+    _RET 
 
     _FUNC receive
-    b interp_loop 
+    _RET  
 
 
 /*************************************************
