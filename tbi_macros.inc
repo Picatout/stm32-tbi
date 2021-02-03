@@ -156,6 +156,7 @@
   .equ CELLL,4 // size of integer 
   .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
   .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
+  .equ ARRAY_ADR,FREE_RAM+4 // array address at bottom of pad  
 
 /* flags used by BASIC interpreter */ 
 	.equ FRUN,(1<<0) // programm running

@@ -449,98 +449,99 @@ ARM GAS  stm32-tbi.s 			page 1
  156              	  .equ CELLL,4 // size of integer 
  157              	  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
  158              	  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
- 159              	
- 160              	/* flags used by BASIC interpreter */ 
- 161              		.equ FRUN,(1<<0) // programm running
- 162              		.equ FTRAP,(1<<1) // inside trap handler 
- 163              		.equ FLOOP,(1<<2) // FOR loop in preparation 
- 164              		.equ FSLEEP,(1<<3) // in halt mode SLEEP 
- 165              		.equ FBREAK,(1<<4) // break point flag 
- 166              		.equ FCOMP,(1<<5)  // compiling flags 
- 167              		.equ FAUTORUN,(1<<6) // auto start program running 
- 168              	
- 169              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
- 170              	  
- 171              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
- 172              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
- 173              	
- 174              	/***********************************************
- 175              	*       MACROS
- 176              	***********************************************/
- 177              		.macro _CALL fn /* low level routine call */ 
- 178              	 	PUSH {LR}
- 179              		BL \fn  
- 180              	  POP {LR}
- 181              		.endm
- 182              		
- 183              		.macro	_RET /* return from subroutine */
- 184              		BX	LR
- 185              		.endm
- 186              	
- 187              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 159              	  .equ ARRAY_ADR,FREE_RAM+4 // array address at bottom of pad  
+ 160              	
+ 161              	/* flags used by BASIC interpreter */ 
+ 162              		.equ FRUN,(1<<0) // programm running
+ 163              		.equ FTRAP,(1<<1) // inside trap handler 
+ 164              		.equ FLOOP,(1<<2) // FOR loop in preparation 
+ 165              		.equ FSLEEP,(1<<3) // in halt mode SLEEP 
+ 166              		.equ FBREAK,(1<<4) // break point flag 
+ 167              		.equ FCOMP,(1<<5)  // compiling flags 
+ 168              		.equ FAUTORUN,(1<<6) // auto start program running 
+ 169              	
+ 170              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
+ 171              	  
+ 172              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
+ 173              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+ 174              	
+ 175              	/***********************************************
+ 176              	*       MACROS
+ 177              	***********************************************/
+ 178              		.macro _CALL fn /* low level routine call */ 
+ 179              	 	PUSH {LR}
+ 180              		BL \fn  
+ 181              	  POP {LR}
+ 182              		.endm
+ 183              		
+ 184              		.macro	_RET /* return from subroutine */
+ 185              		BX	LR
+ 186              		.endm
+ 187              	
 ARM GAS  stm32-tbi.s 			page 9
 
 
- 188              		MOV \REG, #\LITERAL&0xffff
- 189              		MOVT \REG, #\LITERAL>>16
- 190              		.endm
- 191              	
- 192              	// local function header 
- 193              	  .macro _FUNC label 
- 194              	  .p2align 2 
- 195              	  .type \label, %function  
- 196              	\label:
- 197              	  .endm 
- 198              	
- 199              	// global function header 
- 200              	  .macro _GBL_FUNC label 
- 201              	  .global \label 
- 202              	  _FUNC \label 
- 203              	  .endm 
- 204              	
+ 188              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 189              		MOV \REG, #\LITERAL&0xffff
+ 190              		MOVT \REG, #\LITERAL>>16
+ 191              		.endm
+ 192              	
+ 193              	// local function header 
+ 194              	  .macro _FUNC label 
+ 195              	  .p2align 2 
+ 196              	  .type \label, %function  
+ 197              	\label:
+ 198              	  .endm 
+ 199              	
+ 200              	// global function header 
+ 201              	  .macro _GBL_FUNC label 
+ 202              	  .global \label 
+ 203              	  _FUNC \label 
+ 204              	  .endm 
  205              	
- 206              	/********************************
- 207              	    dictionary structure
- 208              	------------------------------
- 209              	 format:
- 210              	   link:    
- 211              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
- 212              	   cmd_name: 31 characters max 
- 213              	   cmd_index: 2 bytes 
- 214              	**********************************/
- 215              		.macro _dict_entry tok_type,name,cmd_idx 
- 216              	  .word LINK 
- 217              	  .word \cmd_idx 
- 218              		.word \tok_type  	
- 219              		.equ LINK,.
- 220              		.asciz "\name"
- 221              		.p2align 2 
- 222              		.endm 
- 223              	
- 224              	  // pop parameter in register 
- 225              	  .macro _POP  reg 
- 226              	  ldmia  DP!,{\reg}
- 227              	  .endm 
- 228              	
- 229              	  // push register on parameter stack 
- 230              	  .macro _PUSH reg 
- 231              	  stmdb DP!,{\reg}
- 232              	  .endm 
- 233              	
- 234              	  .macro _UNGET_TOKEN 
- 235              	  ldr IN,[UPP,#IN_SAVED]
- 236              	  ldr BPTR,[UPP,#BASICPTR] 
- 237              	  .endm 
- 238              	
- 239              	 // create a text data 
- 240              	 .macro _TEXT label,text
- 241              	 \label: .asciz "\text"
- 242              	 .p2align 2 
- 243              	 .endm 
-  41              	  .include "cmd_index.inc"
+ 206              	
+ 207              	/********************************
+ 208              	    dictionary structure
+ 209              	------------------------------
+ 210              	 format:
+ 211              	   link:    
+ 212              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
+ 213              	   cmd_name: 31 characters max 
+ 214              	   cmd_index: 2 bytes 
+ 215              	**********************************/
+ 216              		.macro _dict_entry tok_type,name,cmd_idx 
+ 217              	  .word LINK 
+ 218              	  .word \cmd_idx 
+ 219              		.word \tok_type  	
+ 220              		.equ LINK,.
+ 221              		.asciz "\name"
+ 222              		.p2align 2 
+ 223              		.endm 
+ 224              	
+ 225              	  // pop parameter in register 
+ 226              	  .macro _POP  reg 
+ 227              	  ldmia  DP!,{\reg}
+ 228              	  .endm 
+ 229              	
+ 230              	  // push register on parameter stack 
+ 231              	  .macro _PUSH reg 
+ 232              	  stmdb DP!,{\reg}
+ 233              	  .endm 
+ 234              	
+ 235              	  .macro _UNGET_TOKEN 
+ 236              	  ldr IN,[UPP,#IN_SAVED]
+ 237              	  ldr BPTR,[UPP,#BASICPTR] 
+ 238              	  .endm 
+ 239              	
+ 240              	 // create a text data 
+ 241              	 .macro _TEXT label,text
+ 242              	 \label: .asciz "\text"
+ 243              	 .p2align 2 
+ 244              	 .endm 
 ARM GAS  stm32-tbi.s 			page 10
 
 
+  41              	  .include "cmd_index.inc"
    1              	//---------------------------------------------------------------------  
    2              	//  Copyright Jacques Deschênes 2021
    3              	//  This file is part of stm32-tbi 
@@ -597,10 +598,10 @@ ARM GAS  stm32-tbi.s 			page 1
   54              	    .equ GOSUB_IDX, 29 // <<1
   55              	    .equ GOTO_IDX, 30 // <<1
   56              	    .equ GPIO_IDX, 31 // <<1
-  57              	    .equ HEX_IDX, 32 // <<1
 ARM GAS  stm32-tbi.s 			page 11
 
 
+  57              	    .equ HEX_IDX, 32 // <<1
   58              	    .equ IDR_IDX, 33 // <<1
   59              	    .equ IF_IDX, 34 // <<1
   60              	    .equ INPUT_IDX, 35 // <<1
@@ -657,10 +658,10 @@ ARM GAS  stm32-tbi.s 			page 1
  111              	    .equ STOP_IDX, 86 // <<1
  112              	    .equ TICKS_IDX, 87 // <<1
  113              	    .equ TIMER_IDX, 88 // <<1
- 114              	    .equ TMROUT_IDX, 89 // <<1  //  TIMEOUT
 ARM GAS  stm32-tbi.s 			page 12
 
 
+ 114              	    .equ TMROUT_IDX, 89 // <<1  //  TIMEOUT
  115              	    .equ TO_IDX, 90 // <<1
  116              	    .equ TONE_IDX, 91 // <<1
  117              	    .equ UBOUND_IDX, 92 // <<1
@@ -717,10 +718,10 @@ ARM GAS  stm32-tbi.s 			page 1
   83 0060 00000000 	  .word      default_handler /* IRQ8, EXTI Line2 */                          
   84 0064 00000000 	  .word      default_handler /* IRQ9, EXTI Line3 */                          
   85 0068 00000000 	  .word      default_handler /* IRQ10, EXTI Line4 */                          
-  86 006c 00000000 	  .word      default_handler /* IRQ11, DMA1 CH1 */                  
 ARM GAS  stm32-tbi.s 			page 13
 
 
+  86 006c 00000000 	  .word      default_handler /* IRQ11, DMA1 CH1 */                  
   87 0070 00000000 	  .word      default_handler /* IRQ12, DMA1 CH2 */                   
   88 0074 00000000 	  .word      default_handler /* IRQ13, DMA1 CH3 */                   
   89 0078 00000000 	  .word      default_handler /* IRQ14, DMA1 CH4  */                   
@@ -777,10 +778,10 @@ ARM GAS  stm32-tbi.s 			page 1
  140              	/*************************************
  141              	    EXCEPTIONS & INTERRUPTS HANDLERS 
  142              	*************************************/
- 143              	
 ARM GAS  stm32-tbi.s 			page 14
 
 
+ 143              	
  144              	/*****************************************************
  145              	  default isr handler called on unexpected interrupt
  146              	*****************************************************/
@@ -837,10 +838,10 @@ ARM GAS  stm32-tbi.s 			page 1
  190 0068 E164     	    str r1,[UPP,#RX_TAIL]
  191              	2:
  192 006a 7047     	  	_RET 
- 193              	
 ARM GAS  stm32-tbi.s 			page 15
 
 
+ 193              	
  194              	    _GBL_FUNC user_reboot   
  195 006c D448     	    ldr r0,=user_reboot_msg
  196 006e 00B5FFF7 	    _CALL uart_puts 
@@ -878,7 +879,7 @@ ARM GAS  stm32-tbi.s 			page 1
  222 00b2 00F037F8 	    bl	init_devices	 	/* RCC, GPIOs */
  223 00b6 00F085F8 	    bl  uart_init
  224 00ba FFF7FEFF 	    bl  cold_start  /* initialize BASIC SYSTEM */ 
- 225 00be 00F001F8 	    bl  test 
+ 225 00be FFF7FEFF 	    bl  tbi_test 
  226 00c2 FEE7     	    b .  
  227              	
  228              	    _FUNC test
@@ -897,10 +898,10 @@ ARM GAS  stm32-tbi.s 			page 1
  241              	  // flash write test
  242              	    _MOV32 r0,0x01020304
  243              	    _MOV32 r1,0x0800fff0
- 244              	    _CALL flash_store 
 ARM GAS  stm32-tbi.s 			page 16
 
 
+ 244              	    _CALL flash_store 
  245              	    _MOV32 r1,0x800fff0 
  246              	    ldr r1,[r1]
  247              	    _MOV32 r0,0X01020304
@@ -957,10 +958,10 @@ ARM GAS  stm32-tbi.s 			page 1
  287 0120 7047     	  _RET 
  288              	
  289              	// initialize hardware devices 
- 290 0122 00BF     	  _FUNC init_devices
 ARM GAS  stm32-tbi.s 			page 17
 
 
+ 290 0122 00BF     	  _FUNC init_devices
  291              	/* init clock to HSE 72 Mhz */
  292              	/* set 2 wait states in FLASH_ACR_LATENCY */
  293 0124 4FF40050 	  _MOV32 R0,FLASH_BASE_ADR 
@@ -1017,10 +1018,10 @@ ARM GAS  stm32-tbi.s 			page 1
  341              	/* enable peripheral clock for GPIOA, GPIOC and USART1 */
  342 0184 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
  342      C4F20200 
- 343 018c 44F21401 	  mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
 ARM GAS  stm32-tbi.s 			page 18
 
 
+ 343 018c 44F21401 	  mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
  344 0190 8161     	  str	r1, [r0, #RCC_APB2ENR]
  345              	
  346              	/* configure GPIOC:13 as output for user LED */
@@ -1077,10 +1078,10 @@ ARM GAS  stm32-tbi.s 			page 1
  392              	    R0 character to send 
  393              	  use:
  394              	    T1 status  
- 395              	    T2 UART address
 ARM GAS  stm32-tbi.s 			page 19
 
 
+ 395              	    T2 UART address
  396              	*****************************/
  397 0206 00BF     	    _GBL_FUNC uart_putc
  398 0208 2DE90003 	    push {T1,T2}
@@ -1137,10 +1138,10 @@ ARM GAS  stm32-tbi.s 			page 1
  446 0244 04F15008 	    add T1,UPP,#RX_QUEUE
  447 0248 D4F84890 	    ldr T2, [UPP,#RX_HEAD]
  448 024c 18F80900 	    ldrb r0,[T1,T2]
- 449 0250 09F10109 	    add T2,#1
 ARM GAS  stm32-tbi.s 			page 20
 
 
+ 449 0250 09F10109 	    add T2,#1
  450 0254 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
  451 0258 C4F84890 	    str T2,[UPP,#RX_HEAD]
  452 025c BDE80003 	    pop {T1,T2}
@@ -1197,10 +1198,10 @@ ARM GAS  stm32-tbi.s 			page 1
  499              	   output:
  500              	    none 
  501              	   use:
- 502              	     r0    flash registers address 
 ARM GAS  stm32-tbi.s 			page 21
 
 
+ 502              	     r0    flash registers address 
  503              	     r1    temp 
  504              	***********************************/
  505              	    _FUNC wait_busy 
@@ -1257,10 +1258,10 @@ ARM GAS  stm32-tbi.s 			page 1
  547              	    Write one word into flash memory
  548              	    address must even
  549              	    input:
- 550              	      r0    data 
 ARM GAS  stm32-tbi.s 			page 22
 
 
+ 550              	      r0    data 
  551              	      r1    adr 
  552              	    output: 
  553              	      none 
@@ -1317,10 +1318,10 @@ ARM GAS  stm32-tbi.s 			page 1
  593 0370 C0F81090 	    str T2,[r0,#FLASH_CR]
  594 0374 C0F81480 	    str T1,[r0,#FLASH_AR]
  595 0378 49F04009 	    orr T2,#0x40 
- 596 037c C0F81090 	    str T2,[r0,#FLASH_CR]
 ARM GAS  stm32-tbi.s 			page 23
 
 
+ 596 037c C0F81090 	    str T2,[r0,#FLASH_CR]
  597 0380 D0F80C90 	    ldr T2,[r0,#FLASH_SR]
  598 0384 19F01409 	    ands T2,#(5<<2)
  599 0388 06D0     	    beq 9f
@@ -1611,16 +1612,17 @@ DEFINED SYMBOLS
       tbi_macros.inc:156    *ABS*:0000000000000004 CELLL
       tbi_macros.inc:157    *ABS*:0000000000000068 VARS_SIZE
       tbi_macros.inc:158    *ABS*:00000000000000c8 FREE_RAM
-      tbi_macros.inc:161    *ABS*:0000000000000001 FRUN
-      tbi_macros.inc:162    *ABS*:0000000000000002 FTRAP
-      tbi_macros.inc:163    *ABS*:0000000000000004 FLOOP
-      tbi_macros.inc:164    *ABS*:0000000000000008 FSLEEP
-      tbi_macros.inc:165    *ABS*:0000000000000010 FBREAK
-      tbi_macros.inc:166    *ABS*:0000000000000020 FCOMP
-      tbi_macros.inc:167    *ABS*:0000000000000040 FAUTORUN
-      tbi_macros.inc:169    *ABS*:0000000008001c00 AUTORUN_NAME
-      tbi_macros.inc:171    *ABS*:0000000000000006 FIRST_DATA_ITEM
-      tbi_macros.inc:172    *ABS*:0000000000007fff MAX_LINENO
+      tbi_macros.inc:159    *ABS*:00000000000000cc ARRAY_ADR
+      tbi_macros.inc:162    *ABS*:0000000000000001 FRUN
+      tbi_macros.inc:163    *ABS*:0000000000000002 FTRAP
+      tbi_macros.inc:164    *ABS*:0000000000000004 FLOOP
+      tbi_macros.inc:165    *ABS*:0000000000000008 FSLEEP
+      tbi_macros.inc:166    *ABS*:0000000000000010 FBREAK
+      tbi_macros.inc:167    *ABS*:0000000000000020 FCOMP
+      tbi_macros.inc:168    *ABS*:0000000000000040 FAUTORUN
+      tbi_macros.inc:170    *ABS*:0000000008001c00 AUTORUN_NAME
+      tbi_macros.inc:172    *ABS*:0000000000000006 FIRST_DATA_ITEM
+      tbi_macros.inc:173    *ABS*:0000000000007fff MAX_LINENO
        cmd_index.inc:25     *ABS*:0000000000000000 ABS_IDX
        cmd_index.inc:26     *ABS*:0000000000000001 ADCON_IDX
        cmd_index.inc:27     *ABS*:0000000000000002 ADCREAD_IDX
@@ -1645,10 +1647,10 @@ DEFINED SYMBOLS
        cmd_index.inc:46     *ABS*:0000000000000015 DO_IDX
        cmd_index.inc:47     *ABS*:0000000000000016 DREAD_IDX
        cmd_index.inc:48     *ABS*:0000000000000017 DWRITE_IDX
-       cmd_index.inc:49     *ABS*:0000000000000018 END_IDX
 ARM GAS  stm32-tbi.s 			page 29
 
 
+       cmd_index.inc:49     *ABS*:0000000000000018 END_IDX
        cmd_index.inc:50     *ABS*:0000000000000019 EEPROM_IDX
        cmd_index.inc:51     *ABS*:000000000000001a FCPU_IDX
        cmd_index.inc:52     *ABS*:000000000000001b FOR_IDX
@@ -1705,10 +1707,10 @@ DEFINED SYMBOLS
        cmd_index.inc:103    *ABS*:000000000000004e SHOW_IDX
        cmd_index.inc:104    *ABS*:000000000000004f SIZE_IDX
        cmd_index.inc:105    *ABS*:0000000000000050 SLEEP_IDX
-       cmd_index.inc:106    *ABS*:0000000000000051 SPIRD_IDX
 ARM GAS  stm32-tbi.s 			page 30
 
 
+       cmd_index.inc:106    *ABS*:0000000000000051 SPIRD_IDX
        cmd_index.inc:107    *ABS*:0000000000000052 SPIEN_IDX
        cmd_index.inc:108    *ABS*:0000000000000053 SPISEL_IDX
        cmd_index.inc:109    *ABS*:0000000000000054 SPIWR_IDX
@@ -1765,10 +1767,10 @@ DEFINED SYMBOLS
          stm32-tbi.s:486    .text:0000000000000296 lock
          stm32-tbi.s:505    .text:00000000000002a8 wait_busy
          stm32-tbi.s:527    .text:00000000000002c0 hword_write
-         stm32-tbi.s:541    .text:00000000000002f4 write_error
 ARM GAS  stm32-tbi.s 			page 31
 
 
+         stm32-tbi.s:541    .text:00000000000002f4 write_error
          stm32-tbi.s:542    .text:00000000000002f4 $d
          stm32-tbi.s:543    .text:0000000000000302 $t
          stm32-tbi.s:558    .text:0000000000000304 flash_store
@@ -1786,6 +1788,7 @@ UNDEFINED SYMBOLS
 _mstack
 uart_puts
 cold_start
+tbi_test
 readln
 _tib
 cmove

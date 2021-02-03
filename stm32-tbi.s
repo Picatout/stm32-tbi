@@ -222,7 +222,7 @@ user_reboot_msg:
     bl	init_devices	 	/* RCC, GPIOs */
     bl  uart_init
     bl  cold_start  /* initialize BASIC SYSTEM */ 
-    bl  test 
+    bl  tbi_test 
     b .  
 
     _FUNC test

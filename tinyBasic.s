@@ -1435,12 +1435,47 @@ pad: .word _pad
     none 
   output:
     r0   token attribute 
-    r#   token value 
+    r1   token value 
   use:
+    T1   sign 
+    T2   exit token attribute 
 ***********************************/
     _FUNC factor 
-
+    push {T1,T2}
+    eor T2,T2 // TK_NONE 
+    _CALL next_token 
+    mov T1,#1 // default sign +  
+    and r0,#TK_GRP_MASK 
+    cmp r0,#TK_GRP_ADD
+    bne 1f 
+    mov T1,#-1 
+    _CALL next_token 
+1:  cmp r0,#TK_INTGR 
+    beq 8f 
+    cmp r0,#TK_ARRAY 
+    bne 3f 
+    _CALL get_array_element
+    b 8f 
+3:  cmp r0,#TK_VAR 
+    bne 4f 
+    ldr r0,[UPP,#VARS]
+    lsl r1,#2 
+    add r0,r1 
+    ldr [r1,r0]
+    b 8f 
+4:  cmp r0,#TK_IFUNC 
+    beq 5f 
+    cmp r0,#TK_CFUNC 
+    bne 6f 
+5:  lsl r1,#2 
+    ldr r0,=fn_table
+    ldr r1,[r0,r1]    
+6:  
+8:  mul r1,T1 
+    mov r0,T2 
+    pop {T1,T2}   
     _RET 
+
 
 /*****************************************
     term parser 
@@ -1448,9 +1483,46 @@ pad: .word _pad
     output:
       r0  	token attribute 
       r1		integer
+    use:
+      r2    first operand 
+      T1    operator 
+      T2    exit token attribute 
 ******************************************/
      _FUNC term 
-
+    push {r2,T1,T2}
+    mov T2,#TK_NONE 
+    _CALL factor  
+    cmp r0,#TK_INTGR
+    bne 8f
+    mov T2,r0  // exit attribute 
+    mov r2,r1 // first operand   
+    _CALL next_token
+    mov T1,r0   
+    and r0,#TK_GRP_MASK 
+    cmp r0,#TK_GRP_MULT
+    bne 8f  
+    _CALL factor  
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    cmp T1,#TK_MULT
+    bne 2f 
+multiplication:
+    mul r2,r1
+    b 9f 
+2:  cmp T1,#TK_DIV 
+    bne modulo
+division:
+    sdiv r2,r2,r1
+    b 9f  
+modulo:
+    mov r0,r2 
+    sdiv r2,r2,r1 
+    mul  r2,r1 
+    sub  r2,r0,r2 
+8:  _UNGET_TOKEN
+9:  mov r1,r2 
+    mov r0,T2 
+    pop {r2,T1,T2}
     _RET 
 
 /*****************************************
@@ -1459,11 +1531,40 @@ pad: .word _pad
     result range {-32768..32767}
     output:
       r0    token attribute 
-      r1 	  integer   
+      r1 	  integer
+    use:
+      r2  left operand 
+      T1  operator 
+      T2  exit token attribute
 ******************************************/
     _FUNC expression 
-
+    push {r2,t1,t2}
+    mov T2,#TK_NONE
+    eor r2,r2 // zero 
+    _CALL term 
+    cmp r0,#TK_INTGR  
+    bne 8f 
+    mov r2,r1 // first operand   
+1:  _CALL next_token 
+    mov T1,r0 // token attribute 
+    and r0,#TK_GRP_MASK 
+    cmp r0,#TK_GRP_ADD 
+    bne 8f 
+3:  _CALL term 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    cmp T1,#TK_PLUS 
+    beq 4f 
+    sub r1,r2,r1 // N1-N2  
+    b 1b 
+4:  add r1,r2,r1 // N1+N2
+    b 1b
+8:  _UNGET_TOKEN 
+9:  mov r0,T2 
+    mov r1,r2 
+    pop {r2,t1,t2}
     _RET 
+
 
 /**********************************************
     relation parser 
@@ -1474,32 +1575,28 @@ pad: .word _pad
         r0	TK_INTGR  
         r1	integer 
     use:
-        r0,r1,r2,T1  
+        r2   first operand 
+        T1   relop   
 **********************************************/
     _FUNC relation 
     push {r2,T1}
     _CALL expression 
     cmp r0,#TK_INTGR 
     bne syntax_error 
-    _PUSH r1  // N1 
+    mov r2,r1  // first operand  
     _CALL next_token 
-    and r2,r0,#TK_GRP_MASK 
-    cmp r2,#TK_GRP_RELOP 
-    beq 2f 
-    _UNGET_TOKEN 
-    _POP r1 
-    b 9f
-2:  and r0,#7 
-    _PUSH r0 // relop 
+    mov T1,r0  // relop  
+    and r0,#TK_GRP_MASK 
+    cmp r0,#TK_GRP_RELOP 
+    bne 8f  // single operand 
     _CALL expression 
     cmp r0,#TK_INTGR 
     bne syntax_error 
-    _POP r0 // relop  r1=N2 
-    _POP r2 // N1 
-    subs r2,r1 
+    cmp r2,r1 // compare operands  
     mov r1,#-1 
-    ldr T1,=relop_jmp
-    tbb [T1,r0]    
+    ldr r2,=relop_jmp
+    and T1,#7 // {1..6}
+    tbb [r2,T1]    
 rel_idx0:
 rel_eq:
     beq 9f 
@@ -1519,15 +1616,18 @@ rel_ge:
 rel_diff:
     bne 9f 
 rel_false:    
-    eor r1,r1  // false 
-9:  mov r0,#TK_INTGR 
+    eor r1,r1  // false
+    b 9f  
+8:  _UNGET_TOKEN 
+    mov r1,r2    
+9:  mov r0,#TK_INTGR
     pop {r2,T1}
     _RET 
 
 
 relop_jmp: 
   .byte 0 
-  .byte (rel_gt-rel_idx0)/2, // > 
+  .byte (rel_gt-rel_idx0)/2 // > 
   .byte 0 // =
   .byte (rel_ge-rel_idx0)/2 // >= 
   .byte (rel_lt-rel_idx0)/2 // <
@@ -1539,14 +1639,51 @@ relop_jmp:
     get_array_element 
     return index of array element 
   input:
-    none 
+    r1   index  
   output:
-    r0   address of element 
-  use:
-
+    r0   TK_INTGR
+    r1   value  
 ************************************/
     _FUNC get_array_element 
+    ldr r0,[UPP,#ARRAY_ADR]
+    lsl r1,#2 
+    sub r0,r1 
+    ldr r1,[r0]
+    mov r0,#TK_INTGR 
+    _RET 
 
+/***********************************
+   get_var 
+   get variable value 
+  input:
+     r1    variable index {0..25}
+  output:
+     r0    TK_INTGR
+     r1    value 
+**********************************/
+    _FUNC get_var 
+    ldr r0,[UPP,#VARS]
+    lsl r1,#2 
+    ldr r1,[r0,r1]
+    _RET 
+
+/*********************************
+    set_var 
+    set variable value 
+  input:
+     r0    variable index {0..25}
+     r1    new value 
+  output:
+    none 
+  use:
+    r2   vars pointer 
+*********************************/
+    _FUNC set_var 
+    push {r2}
+    ldr r2,[UPP,#VARS]
+    lsl r0,#2
+    str r1,[r2,r0]
+    pop {r2}
     _RET 
 
 /******************************
@@ -1580,6 +1717,7 @@ uzero:
   .word 0 // RX_TAIL
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
   .space VARS_SIZE,0 // VARS
+  .word _pad - 4  // ARRAY_ADR 
   .space 4, 0 // padding 
 ulast:
 
@@ -1726,6 +1864,16 @@ fn_table:
 **********************************/
 
     .section .text.basic , "ax", %progbits 
+
+
+//************ test code  *****************
+    _GBL_FUNC tbi_test 
+
+
+    _RET 
+
+//************ end test code **************
+
 
 /*******************************
   BASIC:  ABS expr 
