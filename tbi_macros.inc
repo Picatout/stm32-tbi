@@ -231,6 +231,11 @@
   stmdb DP!,{\reg}
   .endm 
 
+  .macro _UNGET_TOKEN 
+  ldr IN,[UPP,#IN_SAVED]
+  ldr BPTR,[UPP,#BASICPTR] 
+  .endm 
+
  // create a text data 
  .macro _TEXT label,text
  \label: .asciz "\text"

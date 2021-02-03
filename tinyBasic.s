@@ -574,7 +574,7 @@ token_ofs:
     T1   *buffer+
     T2   digit count 
 *****************************/
-    _GBL_FUNC parse_int 
+    _FUNC parse_int 
     push {r2,T1,T2}
     mov T1,r0 // *buffer 
     eor T2,T2 // digit count 
@@ -922,7 +922,7 @@ escaped: .asciz "abtnvfr"
     r1    dictionary link
     r2    tmp 
 **********************************/
-    _GBL_FUNC cmd_name
+    _FUNC cmd_name
     push {r1,r2}
     ldr r1,=kword_dict  
 1:  ldrb r2,[r1]
@@ -1008,42 +1008,6 @@ tk_id: .asciz "last token id: "
     .section  .text , "ax", %progbits 
 
 /*********************************
-     arg_list 
-     extract command arguments
-     and push them on parameter stack 
-    input:
-       none 
-    output:
-       r0  arguments count found
-       args on dstack in order left to right 
-    use:
-       T1   arguments counter  
-********************************/
-     _FUNC arg_list 
-     push {T1}
-
-     pop {T1}      
-     _RET 
-
-/************************************
-    func_args 
-    get and stack function parameters
-  input:
-    none 
-  output:
-    r0    parameter count 
-  use:
-
-************************************/
-    _FUNC func_args 
-
-  
-    _RET 
-
-
-
-
-/*********************************
    BASIC: BTGL adr, mask   
    toggle bits [adr]=[adr]^mask  
    input:
@@ -1058,8 +1022,6 @@ tk_id: .asciz "last token id: "
     _FUNC BTGL 
 
     _RET 
-
-
 
 
 //---------------------------------
@@ -1094,6 +1056,45 @@ tk_id: .asciz "last token id: "
 9: add sp,#8  // drop pushed r0,r1
    pop {r2}
    _RET 
+
+/**************************
+    INTERPRETER 
+*************************/
+
+/*********************************
+   cold_start 
+   initialize BASIC interpreter 
+   input:
+     none 
+   output:
+    none 
+   use:
+     r0,r1,r2,r3 
+*********************************/
+    _GBL_FUNC cold_start 
+    push {r0,r1,r2,r3}
+// initialise parameters stack
+   ldr DP,dstack_empty     
+//copy system variables to ram 
+    _MOV32 UPP,RAM_ADR 
+    ldr r0,src_addr 
+    ldr r1,dest_addr
+    ldr r1,[r1] 
+    add UPP,r1 // system variables base address   
+    mov r1,UPP 
+    mov r2,#ulast-uzero
+    _CALL cmove  
+    _CALL prt_version 
+    pop {r0,r1,r2,r3}
+    _RET
+    _CALL warm_init 
+    b cmd_line   
+src_addr:
+  .word uzero
+dest_addr:
+  .word vectors_size
+dstack_empty:
+   .word _dstack 
 
 /************************************
     print firmware version 
@@ -1134,41 +1135,6 @@ version:
     .byte 0x10 
     .p2align 2 
 
-
-/*********************************
-   cold_start 
-   initialize BASIC interpreter 
-   input:
-     none 
-   output:
-    none 
-   use:
-     r0,r1,r2,r3 
-*********************************/
-    _GBL_FUNC cold_start 
-    push {r0,r1,r2,r3}
-// initialise parameters stack
-   ldr DP,dstack_empty     
-//copy system variables to ram 
-    _MOV32 UPP,RAM_ADR 
-    ldr r0,src_addr 
-    ldr r1,dest_addr
-    ldr r1,[r1] 
-    add UPP,r1 // system variables base address   
-    mov r1,UPP 
-    mov r2,#ulast-uzero
-    _CALL cmove  
-    _CALL prt_version 
-    pop {r0,r1,r2,r3}
-    _RET
-    _CALL warm_init 
-    b cmd_line   
-src_addr:
-  .word uzero
-dest_addr:
-  .word vectors_size
-dstack_empty:
-   .word _dstack 
 
 /*****************************
     clear_vars 
@@ -1230,6 +1196,23 @@ warm_init:
 	mov r0,#10 // default base decimal 
 	str r0,[UPP,#BASE]
   _RET  
+
+/**********************************
+    warm_start 
+    start BASIC interpreter without 
+    reset variables and code space 
+  input:
+    none 
+  output:
+    none 
+  use:
+
+**********************************/
+    _FUNC warm_start 
+// initialise parameters stack
+   ldr DP,dstack_empty     
+
+    b warm_start 
 
 
 /**********************************
@@ -1319,6 +1302,7 @@ interp_loop:
   b 9f  
 0: 
   str IN,[UPP,#IN_SAVED]
+  str BPTR,[UPP,#BASICPTR]
   ldrb r0,[BPTR,IN] // token attribute 
   and r0,#0x3f // limit mask 
   add T1,#1
@@ -1373,22 +1357,183 @@ tok_jmp: // token id  tbb offset
 tib: .word _tib 
 pad: .word _pad 
 
-/**********************************
-    warm_start 
-    start BASIC interpreter without 
-    reset variables and code space 
+/*********************************
+    expect 
+    check if next token is of 
+    expected type. If not 
+    call syntax_error  
+  input:
+      r0   token attribute
+  output:
+      r0  token attribute 
+      r1  token value
+  use:
+      T1   
+**********************************/
+    _FUNC expect 
+    push {T1}
+    mov T1,r0 
+    _CALL next_token 
+    cmp r0,T1  
+    bne syntax_error 
+    pop {T1}
+    _RET 
+
+/***********************************
+    func_args 
+    get function arguments list 
   input:
     none 
   output:
-    none 
+    r0    arg. count 
   use:
 
-**********************************/
-    _FUNC warm_start 
-// initialise parameters stack
-   ldr DP,dstack_empty     
+************************************/
+    _FUNC func_args 
+    mov r0,#TK_LPAREN 
+    _CALL expect 
+    _CALL arg_list 
+    push {r0}
+    mov r0,#TK_RPAREN 
+    _CALL expect 
+    pop {r0}
+    _RET 
 
-    b warm_start 
+/**********************************
+    arg_list 
+    get arguments list on dstack 
+  input:
+    none 
+  output:
+    r0    arg count
+  use:
+    T1    tmp count  
+***********************************/
+    _FUNC arg_list 
+    push {T1}
+1:  _CALL relation 
+    cmp R0,#TK_NONE 
+    beq 9f 
+    cmp r0,#TK_INTGR
+    bne 9f 
+    _PUSH r1 
+    add T1,#1 
+    _CALL next_token 
+    cmp r0,#TK_COMMA 
+    beq 1b 
+    _UNGET_TOKEN 
+9:  mov r0,T1 
+    pop {T1}
+    _RET 
+
+/***********************************
+ factor parser 
+ factor ::= ['+'|'-'|e]  var | @ |
+			 integer | function |
+			 '('relation')' 
+  input: 
+    none 
+  output:
+    r0   token attribute 
+    r#   token value 
+  use:
+***********************************/
+    _FUNC factor 
+
+    _RET 
+
+/*****************************************
+    term parser 
+    term ::= factor [['*'|'/'|'%'] factor]* 
+    output:
+      r0  	token attribute 
+      r1		integer
+******************************************/
+     _FUNC term 
+
+    _RET 
+
+/*****************************************
+    expression parser 
+    expression ::= term [['+'|'-'] term]*
+    result range {-32768..32767}
+    output:
+      r0    token attribute 
+      r1 	  integer   
+******************************************/
+    _FUNC expression 
+
+    _RET 
+
+/**********************************************
+    relation parser 
+    rel ::= expr1 rel_op expr2
+    rel_op ::=  '=','<','>','>=','<=','<>','><'
+    relation return  integer , zero is false 
+    output:
+        r0	TK_INTGR  
+        r1	integer 
+    use:
+        r0,r1,r2,T1  
+**********************************************/
+    _FUNC relation 
+    push {r2,T1}
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    _PUSH r1  // N1 
+    _CALL next_token 
+    and r2,r0,#TK_GRP_MASK 
+    cmp r2,#TK_GRP_RELOP 
+    beq 2f 
+    _UNGET_TOKEN 
+    _POP r1 
+    b 9f
+2:  and r0,#7 
+    _PUSH r0 // relop 
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    _POP r0 // relop  r1=N2 
+    _POP r2 // N1 
+    subs r2,r1 
+    mov r1,#-1 
+    ldr T1,=relop_jmp
+    tbb [T1,r0]    
+rel_idx0:
+rel_eq:
+    beq 9f 
+    b rel_false
+rel_lt: 
+    blt 9f   
+    b rel_false 
+rel_le:
+    ble 9f  
+    b rel_false 
+rel_gt:
+    bgt 9f  
+    b rel_false  
+rel_ge:
+    bge 9f  
+    b rel_false  
+rel_diff:
+    bne 9f 
+rel_false:    
+    eor r1,r1  // false 
+9:  mov r0,#TK_INTGR 
+    pop {r2,T1}
+    _RET 
+
+
+relop_jmp: 
+  .byte 0 
+  .byte (rel_gt-rel_idx0)/2, // > 
+  .byte 0 // =
+  .byte (rel_ge-rel_idx0)/2 // >= 
+  .byte (rel_lt-rel_idx0)/2 // <
+  .byte (rel_diff-rel_idx0)/2 // <>
+  .byte (rel_le-rel_idx0)/2  // <=
+
 
 /***********************************
     get_array_element 
@@ -1404,9 +1549,9 @@ pad: .word _pad
 
     _RET 
 
-    _FUNC relation 
-
-    _RET 
+/******************************
+    CONSTANTS data
+******************************/
 
   .section .rodata 
 
@@ -1556,6 +1701,8 @@ kword_dict: // first name field
   .asciz "ABS" 
   .p2align 2 
 
+    .section .rodata.fn_tabld 
+
 //comands and fonctions address table 	
 fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
@@ -1573,9 +1720,12 @@ fn_table:
 	.word wait,words,write,bit_xor,transmit,receive // 96..103 
 	.word 0 
 
+
 /**********************************
     BASIC commands and functions 
 **********************************/
+
+    .section .text.basic , "ax", %progbits 
 
 /*******************************
   BASIC:  ABS expr 

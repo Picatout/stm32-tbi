@@ -258,17 +258,10 @@ user_reboot_msg:
     ldr r0,tib_addr   
     mov r1,#80
     _CALL readln
-    _CALL parse_int  
-    bne 3f
-    ldr r0,tib_addr 
 2:  _CALL uart_puts 
     mov r0,#CR 
     _CALL uart_putc 
     b 1b
-3:  _CALL cmd_name
-    ands r0,r0 
-    beq 1b   
-    b 2b         
     _RET 
   tib_addr: 
     .word _tib
