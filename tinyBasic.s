@@ -1653,6 +1653,26 @@ relop_jmp:
     _RET 
 
 /***********************************
+    set_array_element 
+    set value of array element 
+  input:
+    r0   index 
+    r1   new value 
+  output:
+    none
+  use:
+    r2    array pointer 
+**********************************/
+    _FUNC set_array_element 
+    push {r2}
+    ldr r2,[UPP,#ARRAY_ADR]
+    lsl r0,#2 
+    sub r2,r0 
+    str r1,[r2]
+    pop {r2}
+    _RET 
+
+/***********************************
    get_var 
    get variable value 
   input:
@@ -1665,6 +1685,7 @@ relop_jmp:
     ldr r0,[UPP,#VARS]
     lsl r1,#2 
     ldr r1,[r0,r1]
+    ldr r0,#TK_INTGR
     _RET 
 
 /*********************************
