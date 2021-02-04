@@ -978,17 +978,17 @@ ARM GAS  terminal.s 			page 1
  398              	//   none
  399              	***********************************/
  400              	    _FUNC move_right
- 401 0288 00B5FFF7 		_CALL  send_escape
+ 401 0288 00B5FFF7 	    _CALL  send_escape
  401      BBFF5DF8 
  401      04EB
- 402 0292 00B5FFF7 		_CALL  send_parameter 
+ 402 0292 00B5FFF7 	    _CALL  send_parameter 
  402      C8FF5DF8 
  402      04EB
- 403 029c 4FF04300 		mov r0,#'C' 
- 404 02a0 00B5FFF7 		_CALL  uart_putc 
+ 403 029c 4FF04300 	    mov r0,#'C' 
+ 404 02a0 00B5FFF7 	    _CALL  uart_putc 
  404      FEFF5DF8 
  404      04EB
- 405 02aa 7047     		_RET 
+ 405 02aa 7047     	    _RET 
  406              	
  407              	/*********************************
  408              	// print n spaces on terminal
@@ -1000,17 +1000,17 @@ ARM GAS  terminal.s 			page 1
  414              	     T1    counter  
  415              	********************************/
  416              	    _GBL_FUNC spaces
- 417 02ac 4DF8048D 		push {T1}
+ 417 02ac 4DF8048D 		  push {T1}
  418 02b0 50B1     	    cbz r0,9f 
  419 02b2 8046     	    mov T1,r0 
  420 02b4 4FF02000 	1:	mov r0,#SPACE 
- 421 02b8 00B5FFF7 		_CALL  uart_putc 
+ 421 02b8 00B5FFF7 	    _CALL  uart_putc 
  421      FEFF5DF8 
  421      04EB
- 422 02c2 B8F10108 		subs T1,#1
- 423 02c6 F5D1     		bne 1b 
+ 422 02c2 B8F10108 	    subs T1,#1
+ 423 02c6 F5D1     	    bne 1b 
  424 02c8 5DF8048B 	9:  pop {T1}
- 425 02cc 7047     		_RET 
+ 425 02cc 7047     	  	_RET 
  426              	
  427              	
  428              	/*********************************

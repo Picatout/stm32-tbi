@@ -380,7 +380,8 @@ move_from_end: // move from high address toward low
       count    1 byte  
       tokens   variable length 
   input:
-    source text in tib  
+     r0   *text buffer 
+     r1   *text length   
   output:
     r0    0 stored | -1 immediate 
   use:
@@ -389,48 +390,55 @@ move_from_end: // move from high address toward low
     T2    pad
 ***********************************/
     _FUNC compile
-    push  {r2,r3,T1,T2}
-    ldr T1,tib 
-    ldr T2,pad 
+    mov T1, r0  // source text buffer 
+    str r1,[UPP,#COUNT] // save line length 
+    ldr T2,pad // tokens buffer
+    eor r3,r3 // source index  
     ldr r0,[UPP,#FLAGS]
     orr r0,#FCOMP
-    str r0,[UPP,#FLAGS]
-    eor r3,r3     
-    strh r3,[T2]    // line no 
-    strb r3,[T2,#2] // length 
-    _CALL comp_token 
-    cmp r0,#TK_INTGR
-    bne 1f 
+    str r0,[UPP,#FLAGS] // compiling flag 
+    eor r0,r0     
+    strh r0,[T2],#2   // line no 
+    strb r0,[T2],#1 // length 
+    str  r0,[UPP,#IN_SAVED]  // save index 
+    str  T1,[UPP,#BASICPTR] // save text line 
+    _CALL parse_int 
+    beq 2f 
+// this is a line number     
     cmp r1,#1 
     bpl 1f 
     mov r0,#ERR_BAD_VALUE 
-    str r3,[UPP,#IN_SAVED]
-    str T1,[UPP,#BASICPTR]
     b tb_error  
-1:  strh r1,[T2],#3 
-2:  cmp T2,T1 
+1:  // write line # to pad 
+    strh r1,[T2,#-3]
+    str r3,[UPP,#IN_SAVED]
+2:  // check for pad full 
+    cmp T2,T1
     blt 3f 
     mov r0,#ERR_BUF_FULL 
     b tb_error 
 3:  _CALL comp_token 
     cmp r0,#TK_NONE 
-    bne 2b 
-// compilation completed 
+    beq 4f 
+    str r3,[UPP,#IN_SAVED]
+    b 2b 
+4: // compilation completed 
     ldr r3,pad 
-    sub T2,r3 // line length 
-    strb T2,[r3,#2]
-    ldrh T2,[r3]
-    cmp T2,#0 
+    sub r0,T2,r3 // line length 
+    strb r0,[r3,#2]
+    str r0,[UPP,#COUNT] // lenght of tokens line 
+    ldrh r0,[r3] // line number 
+    cbz r0,8f  
     beq 8f 
 // insert line in text buffer 
     mov r0,r3 
     _CALL insert_line 
-    eor r0,r0 
+    eors r0,r0 
     b 9f 
-8:  str r3,[UPP,#BASICPTR]
+8:  mov BPTR,r3 // *token_list 
+    mov IN,#3 
     mov r0,#-1 
-9:  pop {r2,r3,T1,T2}
-    _RET 
+9:  _RET 
 
 /*********************************************
     compile next token from source 
@@ -453,44 +461,45 @@ move_from_end: // move from high address toward low
     _FUNC comp_token 
     push {r6}
     ldrb r0,[T1,r3]
-    beq token_exit  
+    ands r0,r0 
+    beq store_r0  // reached end of text  
     mov r0,#SPACE 
-    _CALL skip 
+    _CALL skip  // skip spaces 
     ldrb r0,[T1,r3]
-    cbnz r0,1f 
-    b token_exit
-1:  add r3,#1 
+    ands r0,r0 
+    beq store_r0  // reached end of text 
+    add r3,#1 
     _CALL upper 
     _CALL is_special
     ldr r6,=token_ofs
     tbh [r6,r1] 
 tok_idx0:     
-//  not in list 
-    b try_other 
+//  not special char.  
+    b try_number 
 // single char token with no value 
 single: 
-    mov r0,r1 
-    b token_exit 
+    ldr r6,=tok_single
+    ldrb r0,[r6,r1] 
+    b store_r0  
 lt:
-    mov r1,#TK_LT 
-    ldrb r0,[T1,r3]
-    cmp r0,#'>'
-    bne 1f
-    add r1,#1 
-    b 2f 
-gt: 
-    mov r1,#TK_GT 
-    ldrb r0,[T1,r3]
-    cmp r0,#'<'
-    bne 1f  
-    add r1,#1 
-    b 2f 
-1:  cmp r0,#'=' 
-    bne 3f   
-    add r1,#2
-2:  add r3,#1 
-3:  strb r1,[T2],#1
-    b token_exit 
+    mov r0,#TK_LT
+    b 1f 
+gt:
+    mov r0,#TK_GT 
+1: // check next char for '<'||'>'||'='
+    ldrb r1,[T1,r3]
+    cmp r1,#'<'
+    beq syntax_error 
+    cmp r1,#'>'
+    bne 2f
+    add r3,#1
+    add r0,#1 
+    b store_r0
+2:  cmp r1,#'=' 
+    bne token_exit  
+    add r3,#1
+    add r0,#2
+    b store_r0       
 bkslash:
     ldrb r1,[T1,r3]
     add r3,#1
@@ -501,123 +510,41 @@ prt_cmd:
     mov r1,#PRT_IDX 
     b token_exit 
 quote:
-   _CALL parse_quote
-   b token_exit
+    _CALL parse_quote
+    b token_exit
 tick: 
-   mov r0,T2 
-   add r1,T1,r3 
-   _CALL strlen 
-   mov r2,r0 
-   mov r0,T2 
-   push {r2} 
-   _CALL cmove 
-   pop {r2}
-   add r2,#1
-   add r3,r2 
-   add T2,r2 
-   mov r0,#TK_CMD 
-   mov r1,#REM_IDX 
-   b token_exit  
-try_other:
+// copy comment in pad 
     add r0,T1,r3 
-    sub r0,#1 
+    mov r1,T2 
+    _CALL strcpy 
+    ldr r3,[UPP,#COUNT]
+    mov r0,#TK_CMD 
+    mov r1,#REM_IDX 
+    b token_exit
+store_r0: 
+    strb r0,[T2],#1
+    b token_exit 
+try_number:
+    sub r3,#1
     _CALL parse_int  
-    beq 1f // not an int 
+    beq 1f 
+    strb r0,[T1],#1 
+    str r1,[T1],#4
+    b token_exit 
 1:  _CALL parse_keyword 
     cmp r1,#REM_IDX 
     beq tick  
 token_exit:
-  pop {r6}
-   _RET 
-
-
-char_list:
-  .asciz " ,@():#-+*/%=<>\\?'\""
-
-tok_single:
-  .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
-  .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
-  
-token_ofs:
-  .word  0 // not found
-  // TK_COMMA...TK_EQUAL , 13 
-  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
-  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
-  .word  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2     
-  .word  (single-tok_idx0)/2 // TK_EQUAL 
-  // '<'|'>'
-  .word  (lt-tok_idx0)/2,(gt-tok_idx0)/2
-  // '\'
-  .word  (bkslash-tok_idx0)/2
-  // '?' 
-  .word  (prt_cmd-tok_idx0)/2 
-  // "'" tick 
-  .word  (tick-tok_idx0)/2 
-  // '"' quote 
-  .word (quote-tok_idx0)/2
-
-  
-/****************************
-    parse_int 
-    parse an integer from text
-    if not valid integer 
-    r1 return *buffer else 
-    *buffer is incremented after integer 
-  input:
-    r0   *buffer 
-  output:
-    r0   integer
-    r1   *buffer+||0   
-  use:
-    r0   char 
-    r2   int  
-    T1   *buffer+
-    T2   digit count 
-*****************************/
-    _FUNC parse_int 
-    push {r2,T1,T2}
-    mov T1,r0 // *buffer 
-    eor T2,T2 // digit count 
-    eor r2,r2 // int 
-    mov r1,#10 // default base 
-    ldrb r0,[T1],#1
-    _CALL upper 
-    cmp r0,'$' 
-    bne 2f 
-    mov r1,#16 // hexadecimal number 
-    b 3f  
-2:  cmp r0,#'&' 
-    bne 4f
-    mov r1,#2 //binary number  
-3:  ldrb r0,[T1],#1
-4:  _CALL upper 
-    cmp r0,#'A'
-    bmi 5f
-    subs r0,#7  
-5:  subs r0,#'0' 
-    bmi 6f // not digit   
-    cmp r0,r1 
-    bpl 6f // not digit 
-    mul r2,r1 
-    add r2,r0
-    add T2,#1  
-    ldrb r0,[T1],#1
-    b 4b
-6:  mov r0,r2 
-    subs r1,T1,#1 
-    cmp T2,#0
-    bne 9f   
-    eors r1,r1
-9:  pop {r2,T1,T2}
+    pop {r6}
     _RET 
 
-
 /****************************
-    is_other 
+    is_special  
     check for non alphanum
     input:
       r0    character to scan 
     output:
+      r0    character 
       r1    0 || index 
     use: 
       r2    scan index 
@@ -630,17 +557,99 @@ token_ofs:
 1:  ldrb r1,[r3,r2]
     cbz r1,9f 
     cmp r0,r1 
-    beq 8f 
+    beq 9f 
     add r2,#1 
     b 1b
-8:  mov r1,r2
-    cmp r1,#'<'
-    bpl 9f 
-    ldr r2,=tok_single 
-    ldr r1,[r2,r1]
 9:  pop {r2,r3}
     _RET 
 
+char_list:
+  .asciz " ,@():#-+*/%=<>\\?'\""
+
+tok_single:
+  .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
+  .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
+
+token_ofs:
+  .hword  0 // not found
+  // TK_COMMA...TK_EQUAL , 13 
+  .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
+  .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
+  .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2     
+  .hword  (single-tok_idx0)/2 // TK_EQUAL 
+  // '<','>'
+  .hword  (lt-tok_idx0)/2,(gt-tok_idx0)/2
+  // '\'
+  .hword  (bkslash-tok_idx0)/2
+  // '?' 
+  .hword  (prt_cmd-tok_idx0)/2 
+  // "'"  
+  .hword  (tick-tok_idx0)/2 
+  // '"' quote 
+  .hword (quote-tok_idx0)/2
+
+  
+/****************************
+    parse_int 
+    parse an integer from text
+    if not valid integer 
+    r1 return *buffer else 
+    *buffer is incremented after integer 
+  input:
+    r0   *buffer 
+  output:
+    r0   TK_INTGR|TK_NONE
+    r1   int|0   
+  use:
+    r0   char 
+    r1   save r3 
+    r2   int
+    r6   base 
+    r7   digit count 
+    r3   tib index   
+    T1   *tib 
+    T2   *pad  
+*****************************/
+    _FUNC parse_int 
+    push {r6,r7}
+    eor r2,r2 // int 
+    mov r1,r3 
+    mov r6,#10 // default base 
+    eor r7,r7 // digit count 
+    ldrb r0,[T1,r3]
+    add r3,#1 
+    _CALL upper 
+    cmp r0,'$' 
+    bne 2f 
+    mov r6,#16 // hexadecimal number 
+    b 3f  
+2:  cmp r0,#'&' 
+    bne 4f
+    mov r6,#2 //binary number  
+3:  ldrb r0,[T1,r3]
+    add r3,#1
+4:  _CALL upper 
+    cmp r0,#'A'
+    bmi 5f
+    subs r0,#7  
+5:  subs r0,#'0' 
+    bmi 6f // not digit   
+    cmp r0,r6 
+    bpl 6f // not digit 
+    mul r2,r6 
+    add r2,r0
+    add r7,#1  
+    b 3b
+6:  cbz r7, 7f 
+    mov r0,#TK_INTGR  
+    mov r1,r2 
+    b 9f 
+7: // not a number 
+    mov r3,r1 // restore r3 
+    eor r0,r0 // TK_NONE 
+9:  ands r0,r0 // to set zero flag 
+    pop {r6,r7}
+    _RET 
 
 /*********************************************
     parse_quote 
@@ -885,7 +894,6 @@ escaped: .asciz "abtnvfr"
 *****************************************/
     _FUNC parse_keyword 
     push {T2}
-    strb r0,[T2],#1
 1:  ldrb r0,[T1,r3]
     add r3,#1
     _CALL is_alnum
@@ -972,8 +980,21 @@ escaped: .asciz "abtnvfr"
     lsl r0,#2 
     ldr r0,[r1,r0]
     _CALL uart_puts
+    ldr r0,[UPP,#FLAGS]
+    tst r0,#FCOMP
+    beq compile_error
+interpret_error:
+
+
+compile_error:
+    ldr r0,[UPP,#BASICPTR]
+    _CALL uart_puts 
+    ldr r0,[UPP,#IN_SAVED]
+    _CALL spaces 
+    mov r0,#'^' 
+    _CALL uart_putc  
     b  warm_start  
-    _RET 
+    
 err_msg:
 	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
 	.word err_run_only,err_cmd_only,err_duplicate,err_not_file,err_bad_value
@@ -1238,31 +1259,26 @@ ready: .asciz "READY"
     ands r1,r1 // empty line 
     beq 1b 
     _CALL compile // tokenize BASIC text
-    ands r0,r0 
     beq 1b  // tokens stored in text area 
 // interpret tokenized line 
 interpreter:
-   eor IN,#3 
-   ldr BPTR,[UPP,#BASICPTR]
    ldr r0,[UPP,#COUNT]
    cmp IN,r0  
    bmi interp_loop
 // end of line reached     
 next_line:
   ldr r0,[UPP,#FLAGS]
-  tst r0,#(1<<FRUN)
+  tst r0,#FRUN 
   beq cmd_line 
-  ldr IN,[UPP,#IN_SAVED]
+  ldr r0,[UPP,#COUNT]
   ldr BPTR,[UPP,#BASICPTR]
-  add r0,IN,BPTR  
-  ldr r1,[UPP,#TXTEND]
-  cmp r0,r1 
+  add BPTR,r0  
+  ldr r0,[UPP,#TXTEND]
+  cmp BPTR,r0 
   bmi 1f 
-  _CALL warm_start 
-  b cmd_line
+  b warm_start 
 1:
   mov IN,#3 
-  str IN,[UPP,#IN_SAVED] 
 interp_loop:
   _CALL next_token 
   cmp r0,#TK_NONE 

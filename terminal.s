@@ -398,11 +398,11 @@ pad: .word _pad
 //   none
 ***********************************/
     _FUNC move_right
-	_CALL  send_escape
-	_CALL  send_parameter 
-	mov r0,#'C' 
-	_CALL  uart_putc 
-	_RET 
+    _CALL  send_escape
+    _CALL  send_parameter 
+    mov r0,#'C' 
+    _CALL  uart_putc 
+    _RET 
 
 /*********************************
 // print n spaces on terminal
@@ -414,15 +414,15 @@ pad: .word _pad
      T1    counter  
 ********************************/
     _GBL_FUNC spaces
-	push {T1}
+	  push {T1}
     cbz r0,9f 
     mov T1,r0 
 1:	mov r0,#SPACE 
-	_CALL  uart_putc 
-	subs T1,#1
-	bne 1b 
+    _CALL  uart_putc 
+    subs T1,#1
+    bne 1b 
 9:  pop {T1}
-	_RET 
+  	_RET 
 
 
 /*********************************
