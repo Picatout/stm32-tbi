@@ -333,214 +333,215 @@ ARM GAS  stm32-tbi.s 			page 1
   46              	  .equ TK_COLON,1      // command separator ':' 
   47              	  .equ TK_QSTR,2     // quoted string  
   48              	  .equ TK_CHAR,3       // ASCII character 
-  49              	  .equ TK_VAR,5      // variable index 
-  50              	  .equ TK_ARRAY,6     // array variable '@' 
-  51              	  .equ TK_LPAREN,7     // left parenthesis '('
-  52              	  .equ TK_RPAREN,8     // right parenthesis ')'
-  53              	  .equ TK_COMMA,9     // item separator ',' 
-  54              	  .equ TK_SHARP,0xa     // print colon width '#' 
-  55              	  .equ TK_CMD,0xb      // BASIC command   
-  56              	  .equ TK_IFUNC,0xc    // BASIC integer function
-  57              	  .equ TK_CFUNC,0xd    // BASIC character function
-  58              	  .equ TK_CONST,0xe    // BASIC constant 
-  59              	  .equ TK_INTGR,0xf    // 32 bits integer 
-  60              	  .equ TK_PLUS,0x10    // addition operator '+'
-  61              	  .equ TK_MINUS,0x11   // subtraction operator '-'
-  62              	  .equ TK_MULT,0x20    // multiplication operator '*'
-  63              	  .equ TK_DIV,0x21     // division operator '/'
-  64              	  .equ TK_MOD,0x22     // modulo operator '%'
-  65              	
-  66              	// don't change these token values 
-  67              	// values chosen to be used as a mask.
-  68              	// bit 7   1 for dictionary words else 0 
-  69              	// bits 6  always 0 
-  70              	// bits 5:4 identify group 
-  71              	// bits 3:0 token identifier inside group  
-  72              	  .equ TK_GT,0x31      // relation operator '>'
-  73              	  .equ TK_EQUAL,0x32   // assignment or relation operator '='
+  49              	  .equ TK_VAR,4      // variable index 
+  50              	  .equ TK_ARRAY,5     // array variable '@' 
+  51              	  .equ TK_LPAREN,6     // left parenthesis '('
+  52              	  .equ TK_RPAREN,7     // right parenthesis ')'
+  53              	  .equ TK_COMMA,8     // item separator ',' 
+  54              	  .equ TK_SHARP,9     // print colon width '#' 
+  55              	  .equ TK_CMD,0xa      // BASIC command   
+  56              	  .equ TK_IFUNC,0xb    // BASIC integer function
+  57              	  .equ TK_CFUNC,0xc    // BASIC character function
+  58              	  .equ TK_CONST,0xd    // BASIC constant 
+  59              	  .equ TK_INTGR,0xe    // 32 bits integer 
+  60              	  .equ TK_BAD,0xf      // bad value 
+  61              	  .equ TK_PLUS,0x10    // addition operator '+'
+  62              	  .equ TK_MINUS,0x11   // subtraction operator '-'
+  63              	  .equ TK_MULT,0x20    // multiplication operator '*'
+  64              	  .equ TK_DIV,0x21     // division operator '/'
+  65              	  .equ TK_MOD,0x22     // modulo operator '%'
+  66              	
+  67              	// don't change these token values 
+  68              	// values chosen to be used as a mask.
+  69              	// bit 7   1 for dictionary words else 0 
+  70              	// bits 6  always 0 
+  71              	// bits 5:4 identify group 
+  72              	// bits 3:0 token identifier inside group  
+  73              	  .equ TK_GT,0x31      // relation operator '>'
 ARM GAS  stm32-tbi.s 			page 7
 
 
-  74              	  .equ TK_GE,0x33      // relation operator '>='
-  75              	  .equ TK_LT,0x34      // relation operator '<'
-  76              	  .equ TK_LE,0x36      // relation operator '<='
-  77              	  .equ TK_NE,0x35      // relation operator '<>' not equal 
-  78              	// token groups 
-  79              	  .equ TK_GRP_MASK,0x30 // groups bits selector 
-  80              	  .equ TK_GRP_MISC,0x00 // miscelinous group 
-  81              	  .equ TK_GRP_ADD,0x10  // additive operators
-  82              	  .equ TK_GRP_MULT,0x20 // multiplicative operators
-  83              	  .equ TK_GRP_RELOP,0x30 //relational operators. 
-  84              	  .equ CMD_END,2 
-  85              	
-  86              	//--------------------------------------
-  87              	//   error codes 
-  88              	//--------------------------------------
-  89              	  .equ ERR_NONE,0
-  90              	  .equ ERR_MEM_FULL,1 
-  91              	  .equ ERR_SYNTAX,2
-  92              	  .equ ERR_MATH_OVF,3
-  93              	  .equ ERR_DIV0,4 
-  94              	  .equ ERR_NO_LINE,5
-  95              	  .equ ERR_RUN_ONLY,6
-  96              	  .equ ERR_CMD_ONLY,7
-  97              	  .equ ERR_DUPLICATE,8
-  98              	  .equ ERR_NOT_FILE,9
-  99              	  .equ ERR_BAD_VALUE,10
- 100              	  .equ ERR_NO_ACCESS,11
- 101              	  .equ ERR_NO_DATA,12 
- 102              	  .equ ERR_NO_PROG,13
- 103              	  .equ ERR_NO_FSPACE,14
- 104              	  .equ ERR_BUF_FULL,15
- 105              	
- 106              	//--------------------------------------
- 107              	//   assembler flags 
- 108              	//-------------------------------------
- 109              	.equ MATH_OVF,0 // if 1 then stop on math overflow 
- 110              	
- 111              	.equ CELL_SIZE,4 
- 112              	
+  74              	  .equ TK_EQUAL,0x32   // assignment or relation operator '='
+  75              	  .equ TK_GE,0x33      // relation operator '>='
+  76              	  .equ TK_LT,0x34      // relation operator '<'
+  77              	  .equ TK_LE,0x36      // relation operator '<='
+  78              	  .equ TK_NE,0x35      // relation operator '<>' not equal 
+  79              	// token groups 
+  80              	  .equ TK_GRP_MASK,0x30 // groups bits selector 
+  81              	  .equ TK_GRP_MISC,0x00 // miscelinous group 
+  82              	  .equ TK_GRP_ADD,0x10  // additive operators
+  83              	  .equ TK_GRP_MULT,0x20 // multiplicative operators
+  84              	  .equ TK_GRP_RELOP,0x30 //relational operators. 
+  85              	  .equ CMD_END,2 
+  86              	
+  87              	//--------------------------------------
+  88              	//   error codes 
+  89              	//--------------------------------------
+  90              	  .equ ERR_NONE,0
+  91              	  .equ ERR_MEM_FULL,1 
+  92              	  .equ ERR_SYNTAX,2
+  93              	  .equ ERR_MATH_OVF,3
+  94              	  .equ ERR_DIV0,4 
+  95              	  .equ ERR_NO_LINE,5
+  96              	  .equ ERR_RUN_ONLY,6
+  97              	  .equ ERR_CMD_ONLY,7
+  98              	  .equ ERR_DUPLICATE,8
+  99              	  .equ ERR_NOT_FILE,9
+ 100              	  .equ ERR_BAD_VALUE,10
+ 101              	  .equ ERR_NO_ACCESS,11
+ 102              	  .equ ERR_NO_DATA,12 
+ 103              	  .equ ERR_NO_PROG,13
+ 104              	  .equ ERR_NO_FSPACE,14
+ 105              	  .equ ERR_BUF_FULL,15
+ 106              	
+ 107              	//--------------------------------------
+ 108              	//   assembler flags 
+ 109              	//-------------------------------------
+ 110              	.equ MATH_OVF,0 // if 1 then stop on math overflow 
+ 111              	
+ 112              	.equ CELL_SIZE,4 
  113              	
- 114              	//-------------------------------
- 115              	//  macros used to help debugging
- 116              	//-------------------------------
- 117              	  .equ DEBUG,0
- 118              	
- 119              	    UPP .req r4  // base address system variables 
- 120              	    VADR .req r5  // address FOR loop variable 
- 121              	    LIMIT .req r6   // LOOP limit 
- 122              	    INCR  .req  r7  // LOOP increment 
- 123              	    T1  .req r8     // temporary register 
- 124              	    T2  .req r9     // temporary register 
- 125              	    IN  .req r10    //  index in text line or token list 
- 126              	    BPTR .req r11   //  buffer address or BASIC line address 
- 127              	    DP   .req r12   //  parameter stack pointer 
- 128              	
- 129              	/***************************
- 130              	  SYSTEM variables offset 
+ 114              	
+ 115              	//-------------------------------
+ 116              	//  macros used to help debugging
+ 117              	//-------------------------------
+ 118              	  .equ DEBUG,0
+ 119              	
+ 120              	    UPP .req r4  // base address system variables 
+ 121              	    VADR .req r5  // address FOR loop variable 
+ 122              	    LIMIT .req r6   // LOOP limit 
+ 123              	    INCR  .req  r7  // LOOP increment 
+ 124              	    T1  .req r8     // temporary register 
+ 125              	    T2  .req r9     // temporary register 
+ 126              	    IN  .req r10    //  index in text line or token list 
+ 127              	    BPTR .req r11   //  buffer address or BASIC line address 
+ 128              	    DP   .req r12   //  parameter stack pointer 
+ 129              	
+ 130              	/***************************
 ARM GAS  stm32-tbi.s 			page 8
 
 
- 131              	  from UPP  
- 132              	***************************/ 
- 133              	
- 134              	  .equ IN_SAVED,0 // set by get_token before parsing next token, used by unget_token
- 135              	  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
- 136              	  .equ BASICPTR,COUNT+4 // point to current BASIC line address.
- 137              	  .equ DATAPTR, BASICPTR+4 // point to DATA address
- 138              	  .equ DATA,DATAPTR+4 // index to next data item 
- 139              	  .equ DATALEN, DATA+4 // length of data line 
- 140              	  .equ BASE,DATALEN+4 // nemeric base used to print integer 
- 141              	  .equ TICKS,BASE+4 // milliseconds ticks counter (see Timer4UpdateHandler)
- 142              	  .equ TIMER,TICKS+4 //  milliseconds count down timer 
- 143              	  .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
- 144              	  .equ FSPTR,SEED+4 //  pointer used by file system
- 145              	  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
- 146              	  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
- 147              	  .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
- 148              	  .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
- 149              	  .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
- 150              	  .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
- 151              	  .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
- 152              	  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
- 153              	  .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
- 154              	  .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
- 155              	  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
- 156              	  .equ CELLL,4 // size of integer 
- 157              	  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
- 158              	  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
- 159              	  .equ ARRAY_ADR,FREE_RAM+4 // array address at bottom of pad  
- 160              	
- 161              	/* flags used by BASIC interpreter */ 
- 162              		.equ FRUN,(1<<0) // programm running
- 163              		.equ FTRAP,(1<<1) // inside trap handler 
- 164              		.equ FLOOP,(1<<2) // FOR loop in preparation 
- 165              		.equ FSLEEP,(1<<3) // in halt mode SLEEP 
- 166              		.equ FBREAK,(1<<4) // break point flag 
- 167              		.equ FCOMP,(1<<5)  // compiling flags 
- 168              		.equ FAUTORUN,(1<<6) // auto start program running 
- 169              	
- 170              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
- 171              	  
- 172              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
- 173              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
- 174              	
- 175              	/***********************************************
- 176              	*       MACROS
- 177              	***********************************************/
- 178              		.macro _CALL fn /* low level routine call */ 
- 179              	 	PUSH {LR}
- 180              		BL \fn  
- 181              	  POP {LR}
- 182              		.endm
- 183              		
- 184              		.macro	_RET /* return from subroutine */
- 185              		BX	LR
- 186              		.endm
- 187              	
+ 131              	  SYSTEM variables offset 
+ 132              	  from UPP  
+ 133              	***************************/ 
+ 134              	
+ 135              	  .equ IN_SAVED,0 // set by get_token before parsing next token, used by unget_token
+ 136              	  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
+ 137              	  .equ BASICPTR,COUNT+4 // point to current BASIC line address.
+ 138              	  .equ DATAPTR, BASICPTR+4 // point to DATA address
+ 139              	  .equ DATA,DATAPTR+4 // index to next data item 
+ 140              	  .equ DATALEN, DATA+4 // length of data line 
+ 141              	  .equ BASE,DATALEN+4 // nemeric base used to print integer 
+ 142              	  .equ TICKS,BASE+4 // milliseconds ticks counter (see Timer4UpdateHandler)
+ 143              	  .equ TIMER,TICKS+4 //  milliseconds count down timer 
+ 144              	  .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
+ 145              	  .equ FSPTR,SEED+4 //  pointer used by file system
+ 146              	  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
+ 147              	  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
+ 148              	  .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
+ 149              	  .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
+ 150              	  .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
+ 151              	  .equ FLAGS,ARRAY_SIZE+4 // various boolean flags
+ 152              	  .equ TAB_WIDTH,FLAGS+4 // print colon width (default 4)
+ 153              	  .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
+ 154              	  .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
+ 155              	  .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
+ 156              	  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
+ 157              	  .equ CELLL,4 // size of integer 
+ 158              	  .equ VARS_SIZE, CELLL*26 // space used by 26 BASIC variables (A-Z)
+ 159              	  .equ FREE_RAM,VARS+VARS_SIZE // basic programs start here 
+ 160              	  .equ ARRAY_ADR,FREE_RAM+4 // array address at bottom of pad  
+ 161              	
+ 162              	/* flags used by BASIC interpreter */ 
+ 163              		.equ FRUN,(1<<0) // programm running
+ 164              		.equ FTRAP,(1<<1) // inside trap handler 
+ 165              		.equ FLOOP,(1<<2) // FOR loop in preparation 
+ 166              		.equ FSLEEP,(1<<3) // in halt mode SLEEP 
+ 167              		.equ FBREAK,(1<<4) // break point flag 
+ 168              		.equ FCOMP,(1<<5)  // compiling flags 
+ 169              		.equ FAUTORUN,(1<<6) // auto start program running 
+ 170              	
+ 171              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
+ 172              	  
+ 173              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
+ 174              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+ 175              	
+ 176              	/***********************************************
+ 177              	*       MACROS
+ 178              	***********************************************/
+ 179              		.macro _CALL fn /* low level routine call */ 
+ 180              	 	PUSH {LR}
+ 181              		BL \fn  
+ 182              	  POP {LR}
+ 183              		.endm
+ 184              		
+ 185              		.macro	_RET /* return from subroutine */
+ 186              		BX	LR
+ 187              		.endm
 ARM GAS  stm32-tbi.s 			page 9
 
 
- 188              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
- 189              		MOV \REG, #\LITERAL&0xffff
- 190              		MOVT \REG, #\LITERAL>>16
- 191              		.endm
- 192              	
- 193              	// local function header 
- 194              	  .macro _FUNC label 
- 195              	  .p2align 2 
- 196              	  .type \label, %function  
- 197              	\label:
- 198              	  .endm 
- 199              	
- 200              	// global function header 
- 201              	  .macro _GBL_FUNC label 
- 202              	  .global \label 
- 203              	  _FUNC \label 
- 204              	  .endm 
- 205              	
+ 188              	
+ 189              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 190              		MOV \REG, #\LITERAL&0xffff
+ 191              		MOVT \REG, #\LITERAL>>16
+ 192              		.endm
+ 193              	
+ 194              	// local function header 
+ 195              	  .macro _FUNC label 
+ 196              	  .p2align 2 
+ 197              	  .type \label, %function  
+ 198              	\label:
+ 199              	  .endm 
+ 200              	
+ 201              	// global function header 
+ 202              	  .macro _GBL_FUNC label 
+ 203              	  .global \label 
+ 204              	  _FUNC \label 
+ 205              	  .endm 
  206              	
- 207              	/********************************
- 208              	    dictionary structure
- 209              	------------------------------
- 210              	 format:
- 211              	   link:    
- 212              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
- 213              	   cmd_name: 31 characters max 
- 214              	   cmd_index: 2 bytes 
- 215              	**********************************/
- 216              		.macro _dict_entry tok_type,name,cmd_idx 
- 217              	  .word LINK 
- 218              	  .word \cmd_idx 
- 219              		.word \tok_type  	
- 220              		.equ LINK,.
- 221              		.asciz "\name"
- 222              		.p2align 2 
- 223              		.endm 
- 224              	
- 225              	  // pop parameter in register 
- 226              	  .macro _POP  reg 
- 227              	  ldmia  DP!,{\reg}
- 228              	  .endm 
- 229              	
- 230              	  // push register on parameter stack 
- 231              	  .macro _PUSH reg 
- 232              	  stmdb DP!,{\reg}
- 233              	  .endm 
- 234              	
- 235              	  .macro _UNGET_TOKEN 
- 236              	  ldr IN,[UPP,#IN_SAVED]
- 237              	  ldr BPTR,[UPP,#BASICPTR] 
- 238              	  .endm 
- 239              	
- 240              	 // create a text data 
- 241              	 .macro _TEXT label,text
- 242              	 \label: .asciz "\text"
- 243              	 .p2align 2 
- 244              	 .endm 
+ 207              	
+ 208              	/********************************
+ 209              	    dictionary structure
+ 210              	------------------------------
+ 211              	 format:
+ 212              	   link:    
+ 213              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
+ 214              	   cmd_name: 31 characters max 
+ 215              	   cmd_index: 2 bytes 
+ 216              	**********************************/
+ 217              		.macro _dict_entry tok_type,name,cmd_idx 
+ 218              	  .word LINK 
+ 219              	  .word \cmd_idx 
+ 220              		.word \tok_type  	
+ 221              		.equ LINK,.
+ 222              		.asciz "\name"
+ 223              		.p2align 2 
+ 224              		.endm 
+ 225              	
+ 226              	  // pop parameter in register 
+ 227              	  .macro _POP  reg 
+ 228              	  ldmia  DP!,{\reg}
+ 229              	  .endm 
+ 230              	
+ 231              	  // push register on parameter stack 
+ 232              	  .macro _PUSH reg 
+ 233              	  stmdb DP!,{\reg}
+ 234              	  .endm 
+ 235              	
+ 236              	  .macro _UNGET_TOKEN 
+ 237              	  ldr IN,[UPP,#IN_SAVED]
+ 238              	  ldr BPTR,[UPP,#BASICPTR] 
+ 239              	  .endm 
+ 240              	
+ 241              	 // create a text data 
+ 242              	 .macro _TEXT label,text
+ 243              	 \label: .asciz "\text"
+ 244              	 .p2align 2 
 ARM GAS  stm32-tbi.s 			page 10
 
 
+ 245              	 .endm 
   41              	  .include "cmd_index.inc"
    1              	//---------------------------------------------------------------------  
    2              	//  Copyright Jacques Deschênes 2021
@@ -597,10 +598,10 @@ ARM GAS  stm32-tbi.s 			page 1
   53              	    .equ FORGET_IDX, 28 // <<1
   54              	    .equ GOSUB_IDX, 29 // <<1
   55              	    .equ GOTO_IDX, 30 // <<1
-  56              	    .equ GPIO_IDX, 31 // <<1
 ARM GAS  stm32-tbi.s 			page 11
 
 
+  56              	    .equ GPIO_IDX, 31 // <<1
   57              	    .equ HEX_IDX, 32 // <<1
   58              	    .equ IDR_IDX, 33 // <<1
   59              	    .equ IF_IDX, 34 // <<1
@@ -657,10 +658,10 @@ ARM GAS  stm32-tbi.s 			page 1
  110              	    .equ STEP_IDX, 85 // <<1
  111              	    .equ STOP_IDX, 86 // <<1
  112              	    .equ TICKS_IDX, 87 // <<1
- 113              	    .equ TIMER_IDX, 88 // <<1
 ARM GAS  stm32-tbi.s 			page 12
 
 
+ 113              	    .equ TIMER_IDX, 88 // <<1
  114              	    .equ TMROUT_IDX, 89 // <<1  //  TIMEOUT
  115              	    .equ TO_IDX, 90 // <<1
  116              	    .equ TONE_IDX, 91 // <<1
@@ -717,10 +718,10 @@ ARM GAS  stm32-tbi.s 			page 1
   82 005c 00000000 	  .word      default_handler /* IRQ7, EXTI Line1  */                          
   83 0060 00000000 	  .word      default_handler /* IRQ8, EXTI Line2 */                          
   84 0064 00000000 	  .word      default_handler /* IRQ9, EXTI Line3 */                          
-  85 0068 00000000 	  .word      default_handler /* IRQ10, EXTI Line4 */                          
 ARM GAS  stm32-tbi.s 			page 13
 
 
+  85 0068 00000000 	  .word      default_handler /* IRQ10, EXTI Line4 */                          
   86 006c 00000000 	  .word      default_handler /* IRQ11, DMA1 CH1 */                  
   87 0070 00000000 	  .word      default_handler /* IRQ12, DMA1 CH2 */                   
   88 0074 00000000 	  .word      default_handler /* IRQ13, DMA1 CH3 */                   
@@ -777,10 +778,10 @@ ARM GAS  stm32-tbi.s 			page 1
  139              	
  140              	/*************************************
  141              	    EXCEPTIONS & INTERRUPTS HANDLERS 
- 142              	*************************************/
 ARM GAS  stm32-tbi.s 			page 14
 
 
+ 142              	*************************************/
  143              	
  144              	/*****************************************************
  145              	  default isr handler called on unexpected interrupt
@@ -837,10 +838,10 @@ ARM GAS  stm32-tbi.s 			page 1
  189 0064 01F00F01 	    and r1,#(RX_QUEUE_SIZE-1)
  190 0068 E164     	    str r1,[UPP,#RX_TAIL]
  191              	2:
- 192 006a 7047     	  	_RET 
 ARM GAS  stm32-tbi.s 			page 15
 
 
+ 192 006a 7047     	  	_RET 
  193              	
  194              	    _GBL_FUNC user_reboot   
  195 006c D448     	    ldr r0,=user_reboot_msg
@@ -897,10 +898,10 @@ ARM GAS  stm32-tbi.s 			page 1
  240              	  0:     
  241              	  // flash write test
  242              	    _MOV32 r0,0x01020304
- 243              	    _MOV32 r1,0x0800fff0
 ARM GAS  stm32-tbi.s 			page 16
 
 
+ 243              	    _MOV32 r1,0x0800fff0
  244              	    _CALL flash_store 
  245              	    _MOV32 r1,0x800fff0 
  246              	    ldr r1,[r1]
@@ -957,10 +958,10 @@ ARM GAS  stm32-tbi.s 			page 1
  286 011e 8160     		str r1,[r0,#SCB_VTOR]
  287 0120 7047     	  _RET 
  288              	
- 289              	// initialize hardware devices 
 ARM GAS  stm32-tbi.s 			page 17
 
 
+ 289              	// initialize hardware devices 
  290 0122 00BF     	  _FUNC init_devices
  291              	/* init clock to HSE 72 Mhz */
  292              	/* set 2 wait states in FLASH_ACR_LATENCY */
@@ -1017,10 +1018,10 @@ ARM GAS  stm32-tbi.s 			page 1
  340              	
  341              	/* enable peripheral clock for GPIOA, GPIOC and USART1 */
  342 0184 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
- 342      C4F20200 
 ARM GAS  stm32-tbi.s 			page 18
 
 
+ 342      C4F20200 
  343 018c 44F21401 	  mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
  344 0190 8161     	  str	r1, [r0, #RCC_APB2ENR]
  345              	
@@ -1077,10 +1078,10 @@ ARM GAS  stm32-tbi.s 			page 1
  391              	  input: 
  392              	    R0 character to send 
  393              	  use:
- 394              	    T1 status  
 ARM GAS  stm32-tbi.s 			page 19
 
 
+ 394              	    T1 status  
  395              	    T2 UART address
  396              	*****************************/
  397 0206 00BF     	    _GBL_FUNC uart_putc
@@ -1137,10 +1138,10 @@ ARM GAS  stm32-tbi.s 			page 1
  445 0242 F9D0     	    beq 1b  
  446 0244 04F15008 	    add T1,UPP,#RX_QUEUE
  447 0248 D4F84890 	    ldr T2, [UPP,#RX_HEAD]
- 448 024c 18F80900 	    ldrb r0,[T1,T2]
 ARM GAS  stm32-tbi.s 			page 20
 
 
+ 448 024c 18F80900 	    ldrb r0,[T1,T2]
  449 0250 09F10109 	    add T2,#1
  450 0254 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
  451 0258 C4F84890 	    str T2,[UPP,#RX_HEAD]
@@ -1197,10 +1198,10 @@ ARM GAS  stm32-tbi.s 			page 1
  498              	    none
  499              	   output:
  500              	    none 
- 501              	   use:
 ARM GAS  stm32-tbi.s 			page 21
 
 
+ 501              	   use:
  502              	     r0    flash registers address 
  503              	     r1    temp 
  504              	***********************************/
@@ -1257,10 +1258,10 @@ ARM GAS  stm32-tbi.s 			page 1
  546              	    flash_store
  547              	    Write one word into flash memory
  548              	    address must even
- 549              	    input:
 ARM GAS  stm32-tbi.s 			page 22
 
 
+ 549              	    input:
  550              	      r0    data 
  551              	      r1    adr 
  552              	    output: 
@@ -1317,10 +1318,10 @@ ARM GAS  stm32-tbi.s 			page 1
  592 036c 4FF00209 	    mov T2,#2 // PER bit in FLASH_CR 
  593 0370 C0F81090 	    str T2,[r0,#FLASH_CR]
  594 0374 C0F81480 	    str T1,[r0,#FLASH_AR]
- 595 0378 49F04009 	    orr T2,#0x40 
 ARM GAS  stm32-tbi.s 			page 23
 
 
+ 595 0378 49F04009 	    orr T2,#0x40 
  596 037c C0F81090 	    str T2,[r0,#FLASH_CR]
  597 0380 D0F80C90 	    ldr T2,[r0,#FLASH_SR]
  598 0384 19F01409 	    ands T2,#(5<<2)
@@ -1537,92 +1538,93 @@ DEFINED SYMBOLS
       tbi_macros.inc:46     *ABS*:0000000000000001 TK_COLON
       tbi_macros.inc:47     *ABS*:0000000000000002 TK_QSTR
       tbi_macros.inc:48     *ABS*:0000000000000003 TK_CHAR
-      tbi_macros.inc:49     *ABS*:0000000000000005 TK_VAR
-      tbi_macros.inc:50     *ABS*:0000000000000006 TK_ARRAY
-      tbi_macros.inc:51     *ABS*:0000000000000007 TK_LPAREN
-      tbi_macros.inc:52     *ABS*:0000000000000008 TK_RPAREN
-      tbi_macros.inc:53     *ABS*:0000000000000009 TK_COMMA
-      tbi_macros.inc:54     *ABS*:000000000000000a TK_SHARP
-      tbi_macros.inc:55     *ABS*:000000000000000b TK_CMD
-      tbi_macros.inc:56     *ABS*:000000000000000c TK_IFUNC
-      tbi_macros.inc:57     *ABS*:000000000000000d TK_CFUNC
-      tbi_macros.inc:58     *ABS*:000000000000000e TK_CONST
-      tbi_macros.inc:59     *ABS*:000000000000000f TK_INTGR
-      tbi_macros.inc:60     *ABS*:0000000000000010 TK_PLUS
-      tbi_macros.inc:61     *ABS*:0000000000000011 TK_MINUS
-      tbi_macros.inc:62     *ABS*:0000000000000020 TK_MULT
-      tbi_macros.inc:63     *ABS*:0000000000000021 TK_DIV
-      tbi_macros.inc:64     *ABS*:0000000000000022 TK_MOD
-      tbi_macros.inc:72     *ABS*:0000000000000031 TK_GT
-      tbi_macros.inc:73     *ABS*:0000000000000032 TK_EQUAL
-      tbi_macros.inc:74     *ABS*:0000000000000033 TK_GE
-      tbi_macros.inc:75     *ABS*:0000000000000034 TK_LT
-      tbi_macros.inc:76     *ABS*:0000000000000036 TK_LE
-      tbi_macros.inc:77     *ABS*:0000000000000035 TK_NE
-      tbi_macros.inc:79     *ABS*:0000000000000030 TK_GRP_MASK
-      tbi_macros.inc:80     *ABS*:0000000000000000 TK_GRP_MISC
-      tbi_macros.inc:81     *ABS*:0000000000000010 TK_GRP_ADD
-      tbi_macros.inc:82     *ABS*:0000000000000020 TK_GRP_MULT
-      tbi_macros.inc:83     *ABS*:0000000000000030 TK_GRP_RELOP
-      tbi_macros.inc:84     *ABS*:0000000000000002 CMD_END
-      tbi_macros.inc:89     *ABS*:0000000000000000 ERR_NONE
-      tbi_macros.inc:90     *ABS*:0000000000000001 ERR_MEM_FULL
-      tbi_macros.inc:91     *ABS*:0000000000000002 ERR_SYNTAX
-      tbi_macros.inc:92     *ABS*:0000000000000003 ERR_MATH_OVF
-      tbi_macros.inc:93     *ABS*:0000000000000004 ERR_DIV0
-      tbi_macros.inc:94     *ABS*:0000000000000005 ERR_NO_LINE
-      tbi_macros.inc:95     *ABS*:0000000000000006 ERR_RUN_ONLY
-      tbi_macros.inc:96     *ABS*:0000000000000007 ERR_CMD_ONLY
-      tbi_macros.inc:97     *ABS*:0000000000000008 ERR_DUPLICATE
-      tbi_macros.inc:98     *ABS*:0000000000000009 ERR_NOT_FILE
-      tbi_macros.inc:99     *ABS*:000000000000000a ERR_BAD_VALUE
-      tbi_macros.inc:100    *ABS*:000000000000000b ERR_NO_ACCESS
-      tbi_macros.inc:101    *ABS*:000000000000000c ERR_NO_DATA
-      tbi_macros.inc:102    *ABS*:000000000000000d ERR_NO_PROG
-      tbi_macros.inc:103    *ABS*:000000000000000e ERR_NO_FSPACE
-      tbi_macros.inc:104    *ABS*:000000000000000f ERR_BUF_FULL
-      tbi_macros.inc:109    *ABS*:0000000000000000 MATH_OVF
-      tbi_macros.inc:111    *ABS*:0000000000000004 CELL_SIZE
-      tbi_macros.inc:117    *ABS*:0000000000000000 DEBUG
-      tbi_macros.inc:134    *ABS*:0000000000000000 IN_SAVED
-      tbi_macros.inc:135    *ABS*:0000000000000004 COUNT
-      tbi_macros.inc:136    *ABS*:0000000000000008 BASICPTR
+      tbi_macros.inc:49     *ABS*:0000000000000004 TK_VAR
+      tbi_macros.inc:50     *ABS*:0000000000000005 TK_ARRAY
+      tbi_macros.inc:51     *ABS*:0000000000000006 TK_LPAREN
+      tbi_macros.inc:52     *ABS*:0000000000000007 TK_RPAREN
+      tbi_macros.inc:53     *ABS*:0000000000000008 TK_COMMA
+      tbi_macros.inc:54     *ABS*:0000000000000009 TK_SHARP
+      tbi_macros.inc:55     *ABS*:000000000000000a TK_CMD
+      tbi_macros.inc:56     *ABS*:000000000000000b TK_IFUNC
+      tbi_macros.inc:57     *ABS*:000000000000000c TK_CFUNC
+      tbi_macros.inc:58     *ABS*:000000000000000d TK_CONST
+      tbi_macros.inc:59     *ABS*:000000000000000e TK_INTGR
+      tbi_macros.inc:60     *ABS*:000000000000000f TK_BAD
+      tbi_macros.inc:61     *ABS*:0000000000000010 TK_PLUS
+      tbi_macros.inc:62     *ABS*:0000000000000011 TK_MINUS
+      tbi_macros.inc:63     *ABS*:0000000000000020 TK_MULT
+      tbi_macros.inc:64     *ABS*:0000000000000021 TK_DIV
+      tbi_macros.inc:65     *ABS*:0000000000000022 TK_MOD
+      tbi_macros.inc:73     *ABS*:0000000000000031 TK_GT
+      tbi_macros.inc:74     *ABS*:0000000000000032 TK_EQUAL
+      tbi_macros.inc:75     *ABS*:0000000000000033 TK_GE
+      tbi_macros.inc:76     *ABS*:0000000000000034 TK_LT
+      tbi_macros.inc:77     *ABS*:0000000000000036 TK_LE
+      tbi_macros.inc:78     *ABS*:0000000000000035 TK_NE
+      tbi_macros.inc:80     *ABS*:0000000000000030 TK_GRP_MASK
+      tbi_macros.inc:81     *ABS*:0000000000000000 TK_GRP_MISC
+      tbi_macros.inc:82     *ABS*:0000000000000010 TK_GRP_ADD
+      tbi_macros.inc:83     *ABS*:0000000000000020 TK_GRP_MULT
+      tbi_macros.inc:84     *ABS*:0000000000000030 TK_GRP_RELOP
+      tbi_macros.inc:85     *ABS*:0000000000000002 CMD_END
+      tbi_macros.inc:90     *ABS*:0000000000000000 ERR_NONE
+      tbi_macros.inc:91     *ABS*:0000000000000001 ERR_MEM_FULL
+      tbi_macros.inc:92     *ABS*:0000000000000002 ERR_SYNTAX
+      tbi_macros.inc:93     *ABS*:0000000000000003 ERR_MATH_OVF
+      tbi_macros.inc:94     *ABS*:0000000000000004 ERR_DIV0
+      tbi_macros.inc:95     *ABS*:0000000000000005 ERR_NO_LINE
+      tbi_macros.inc:96     *ABS*:0000000000000006 ERR_RUN_ONLY
+      tbi_macros.inc:97     *ABS*:0000000000000007 ERR_CMD_ONLY
+      tbi_macros.inc:98     *ABS*:0000000000000008 ERR_DUPLICATE
+      tbi_macros.inc:99     *ABS*:0000000000000009 ERR_NOT_FILE
+      tbi_macros.inc:100    *ABS*:000000000000000a ERR_BAD_VALUE
+      tbi_macros.inc:101    *ABS*:000000000000000b ERR_NO_ACCESS
+      tbi_macros.inc:102    *ABS*:000000000000000c ERR_NO_DATA
+      tbi_macros.inc:103    *ABS*:000000000000000d ERR_NO_PROG
+      tbi_macros.inc:104    *ABS*:000000000000000e ERR_NO_FSPACE
+      tbi_macros.inc:105    *ABS*:000000000000000f ERR_BUF_FULL
+      tbi_macros.inc:110    *ABS*:0000000000000000 MATH_OVF
+      tbi_macros.inc:112    *ABS*:0000000000000004 CELL_SIZE
+      tbi_macros.inc:118    *ABS*:0000000000000000 DEBUG
+      tbi_macros.inc:135    *ABS*:0000000000000000 IN_SAVED
+      tbi_macros.inc:136    *ABS*:0000000000000004 COUNT
 ARM GAS  stm32-tbi.s 			page 28
 
 
-      tbi_macros.inc:137    *ABS*:000000000000000c DATAPTR
-      tbi_macros.inc:138    *ABS*:0000000000000010 DATA
-      tbi_macros.inc:139    *ABS*:0000000000000014 DATALEN
-      tbi_macros.inc:140    *ABS*:0000000000000018 BASE
-      tbi_macros.inc:141    *ABS*:000000000000001c TICKS
-      tbi_macros.inc:142    *ABS*:0000000000000020 TIMER
-      tbi_macros.inc:143    *ABS*:0000000000000024 SEED
-      tbi_macros.inc:144    *ABS*:0000000000000028 FSPTR
-      tbi_macros.inc:145    *ABS*:000000000000002c FFREE
-      tbi_macros.inc:146    *ABS*:0000000000000030 TXTBGN
-      tbi_macros.inc:147    *ABS*:0000000000000034 TXTEND
-      tbi_macros.inc:148    *ABS*:0000000000000038 LOOP_DEPTH
-      tbi_macros.inc:149    *ABS*:000000000000003c ARRAY_SIZE
-      tbi_macros.inc:150    *ABS*:0000000000000040 FLAGS
-      tbi_macros.inc:151    *ABS*:0000000000000044 TAB_WIDTH
-      tbi_macros.inc:152    *ABS*:0000000000000048 RX_HEAD
-      tbi_macros.inc:153    *ABS*:000000000000004c RX_TAIL
-      tbi_macros.inc:154    *ABS*:0000000000000050 RX_QUEUE
-      tbi_macros.inc:155    *ABS*:0000000000000060 VARS
-      tbi_macros.inc:156    *ABS*:0000000000000004 CELLL
-      tbi_macros.inc:157    *ABS*:0000000000000068 VARS_SIZE
-      tbi_macros.inc:158    *ABS*:00000000000000c8 FREE_RAM
-      tbi_macros.inc:159    *ABS*:00000000000000cc ARRAY_ADR
-      tbi_macros.inc:162    *ABS*:0000000000000001 FRUN
-      tbi_macros.inc:163    *ABS*:0000000000000002 FTRAP
-      tbi_macros.inc:164    *ABS*:0000000000000004 FLOOP
-      tbi_macros.inc:165    *ABS*:0000000000000008 FSLEEP
-      tbi_macros.inc:166    *ABS*:0000000000000010 FBREAK
-      tbi_macros.inc:167    *ABS*:0000000000000020 FCOMP
-      tbi_macros.inc:168    *ABS*:0000000000000040 FAUTORUN
-      tbi_macros.inc:170    *ABS*:0000000008001c00 AUTORUN_NAME
-      tbi_macros.inc:172    *ABS*:0000000000000006 FIRST_DATA_ITEM
-      tbi_macros.inc:173    *ABS*:0000000000007fff MAX_LINENO
+      tbi_macros.inc:137    *ABS*:0000000000000008 BASICPTR
+      tbi_macros.inc:138    *ABS*:000000000000000c DATAPTR
+      tbi_macros.inc:139    *ABS*:0000000000000010 DATA
+      tbi_macros.inc:140    *ABS*:0000000000000014 DATALEN
+      tbi_macros.inc:141    *ABS*:0000000000000018 BASE
+      tbi_macros.inc:142    *ABS*:000000000000001c TICKS
+      tbi_macros.inc:143    *ABS*:0000000000000020 TIMER
+      tbi_macros.inc:144    *ABS*:0000000000000024 SEED
+      tbi_macros.inc:145    *ABS*:0000000000000028 FSPTR
+      tbi_macros.inc:146    *ABS*:000000000000002c FFREE
+      tbi_macros.inc:147    *ABS*:0000000000000030 TXTBGN
+      tbi_macros.inc:148    *ABS*:0000000000000034 TXTEND
+      tbi_macros.inc:149    *ABS*:0000000000000038 LOOP_DEPTH
+      tbi_macros.inc:150    *ABS*:000000000000003c ARRAY_SIZE
+      tbi_macros.inc:151    *ABS*:0000000000000040 FLAGS
+      tbi_macros.inc:152    *ABS*:0000000000000044 TAB_WIDTH
+      tbi_macros.inc:153    *ABS*:0000000000000048 RX_HEAD
+      tbi_macros.inc:154    *ABS*:000000000000004c RX_TAIL
+      tbi_macros.inc:155    *ABS*:0000000000000050 RX_QUEUE
+      tbi_macros.inc:156    *ABS*:0000000000000060 VARS
+      tbi_macros.inc:157    *ABS*:0000000000000004 CELLL
+      tbi_macros.inc:158    *ABS*:0000000000000068 VARS_SIZE
+      tbi_macros.inc:159    *ABS*:00000000000000c8 FREE_RAM
+      tbi_macros.inc:160    *ABS*:00000000000000cc ARRAY_ADR
+      tbi_macros.inc:163    *ABS*:0000000000000001 FRUN
+      tbi_macros.inc:164    *ABS*:0000000000000002 FTRAP
+      tbi_macros.inc:165    *ABS*:0000000000000004 FLOOP
+      tbi_macros.inc:166    *ABS*:0000000000000008 FSLEEP
+      tbi_macros.inc:167    *ABS*:0000000000000010 FBREAK
+      tbi_macros.inc:168    *ABS*:0000000000000020 FCOMP
+      tbi_macros.inc:169    *ABS*:0000000000000040 FAUTORUN
+      tbi_macros.inc:171    *ABS*:0000000008001c00 AUTORUN_NAME
+      tbi_macros.inc:173    *ABS*:0000000000000006 FIRST_DATA_ITEM
+      tbi_macros.inc:174    *ABS*:0000000000007fff MAX_LINENO
        cmd_index.inc:25     *ABS*:0000000000000000 ABS_IDX
        cmd_index.inc:26     *ABS*:0000000000000001 ADCON_IDX
        cmd_index.inc:27     *ABS*:0000000000000002 ADCREAD_IDX
@@ -1646,10 +1648,10 @@ DEFINED SYMBOLS
        cmd_index.inc:45     *ABS*:0000000000000014 DIR_IDX
        cmd_index.inc:46     *ABS*:0000000000000015 DO_IDX
        cmd_index.inc:47     *ABS*:0000000000000016 DREAD_IDX
-       cmd_index.inc:48     *ABS*:0000000000000017 DWRITE_IDX
 ARM GAS  stm32-tbi.s 			page 29
 
 
+       cmd_index.inc:48     *ABS*:0000000000000017 DWRITE_IDX
        cmd_index.inc:49     *ABS*:0000000000000018 END_IDX
        cmd_index.inc:50     *ABS*:0000000000000019 EEPROM_IDX
        cmd_index.inc:51     *ABS*:000000000000001a FCPU_IDX
@@ -1706,10 +1708,10 @@ DEFINED SYMBOLS
        cmd_index.inc:102    *ABS*:000000000000004d SAVE_IDX
        cmd_index.inc:103    *ABS*:000000000000004e SHOW_IDX
        cmd_index.inc:104    *ABS*:000000000000004f SIZE_IDX
-       cmd_index.inc:105    *ABS*:0000000000000050 SLEEP_IDX
 ARM GAS  stm32-tbi.s 			page 30
 
 
+       cmd_index.inc:105    *ABS*:0000000000000050 SLEEP_IDX
        cmd_index.inc:106    *ABS*:0000000000000051 SPIRD_IDX
        cmd_index.inc:107    *ABS*:0000000000000052 SPIEN_IDX
        cmd_index.inc:108    *ABS*:0000000000000053 SPISEL_IDX
@@ -1766,10 +1768,10 @@ DEFINED SYMBOLS
          stm32-tbi.s:470    .text:0000000000000264 unlock
          stm32-tbi.s:486    .text:0000000000000296 lock
          stm32-tbi.s:505    .text:00000000000002a8 wait_busy
-         stm32-tbi.s:527    .text:00000000000002c0 hword_write
 ARM GAS  stm32-tbi.s 			page 31
 
 
+         stm32-tbi.s:527    .text:00000000000002c0 hword_write
          stm32-tbi.s:541    .text:00000000000002f4 write_error
          stm32-tbi.s:542    .text:00000000000002f4 $d
          stm32-tbi.s:543    .text:0000000000000302 $t

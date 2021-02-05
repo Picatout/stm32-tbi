@@ -429,15 +429,17 @@ move_from_end: // move from high address toward low
     str r0,[UPP,#COUNT] // lenght of tokens line 
     ldrh r0,[r3] // line number 
     cbz r0,8f  
-    beq 8f 
 // insert line in text buffer 
     mov r0,r3 
     _CALL insert_line 
     eors r0,r0 
     b 9f 
 8:  mov BPTR,r3 // *token_list 
-    mov IN,#3 
-    mov r0,#-1 
+    mov IN,#3
+    ldr r0,[UPP,#FLAGS]
+    sub r0,#FCOMP
+    str r0,[UPP,#FLAGS]
+    movs r0,#-1 
 9:  _RET 
 
 /*********************************************
@@ -504,22 +506,30 @@ bkslash:
     ldrb r1,[T1,r3]
     add r3,#1
     mov r0,#TK_CHAR 
+    strb r0,[T2],#1
+    strb r1,[T2],#1
     b token_exit 
 prt_cmd: 
     mov r0,#TK_CMD 
-    mov r1,#PRT_IDX 
+    mov r1,#PRT_IDX
+    strb r0,[T2],#1
+    strb r1,[T2],#1
     b token_exit 
 quote:
+    mov r0,#TK_QSTR 
+    strb r0,[T2],#1
     _CALL parse_quote
     b token_exit
 tick: 
 // copy comment in pad 
+    mov r0,#TK_CMD 
+    mov r1,#REM_IDX 
+    strb r0,[T2],#1 
+    strb r1,[T2],#1
     add r0,T1,r3 
     mov r1,T2 
     _CALL strcpy 
     ldr r3,[UPP,#COUNT]
-    mov r0,#TK_CMD 
-    mov r1,#REM_IDX 
     b token_exit
 store_r0: 
     strb r0,[T2],#1
@@ -528,12 +538,14 @@ try_number:
     sub r3,#1
     _CALL parse_int  
     beq 1f 
-    strb r0,[T1],#1 
-    str r1,[T1],#4
+    strb r0,[T2],#1 
+    str r1,[T2],#4
     b token_exit 
 1:  _CALL parse_keyword 
     cmp r1,#REM_IDX 
-    beq tick  
+    beq tick
+    strb r0,[T2],#1 
+    strb r1,[T2],#1
 token_exit:
     pop {r6}
     _RET 
@@ -547,19 +559,21 @@ token_exit:
       r0    character 
       r1    0 || index 
     use: 
-      r2    scan index 
+      r1    scan index 
+      r2    temp 
       r3    char_list 
 *****************************/
     _FUNC is_special 
     push {r2,r3}
-    mov r2,#1
+    mov r1,#1
     ldr r3,=char_list 
-1:  ldrb r1,[r3,r2]
-    cbz r1,9f 
-    cmp r0,r1 
+1:  ldrb r2,[r3,r1]
+    cbz r2,8f 
+    cmp r2,r0 
     beq 9f 
-    add r2,#1 
+    add r1,#1 
     b 1b
+8:  eor r1,r1     
 9:  pop {r2,r3}
     _RET 
 
@@ -569,14 +583,14 @@ char_list:
 tok_single:
   .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
   .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
-
+  
+  .p2align 2
 token_ofs:
   .hword  0 // not found
-  // TK_COMMA...TK_EQUAL , 13 
+  // TK_COMMA...TK_EQUAL , 12 
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2     
-  .hword  (single-tok_idx0)/2 // TK_EQUAL 
   // '<','>'
   .hword  (lt-tok_idx0)/2,(gt-tok_idx0)/2
   // '\'
@@ -588,7 +602,8 @@ token_ofs:
   // '"' quote 
   .hword (quote-tok_idx0)/2
 
-  
+  .p2align 2
+
 /****************************
     parse_int 
     parse an integer from text
@@ -618,7 +633,6 @@ token_ofs:
     eor r7,r7 // digit count 
     ldrb r0,[T1,r3]
     add r3,#1 
-    _CALL upper 
     cmp r0,'$' 
     bne 2f 
     mov r6,#16 // hexadecimal number 
@@ -660,13 +674,12 @@ token_ofs:
       T2    insert point in pad  
     output:
       r0     token attribute 
-      r1 		token value
+      r1 		*str 
       r3     tib index updated    
       T2     updated 
       use:
 *********************************************/
     _FUNC parse_quote
-    add T2,#1
     push {T2} 
 1:  ldrb r0,[T1,r3]
     add r3,#1 
@@ -675,12 +688,12 @@ token_ofs:
     cmp r0,#'\\'
     bne 2f 
     _CALL get_escaped_char 
-    b 1b 
 2:  strb r0,[T2],#1
     b 1b 
-9:  mov r0,#TK_QSTR
+9:  eor  r0,r0
+    strb r0,[T2],#1
+    mov r0,#TK_QSTR
     pop {r1}
-    strb r0,[r1,#-1]
     _RET 
 
 /**********************************************
@@ -690,28 +703,28 @@ token_ofs:
       r0 
       r3   index 
       T1   tib 
-      T2   pad 
     output:
+      r0   replacement char
       r3   updated 
-      T1   updated 
-      T2   updated 
+    use:
+      r1   *table 
+      r2   temp 
 **********************************************/
     _FUNC get_escaped_char 
+    push {r1,r2}
     ldrb r0,[T1,r3]
     add r3,#1
     cmp r0,#'"' 
-    bne 1f 
-    strb r0,[T2],#1
-    b 9f 
+    beq 9f 
 1:  ldr r1,=escaped 
 2:  ldrb r2,[r1],#1
-    cbz r2,8f 
+    cbz r2,6f 
     cmp r2,r0 
     beq 7f 
     b 2b
+6:  sub r2,r0,#7     
 7:  add r0,r2,#7
-8:  strb r0,[T2],#1    
-9:     
+9:  pop {r1,r2}   
     _RET
 
 escaped: .asciz "abtnvfr"
@@ -723,14 +736,19 @@ escaped: .asciz "abtnvfr"
       r3    tib index 
       T1    tib adr
     output: 
-      r3    updated 
+      r3    updated
+    use:
+      r1     
 **********************************************/   
-    _FUNC skip 
+    _FUNC skip
+    push {r1} 
 1:  ldrb r1,[T1,r3]
-    add r3,#1
     cmp r1,r0
-    beq 1b 
-    str r3,[UPP,#IN_SAVED]
+    bne 2f
+    add r3,#1 
+    b 1b 
+2:  str r3,[UPP,#IN_SAVED]
+    pop {r1}
     _RET
 
 /********************************************
@@ -909,8 +927,6 @@ escaped: .asciz "abtnvfr"
     cbnz r0,9f 
     b syntax_error 
 9:  pop {T2}
-    strb r0,[T2],#1
-    strb r1,[T2],#1
     _RET 
 
 
@@ -982,17 +998,19 @@ escaped: .asciz "abtnvfr"
     _CALL uart_puts
     ldr r0,[UPP,#FLAGS]
     tst r0,#FCOMP
-    beq compile_error
+    bne compile_error
 interpret_error:
-
-
+    
+    b warm_start 
 compile_error:
     ldr r0,[UPP,#BASICPTR]
     _CALL uart_puts 
     ldr r0,[UPP,#IN_SAVED]
     _CALL spaces 
     mov r0,#'^' 
-    _CALL uart_putc  
+    _CALL uart_putc
+    mov r0,#CR 
+    _CALL uart_putc   
     b  warm_start  
     
 err_msg:
@@ -1364,8 +1382,8 @@ tok_jmp: // token id  tbb offset
   .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(3b-1b)/2 // TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
   .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SHARP 
   .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
-  .byte (4b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_INTGR, TK_PLUS,TK_MINUS  
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // TK_MULT,TK_DIV,TK_MOD 
+  .byte (4b-1b)/2,(8b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_INTGR,TK_BAD,TK_PLUS,TK_MINUS  
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_MULT,TK_DIV,TK_MOD 
 // the following are not used 
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
@@ -2202,8 +2220,54 @@ let_array:
     _FUNC const_output
     _RET 
 
+/****************************
+  BASIC: PRINT|? arg_list 
+  print list of arguments 
+****************************/
     _FUNC print
-    _RET 
+0:  eor T1,T1 // zero 
+1:  _CALL next_token
+    cmp r0,#TK_COLON 
+    bgt 2f
+    _UNGET_TOKEN 
+    b print_exit
+2:  cmp r0,#TK_COMMA 
+    bne 3f 
+    mov T1,#-1 
+    b print_exit 
+3:  cmp r0,#TK_QSTR 
+    bne 4f
+    mov r0,r1 
+    _CALL uart_puts  
+    b 0b 
+4:  cmp r0,#TK_CHAR 
+    bne 5f 
+    mov r0,r1 
+    _CALL uart_putc 
+    b 0b 
+5:  cmp r0,#TK_SHARP
+    bne 6f 
+    _CALL next_token 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    str r1,[UPP,#TAB_WIDTH]
+    b 0b 
+6:  cmp r0,#TK_INTGR
+    bne syntax_error 
+    _UNGET_TOKEN 
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    mov r0,r1 
+    ldr r1,[UPP,#BASE]
+    _CALL print_int
+    b 0b       
+  print_exit:
+      ands T1,T1 
+      bne 9f
+      mov r0,#CR 
+      _CALL uart_putc 
+  9:  _RET 
 
     _FUNC const_porta
     _RET 
