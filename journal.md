@@ -1,3 +1,21 @@
+#### 2021-02-08
+
+* Tester et déboguer **relation**
+
+* Écrire code pour commande **IF**. 
+
+* Ajouter **DUMP** au vocabulaire BASIC 
+
+* Compléter et tester commande **LET**.
+
+
+#### 2021-02-05
+
+* Modification de *parse_keyword* pour accepter les variables.
+* Déboguer *expression* et *search_dict*
+**À faire** 
+* déboguer @(expr)
+
 #### 2021-02-04
 
 * Corrigé bogue dans *is_special* qui retournait la mauvaise la valeur.

@@ -235,20 +235,27 @@ move_from_end: // move from high address toward low
     _RET 
 
 /****************************************
-    dump 
+  BASIC: DUMP adr, count 
+    command line only  
     print memory content in hexadecimal 
     16 bytes per row 
-    input:
-      r0  address 
-      r1  count 
     ouput:
       none 
     use:
-
+      r2   byte counter  
 ****************************************/
     _FUNC dump 
     push {r2}
-    mov r2,r1 
+    ldr r2,[UPP,#FLAGS]
+    tst r2,#FRUN 
+    beq 0f
+    mov r0,#ERR_CMD_ONLY 
+    b tb_error  
+0:  _CALL arg_list 
+    cmp r0,#2
+    bne syntax_error 
+    _POP r2   // count 
+    _POP  r0  // adr 
 1:  mov r1,#16
     _CALL prt_row 
     subs r2,#16 
@@ -485,20 +492,20 @@ single:
     b store_r0  
 lt:
     mov r0,#TK_LT
-    b 1f 
+    ldrb r1,[T1,r3]
+    cmp r1,#'>' 
+    beq 1f
+    b store_r0 
 gt:
     mov r0,#TK_GT 
-1: // check next char for '<'||'>'||'='
     ldrb r1,[T1,r3]
     cmp r1,#'<'
-    beq syntax_error 
-    cmp r1,#'>'
-    bne 2f
-    add r3,#1
-    add r0,#1 
+    bne 2f  
+1:  add r3,#1
+    mov r0,#TK_NE  
     b store_r0
 2:  cmp r1,#'=' 
-    bne token_exit  
+    bne store_r0  
     add r3,#1
     add r0,#2
     b store_r0       
@@ -542,9 +549,11 @@ try_number:
     str r1,[T2],#4
     b token_exit 
 1:  _CALL parse_keyword 
+    cmp r0,#TK_VAR 
+    beq 2f 
     cmp r1,#REM_IDX 
     beq tick
-    strb r0,[T2],#1 
+2:  strb r0,[T2],#1 
     strb r1,[T2],#1
 token_exit:
     pop {r6}
@@ -654,7 +663,8 @@ token_ofs:
     add r2,r0
     add r7,#1  
     b 3b
-6:  cbz r7, 7f 
+6:  sub r3,#1  // unget last char
+    cbz r7, 7f 
     mov r0,#TK_INTGR  
     mov r1,r2 
     b 9f 
@@ -890,7 +900,7 @@ escaped: .asciz "abtnvfr"
 *****************************************/
     _FUNC is_alnum 
     _CALL is_alpha 
-    beq 9f 
+    bne 9f 
     _CALL is_num 
 9:  _RET 
 
@@ -912,17 +922,32 @@ escaped: .asciz "abtnvfr"
 *****************************************/
     _FUNC parse_keyword 
     push {T2}
-1:  ldrb r0,[T1,r3]
+    ldrb r0,[T1,r3]
     add r3,#1
+    cbz r0,2f 
+    _CALL upper 
+    _CALL is_alpha 
+    beq syntax_error 
+    strb r0,[T2],#1
+1:  ldrb r0,[T1,r3]
+    add r3,#1 
+    cbz r0,2f 
+    _CALL upper 
     _CALL is_alnum
-    bne 2f 
+    beq 2f 
     strb r0,[T2],#1
     b 1b 
 2:  sub r3,#1
-    eor r0,r0 
+    eor r0,r0
     strb r0,[T2] 
     ldr r0,[sp]
-    ldr r1,=kword_dict  
+    ldrb r1,[r0,#1] 
+    cbnz r1,3f
+    ldrb r1,[r0]
+    sub r1,#'A'
+    mov r0,#TK_VAR
+    b 9f 
+3:  ldr r1,=kword_dict  
     _CALL search_dict 
     cbnz r0,9f 
     b syntax_error 
@@ -1059,38 +1084,68 @@ tk_id: .asciz "last token id: "
 
     _RET 
 
+/***************************************
+   kword_cmp
+   compare keyword to dict entry
+  input:
+    r0  keyword 
+    r1  dict entry 
+    r2  character count 
+  output:
+    r0  0 not same | -1 same 
+  use:
+    r6   result  
+    T1   char 1
+    T2   char 2
+**************************************/   
+    _FUNC kword_cmp 
+    push {r6,T1,T2}
+    mov r6,#-1 
+1:  cbz r2,9f       
+    ldrb T1,[r0],#1
+    ldrb T2,[r1],#1
+    sub r2,#1
+    cmp T1,T2
+    beq 1b 
+    eor r6,r6  
+9:  mov r0,r6
+    pop {r6,T1,T2}
+    _RET 
 
-//---------------------------------
-// dictionary search 
-// input:
-//	 r0   target name
-//   r1		dictionary first name field address  
-// output:
-//  r0 		token attribute 
-//  r1		cmd_index if r0!=TK_NONE  
-// use:
-//  r2   length dictionary name 
-//---------------------------------
+/***********************************************
+    search_dict 
+    search keyword in dictionary
+   input:
+  	 r0   keyword 
+     r1		dictionary first name field address  
+   output:
+     r0 		token attribute 
+     r1		  cmd_index if r0!=TK_NONE  
+   use:
+     r3   length keyword 
+     T1   keyword
+     T2   link  
+**********************************************/
   _FUNC search_dict
-  push {r2}
-  push {r0,r1}
-1:
-  ldrb r0,[r1],#1 
-  orrs r0,r0
-  beq 9f // null byte  -> end of dictinary 
-  ldr r0,[sp]  
-  _CALL strcmp 
-  beq 2f 
-  ldr r1,[sp,#4]
-  ldr r1,[r1,#-12]
-  str r1,[sp,#4]
-  b 1b   
+  push {r2,r3,T1,T2}
+  mov T1,r0 
+  _CALL strlen 
+  mov r3,r0  
+1:  
+   mov T2,r1  // keep for linking   
+   ldrb r0,[r1] 
+   cbz r0,9f // null byte, end of dictionary
+   mov r0,T1
+   mov r2,r3   
+   _CALL kword_cmp  
+   cbnz r0,2f 
+   mov r1,T2
+   ldr r1,[r1,#-12]
+   b 1b   
 2: // found
-  ldr r1,[sp,#4]
-  ldrb r0,[r1,#-4] // token attribute 
-  ldr r1,[r1,#-8]  // command index 
-9: add sp,#8  // drop pushed r0,r1
-   pop {r2}
+   ldr r0,[T2,#-4] // token attribute 
+   ldr r1,[T2,#-8]  // command index 
+9: pop {r2,r3,T1,T2}
    _RET 
 
 /**************************
@@ -1109,14 +1164,22 @@ tk_id: .asciz "last token id: "
   .type cold_start, %function 
   .global cold_start 
 cold_start: 
-//copy initialized system variables to ram 
     _MOV32 UPP,RAM_ADR 
     ldr r0,src_addr 
     ldr r1,dest_addr
     ldr r1,[r1] 
     add UPP,r1 // system variables base address   
+// clear RAM
+    mov r0,UPP  
+    ldr r1,tib 
+    eor r2,r2 
+1:  str r2,[r0],#4 
+    cmp r0,r1 
+    bmi 1b 
+//copy initialized system variables to ram 
+    ldr r0,src_addr 
     mov r1,UPP 
-    mov r2,#ulast-uzero
+    ldr r2,sysvar_size
     _CALL cmove  
     _CALL prt_version
     _CALL clear_basic  
@@ -1125,6 +1188,7 @@ src_addr:
   .word uzero
 dest_addr:
   .word vectors_size
+sysvar_size: .word ulast-uzero 
 
 /************************************
     print firmware version 
@@ -1201,7 +1265,8 @@ version:
     str r0,[UPP,#DATAPTR]
     str r0,[UPP,#DATA]
     str r0,[UPP,#DATALEN]
-    add r0,UPP,#FREE_RAM
+    ldr r0,sysvar_size
+    add r0,UPP 
     str r0,[UPP,#TXTBGN]
     str r0,[UPP,#TXTEND]
     _CALL clear_vars 
@@ -1303,9 +1368,8 @@ interp_loop:
   beq next_line 
   cmp r0,#TK_CMD 
   bne 2f
-  ldr r0,=fn_table
-  ldr r0,[r0,r1,lsl #2]
-  blx r0
+  mov r0,r1 
+  bl execute  
   b interp_loop   
 2: 
   cmp r0,#TK_VAR 
@@ -1323,6 +1387,20 @@ interp_loop:
   b syntax_error
 
 /*****************************
+    execute 
+    execute a BASIC routine from 
+    its token value 
+  input:
+    r0  BASIC SUB|FUNC token  
+  output: 
+    depend on SUB|FUNc
+*****************************/
+    _FUNC execute 
+    ldr r1,=fn_table 
+    ldr r0,[r1,r0,lsl #2]
+    bx r0 
+
+/*************************************
   next_token 
   extract next token from token list 
   input:
@@ -1378,20 +1456,19 @@ interp_loop:
 
   .p2align 2
 tok_jmp: // token id  tbb offset 
-  .byte (9b-1b)/2,(9b-1b)/2   // TK_NONE, TK_COLON
-  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(3b-1b)/2 // TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SHARP 
-  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
-  .byte (4b-1b)/2,(8b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_INTGR,TK_BAD,TK_PLUS,TK_MINUS  
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // TK_MULT,TK_DIV,TK_MOD 
-// the following are not used 
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2   
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2
+  .byte (9b-1b)/2,(9b-1b)/2   // 0x0..0x1  TK_NONE, TK_COLON
+  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(9b-1b)/2 // 0x2..0x5 TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x6..0x9 TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SHARP 
+  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // 0xa..0xd TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
+  .byte (4b-1b)/2,(8b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0xe..0x11 TK_INTGR,TK_BAD,TK_PLUS,TK_MINUS  
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x12..0x16
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 //0x17..0x1c
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x1d..0x1f
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x20..0x22  TK_MULT,TK_DIV,TK_MOD 
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x23..0x2a
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x2b..0x30 
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x31..0x36  TK_GT..TK_LE    
+  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x37..0x3f
 
   .p2align 2 
 
@@ -1449,7 +1526,8 @@ tok_jmp: // token id  tbb offset
 ***********************************/
     _FUNC arg_list 
     push {T1}
-1:  _CALL relation 
+    eor T1,T1 
+1:  _CALL expression 
     cmp R0,#TK_NONE 
     beq 9f 
     cmp r0,#TK_INTGR
@@ -1465,55 +1543,84 @@ tok_jmp: // token id  tbb offset
     _RET 
 
 /***********************************
- factor parser 
+ factor
+ arithmetick factor parser 
  factor ::= ['+'|'-'|e]  var | @ |
 			 integer | function |
-			 '('relation')' 
+			 '('expression')' 
   input: 
     none 
   output:
     r0   token attribute 
     r1   token value 
   use:
+    r2   temp 
     T1   sign 
     T2   exit token attribute 
 ***********************************/
     _FUNC factor 
-    push {T1,T2}
-    eor T2,T2 // TK_NONE 
-    _CALL next_token 
+    push {r2,T1,T2}
+    mov T2,#TK_INTGR 
     mov T1,#1 // default sign +  
+    _CALL next_token 
+    mov r2,r0 
     and r0,#TK_GRP_MASK 
     cmp r0,#TK_GRP_ADD
+    mov r0,r2
     bne 1f 
-    mov T1,#-1 
-    _CALL next_token 
+    cmp r0,#TK_PLUS 
+    beq 0f 
+    mov T1,#-1 // minus sign 
+0:  _CALL next_token 
 1:  cmp r0,#TK_INTGR 
     beq 8f 
     cmp r0,#TK_ARRAY 
+    bne 2f 
+    mov r0,#TK_LPAREN 
+    _CALL expect 
+    _CALL expression
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    mov T2,r0
+    mov r2,r1  
+    mov r0,#TK_RPAREN
+    _CALL expect 
+    mov r0,r2 
+    _CALL get_array_element 
+    b 8f
+2:  cmp r0,#TK_LPAREN 
     bne 3f 
-    _CALL get_array_element
-    b 8f 
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error
+    mov T2,r0
+    mov r2,r1   
+    mov r0,#TK_RPAREN
+    _CALL expect 
+    mov r1,r2 
+    b 8f       
 3:  cmp r0,#TK_VAR 
-    bne 4f 
+    bne 4f
+    mov r0,r1  
     _CALL get_var 
     b 8f 
 4:  cmp r0,#TK_IFUNC 
     beq 5f 
     cmp r0,#TK_CFUNC 
     bne 6f 
-5:  lsl r1,#2 
-    ldr r0,=fn_table
-    ldr r1,[r0,r1]
-    blx r1 
-6:  
+5:  mov r0,r1  
+    bl execute
+    b 8f  
+6:  _UNGET_TOKEN 
+    mov T2,#TK_NONE 
 8:  mul r1,T1 
-    mov r0,T2 
-    pop {T1,T2}   
+    movs r0,T2 
+    pop {r2,T1,T2}   
     _RET 
 
 
 /*****************************************
+    term 
     term parser 
     term ::= factor [['*'|'/'|'%'] factor]* 
     output:
@@ -1521,52 +1628,55 @@ tok_jmp: // token id  tbb offset
       r1		integer
     use:
       r2    first operand 
+      r3    temp 
       T1    operator 
       T2    exit token attribute 
 ******************************************/
      _FUNC term 
-    push {r2,T1,T2}
+    push {r2,r3,T1,T2}
     mov T2,#TK_NONE 
-    _CALL factor  
-    cmp r0,#TK_INTGR
-    bne 8f
-    mov T2,r0  // exit attribute 
-    mov r2,r1 // first operand   
-    _CALL next_token
-    mov T1,r0   
+    _CALL factor
+    beq 9f  // no factor   
+    mov T2,r0  // TK_INTGR 
+    mov r2,r1 // first factor    
+0:  _CALL next_token
+    mov r3,r0   
     and r0,#TK_GRP_MASK 
     cmp r0,#TK_GRP_MULT
-    bne 8f  
+    beq 1f
+    _UNGET_TOKEN
+    b 9f 
+1:  mov T1,r3 
     _CALL factor  
-    cmp r0,#TK_INTGR
-    bne syntax_error 
+    beq syntax_error 
     cmp T1,#TK_MULT
     bne 2f 
-multiplication:
+// multiplication
     mul r2,r1
-    b 9f 
+    b 0b  
 2:  cmp T1,#TK_DIV 
-    bne modulo
-division:
+    bne 3f
+// division
     sdiv r2,r2,r1
-    b 9f  
-modulo:
+    b 0b  
+3: // modulo
     mov r0,r2 
     sdiv r2,r2,r1 
     mul  r2,r1 
-    sub  r2,r0,r2 
-8:  _UNGET_TOKEN
+    sub  r2,r0,r2
+    b 0b  
 9:  mov r1,r2 
-    mov r0,T2 
-    pop {r2,T1,T2}
+    movs r0,T2 
+    pop {r2,r3,T1,T2}
     _RET 
 
 /*****************************************
-    expression parser 
+    expression 
+    arithmetic expression parser 
     expression ::= term [['+'|'-'] term]*
     result range {-32768..32767}
     output:
-      r0    token attribute 
+      r0    TK_NONE || TK_INTGR 
       r1 	  integer
     use:
       r2  left operand 
@@ -1578,24 +1688,25 @@ modulo:
     mov T2,#TK_NONE
     eor r2,r2 // zero 
     _CALL term 
-    cmp r0,#TK_INTGR  
-    bne 8f 
-    mov r2,r1 // first operand   
+    beq 9f  // no term  
+    mov r2,r1 // first term
+    mov T2,#TK_INTGR    
 1:  _CALL next_token 
     mov T1,r0 // token attribute 
     and r0,#TK_GRP_MASK 
     cmp r0,#TK_GRP_ADD 
-    bne 8f 
+    beq 3f 
+    _UNGET_TOKEN
+    b 9f  
 3:  _CALL term 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     cmp T1,#TK_PLUS 
     beq 4f 
-    sub r1,r2,r1 // N1-N2  
+    sub r2,r2,r1 // N1-N2  
     b 1b 
-4:  add r1,r2,r1 // N1+N2
+4:  add r2,r2,r1 // N1+N2
     b 1b
-8:  _UNGET_TOKEN 
 9:  mov r0,T2 
     mov r1,r2 
     pop {r2,t1,t2}
@@ -1672,21 +1783,22 @@ relop_jmp:
 
 
 /***********************************
-    get_array_element 
-    return index of array element 
+    get_array_element
+    return value of @(n)
   input:
-    r1   index  
+    r0    indice 
   output:
     r0   TK_INTGR
     r1   value  
 ************************************/
     _FUNC get_array_element 
-    ldr r0,[UPP,#ARRAY_ADR]
-    lsl r1,#2 
-    sub r0,r1 
+    ldr r1,[UPP,#ARRAY_ADR]
+    lsl r0,#2 
+    rsb r0,r1 
     ldr r1,[r0]
     mov r0,#TK_INTGR 
     _RET 
+
 
 /***********************************
     set_array_element 
@@ -1701,10 +1813,10 @@ relop_jmp:
 **********************************/
     _FUNC set_array_element 
     push {r2}
-    ldr r2,[UPP,#ARRAY_ADR]
+    ldr r1,[UPP,#ARRAY_ADR]
     lsl r0,#2 
-    sub r2,r0 
-    str r1,[r2]
+    sub r1,r0 
+    str r1,[r1]
     pop {r2}
     _RET 
 
@@ -1712,15 +1824,15 @@ relop_jmp:
    get_var 
    get variable value 
   input:
-     r1    variable index {0..25}
+     r0    variable index {0..25}
   output:
      r0    TK_INTGR
      r1    value 
 **********************************/
     _FUNC get_var 
-    ldr r0,[UPP,#VARS]
-    lsl r1,#2 
-    ldr r1,[r0,r1]
+    add r1,UPP,#VARS
+    lsl r0,#2 
+    ldr r1,[r1,r0]
     mov r0,#TK_INTGR
     _RET 
 
@@ -1751,7 +1863,6 @@ relop_jmp:
 
 // system variables initial value 
 uzero:
-  .word 0 // IN
   .word 0 // IN_SAVED
   .word 0 // COUNT
   .word 0 // BASICPTR
@@ -1764,8 +1875,8 @@ uzero:
   .word 0xaa5555aa // SEED
   .word FILE_SYSTEM // FSPTR
   .word 0 // FFREE
-  .word RAM_ADR+1024 // TXTBGN
-  .word RAM_ADR+1024 // TXTEND
+  .word ulast // TXTBGN
+  .word ulast // TXTEND
   .word 0 //LOOP_DEPTH
   .word 0 // ARRAY_SIZE
   .word 0 // FLAGS
@@ -1774,7 +1885,7 @@ uzero:
   .word 0 // RX_TAIL
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
   .space VARS_SIZE,0 // VARS
-  .word _pad - 4  // ARRAY_ADR 
+  .word _pad  // ARRAY_ADR 
   .space 4, 0 // padding 
 ulast:
 
@@ -1866,6 +1977,7 @@ kword_end:
   _dict_entry TK_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
   _dict_entry TK_CMD,DWRITE,DWRITE_IDX //digital_write
   _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
+  _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
@@ -1912,7 +2024,7 @@ fn_table:
 	.word restore,return, random,rshift,run,save,show,size // 72..79
 	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
 	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
-	.word wait,words,write,bit_xor,transmit,receive // 96..103 
+	.word wait,words,write,bit_xor,transmit,receive,dump // 96..102 
 	.word 0 
 
 
@@ -2117,8 +2229,15 @@ fn_table:
     _FUNC const_idr
     _RET 
 
+/**********************************************
+  BASIC: IF relation : statement
+  execute statement only if relation is true
+*********************************************/
     _FUNC if
-    _RET 
+    _CALL relation 
+    cbnz r1,9f 
+    ldr IN,[UPP,#COUNT]
+9:  _RET 
 
     _FUNC input_var
     _RET 
@@ -2153,20 +2272,31 @@ fn_table:
     beq let_array 
     b syntax_error 
 let_var:
-    _CALL get_array_element
+    lsl r1,#2
+    add r0,UPP,#VARS
+    add r0,r1
+    b 1f 
 let_array: 
-    _PUSH r0 
-    _CALL next_token 
-    cmp r0,#TK_EQUAL 
-    beq 1f 
-    b syntax_error 
-1:  _CALL relation  
+    mov r0,#TK_LPAREN
+    _CALL expect 
+    _CALL expression
+    cmp r0,#TK_INTGR 
+    bne syntax_error
+    _PUSH r1 
+    mov r0,#TK_RPAREN
+    _CALL expect 
+    _POP r1 
+    ldr r0,[UPP,#ARRAY_ADR]
+    lsl r1,#2 
+    sub r0,r1 
+1:  _PUSH r0 
+    mov r0,#TK_EQUAL 
+    _CALL expect 
+    _CALL expression   
     cmp r0,#TK_INTGR
-    beq 2f 
-    b syntax_error 
+    bne syntax_error   
 2:  _POP r0 
     str r1,[r0]
-    mov r0,#TK_NONE 
     _RET  
 
     _FUNC list
@@ -2225,44 +2355,44 @@ let_array:
   print list of arguments 
 ****************************/
     _FUNC print
-0:  eor T1,T1 // zero 
+    eor T1,T1 // no comma 
+0:  _CALL expression
+    cmp r0,#TK_INTGR
+    bne 1f 
+    mov r0,r1
+    ldr r1,[UPP,#BASE]
+    _CALL print_int
+    b 6f 
 1:  _CALL next_token
     cmp r0,#TK_COLON 
     bgt 2f
     _UNGET_TOKEN 
     b print_exit
-2:  cmp r0,#TK_COMMA 
-    bne 3f 
-    mov T1,#-1 
-    b print_exit 
-3:  cmp r0,#TK_QSTR 
+2:  eor T1, T1 
+    cmp r0,#TK_QSTR 
     bne 4f
     mov r0,r1 
     _CALL uart_puts  
-    b 0b 
+    b 6f 
 4:  cmp r0,#TK_CHAR 
     bne 5f 
     mov r0,r1 
     _CALL uart_putc 
-    b 0b 
+    b 6f 
 5:  cmp r0,#TK_SHARP
-    bne 6f 
+    bne syntax_error 
     _CALL next_token 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
-    b 0b 
-6:  cmp r0,#TK_INTGR
-    bne syntax_error 
-    _UNGET_TOKEN 
-    _CALL expression 
-    cmp r0,#TK_INTGR 
-    bne syntax_error 
-    mov r0,r1 
-    ldr r1,[UPP,#BASE]
-    _CALL print_int
-    b 0b       
-  print_exit:
+6:  _CALL next_token 
+    cmp r0,#TK_COMMA 
+    bne 7f
+    mov T1,#1
+    b 0b  
+7:  cmp r0,#2 
+    bpl syntax_error  
+print_exit:
       ands T1,T1 
       bne 9f
       mov r0,#CR 
@@ -2365,7 +2495,19 @@ let_array:
     _FUNC tone
     _RET 
 
+/***************************
+  BASIC: UBOUND 
+  return last indice of @
+  output:
+    r0  TK_INTGR 
+    r1  +int 
+**************************/
     _FUNC ubound
+    ldr r1,[UPP,#ARRAY_ADR]
+    ldr r0,[UPP,#TXTEND]
+    sub r1,r0 
+    lsr r1,#2
+    mov r0,#TK_INTGR 
     _RET 
 
     _FUNC uflash
