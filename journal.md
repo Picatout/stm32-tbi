@@ -1,3 +1,9 @@
+#### 2021-02-09
+
+* Corrigé bogue dans **is_digit** 
+
+* Modifié **next_token** et **interpreter**
+
 #### 2021-02-08
 
 * Tester et déboguer **relation**

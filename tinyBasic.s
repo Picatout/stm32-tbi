@@ -372,8 +372,9 @@ move_from_end: // move from high address toward low
 1: //insert new line 
     ldrb r1,[T1,#2]
     _CALL create_gap 
-    mov r1,T1 
-    ldrb r2,[r1,#2]
+    mov r1,r0
+    mov r0,T1 
+    ldrb r2,[r0,#2]
     _CALL cmove 
 9:  pop {r1,T1,T2}
     _RET 
@@ -784,17 +785,18 @@ escaped: .asciz "abtnvfr"
    input:
       r0    char 
    output:
-      r0    if Z then converted digit 
+      r0    if !Z then converted digit 
       Z     0 true | 1 false  
 ***************************************/
-    _FUNC is_digit 
+    _GBL_FUNC is_digit 
     push {r1} 
     eor r1,r1 
-    subs r0,#'0' 
+    cmp r0,#'0' 
     blt 9f
     cmp r0,'9'+1
-    bmi 9f 
-    mov r1,#-1 
+    bpl 9f 
+    mov r1,#-1
+    sub r0,#'0'  
 9:   
     ands r1,r1
     pop {r1} 
@@ -807,7 +809,7 @@ escaped: .asciz "abtnvfr"
     input:
       r0    
     output:
-      r0     if Z then converted digit 
+      r0     if !Z then converted digit 
       Z      0 true | 1 false         
 ***************************************/
     _FUNC is_hex 
@@ -832,7 +834,7 @@ escaped: .asciz "abtnvfr"
     input:
       r0    
     output:
-      r0     if Z then converted digit 
+      r0     if !Z then converted digit 
       Z      0 true | 1 false         
 ***************************************/
     _FUNC is_bit
@@ -1180,7 +1182,7 @@ cold_start:
     ldr r0,src_addr 
     mov r1,UPP 
     ldr r2,sysvar_size
-    _CALL cmove  
+    _CALL cmove
     _CALL prt_version
     _CALL clear_basic  
     b warm_start    
@@ -1265,8 +1267,10 @@ version:
     str r0,[UPP,#DATAPTR]
     str r0,[UPP,#DATA]
     str r0,[UPP,#DATALEN]
-    ldr r0,sysvar_size
-    add r0,UPP 
+    add r0,UPP,#BASIC_START 
+    add r0,#16 
+    mvn r1,#15
+    and r0,r1 
     str r0,[UPP,#TXTBGN]
     str r0,[UPP,#TXTEND]
     _CALL clear_vars 
@@ -1283,9 +1287,6 @@ version:
     r0 
 ***********************************/
 warm_init:
-// reset main stack 
-    ldr r0,mstack
-    mov sp,r0 
 // reset data stack       
     ldr DP,dstack 
     mov IN,#0 // BASIC line index 
@@ -1319,6 +1320,9 @@ ready: .asciz "READY"
     _FUNC warm_start 
 // initialise parameters stack
     bl warm_init
+// reset main stack 
+    ldr r0,mstack
+    mov sp,r0 
     ldr r0,=ready 
     _CALL uart_puts 
 // fall in cmd_line 
@@ -1345,6 +1349,7 @@ ready: .asciz "READY"
     beq 1b  // tokens stored in text area 
 // interpret tokenized line 
 interpreter:
+/*
    ldr r0,[UPP,#COUNT]
    cmp IN,r0  
    bmi interp_loop
@@ -1354,18 +1359,18 @@ next_line:
   tst r0,#FRUN 
   beq cmd_line 
   ldr r0,[UPP,#COUNT]
-  ldr BPTR,[UPP,#BASICPTR]
-  add BPTR,r0  
+  add BPTR,r0 
   ldr r0,[UPP,#TXTEND]
   cmp BPTR,r0 
   bmi 1f 
   b warm_start 
 1:
-  mov IN,#3 
+  mov IN,#3
+*/ 
 interp_loop:
   _CALL next_token 
   cmp r0,#TK_NONE 
-  beq next_line 
+  beq warm_start  
   cmp r0,#TK_CMD 
   bne 2f
   mov r0,r1 
@@ -1416,8 +1421,16 @@ interp_loop:
     eor T1,T1 // TK_NONE 
     ldr r0,[UPP,#COUNT]
     cmp IN,r0 
-    bmi 0f 
-    b 9f  
+    bmi 0f
+    ldrh r1,[BPTR] // line #
+    cbz r1, 9f  // command line  
+    add BPTR,r0 // next line 
+    ldr r0,[UPP,#TXTEND]
+    cmp BPTR,r0 
+    bpl 9f // end of program
+    ldrb r0,[BPTR,#2]
+    str r0,[UPP,#COUNT] 
+    mov IN,#3   
 0: 
     str IN,[UPP,#IN_SAVED]
     str BPTR,[UPP,#BASICPTR]
@@ -1562,7 +1575,7 @@ tok_jmp: // token id  tbb offset
     push {r2,T1,T2}
     mov T2,#TK_INTGR 
     mov T1,#1 // default sign +  
-    _CALL next_token 
+    _CALL next_token
     mov r2,r0 
     and r0,#TK_GRP_MASK 
     cmp r0,#TK_GRP_ADD
@@ -1571,7 +1584,7 @@ tok_jmp: // token id  tbb offset
     cmp r0,#TK_PLUS 
     beq 0f 
     mov T1,#-1 // minus sign 
-0:  _CALL next_token 
+0:  _CALL next_token
 1:  cmp r0,#TK_INTGR 
     beq 8f 
     cmp r0,#TK_ARRAY 
@@ -1610,12 +1623,13 @@ tok_jmp: // token id  tbb offset
     bne 6f 
 5:  mov r0,r1  
     bl execute
-    b 8f  
-6:  _UNGET_TOKEN 
-    mov T2,#TK_NONE 
+    b 8f 
+6:  _UNGET_TOKEN      
+    mov r0,#TK_NONE
+    b 9f  
 8:  mul r1,T1 
     movs r0,T2 
-    pop {r2,T1,T2}   
+9:  pop {r2,T1,T2}   
     _RET 
 
 
@@ -1636,7 +1650,7 @@ tok_jmp: // token id  tbb offset
     push {r2,r3,T1,T2}
     mov T2,#TK_NONE 
     _CALL factor
-    beq 9f  // no factor   
+    cbz r0, 9f  // no factor   
     mov T2,r0  // TK_INTGR 
     mov r2,r1 // first factor    
 0:  _CALL next_token
@@ -1875,8 +1889,8 @@ uzero:
   .word 0xaa5555aa // SEED
   .word FILE_SYSTEM // FSPTR
   .word 0 // FFREE
-  .word ulast // TXTBGN
-  .word ulast // TXTEND
+  .word ulast-uzero // TXTBGN
+  .word ulast-uzero // TXTEND
   .word 0 //LOOP_DEPTH
   .word 0 // ARRAY_SIZE
   .word 0 // FLAGS
@@ -1886,7 +1900,6 @@ uzero:
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
   .space VARS_SIZE,0 // VARS
   .word _pad  // ARRAY_ADR 
-  .space 4, 0 // padding 
 ulast:
 
   .section .rodata.dictionary 
@@ -1976,8 +1989,8 @@ kword_end:
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
   _dict_entry TK_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
   _dict_entry TK_CMD,DWRITE,DWRITE_IDX //digital_write
-  _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
+  _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
@@ -2033,15 +2046,6 @@ fn_table:
 **********************************/
 
     .section .text.basic , "ax", %progbits 
-
-
-//************ test code  *****************
-    _GBL_FUNC tbi_test 
-
-
-    _RET 
-
-//************ end test code **************
 
 
 /*******************************
@@ -2199,7 +2203,12 @@ fn_table:
     _FUNC digital_write
     _RET  
 
+/*******************************
+  BASIC: END 
+  exit program 
+******************************/ 
     _FUNC cmd_end
+    b warm_start 
     _RET 
 
     _FUNC const_eeprom_base
@@ -2217,7 +2226,24 @@ fn_table:
     _FUNC gosub
     _RET 
 
+/**********************************
+  BASIC: GOTO expr 
+  go to line # 
+  use:
+
+**********************************/
     _FUNC goto
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    cbz r1,9f 
+1:  mov r0,r1 
+    _CALL search_lineno 
+    cbz r1,2f 
+    mov r0,#ERR_NO_LINE 
+    b tb_error 
+2:  mov BPTR,r0 
+9:  mov IN,#3 
     _RET 
 
     _FUNC gpio
@@ -2447,8 +2473,24 @@ print_exit:
     _FUNC rshift
     _RET 
 
+/****************************
+  BASIC: RUN 
+  execute program in memory
+****************************/
     _FUNC run
-    _RET 
+    _CLO 
+    ldr r0,[UPP,#TXTBGN]
+    ldr r1,[UPP,#TXTEND]
+    cmp r0,r1
+    beq 9f 
+    ldrb r1,[r0,#2]
+    str r1,[UPP,#COUNT]
+    mov BPTR,r0 
+    mov IN,#3 
+    ldr r0,[UPP,#FLAGS]
+    orr r0,#FRUN 
+    str r0,[UPP,#FLAGS]
+9:  _RET 
 
     _FUNC save
     _RET 
@@ -2522,8 +2564,34 @@ print_exit:
     _FUNC wait
     _RET 
 
+/*********************************************
+  BASIC: WORDS 
+  print list of BASIC WORDS in dictionary 
+  use:
+    r0,r1,T1,T2  
+********************************************/
     _FUNC words
-    _RET 
+    _CLO 
+    ldr T1,=kword_dict
+    eor T2,T2 
+1:  
+    mov r0,T1
+    _CALL strlen
+    cbz r0,9f 
+    add T2,r0 
+    cmp T2,#80 
+    bmi 2f
+    eor T2,T2  
+    mov r0,#CR 
+    _CALL uart_putc 
+2:  mov r0,T1 
+    _CALL uart_puts 
+    mov r0,#SPACE
+    add T2,#1  
+    _CALL uart_putc 
+    ldr T1,[T1,#-12]
+    b 1b 
+9:  _RET 
 
     _FUNC write
     _RET 

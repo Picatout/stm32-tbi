@@ -782,3 +782,62 @@ readln_exit:
   _RET 
 
 
+/*******************************
+    get_param 
+    read ANSI parameter 
+    input:
+      none 
+    output:
+      r0   value 
+    use:
+      T1   temp
+      T2   base 10  
+*******************************/
+    _FUNC get_param
+    push {T1,T2}
+    eor T1,T1 
+    mov T2,#10 
+1:  _CALL uart_getc
+    _CALL is_digit 
+    beq 9f 
+    mul T1,T2 
+    add T1,r0 
+    b 1b
+9: 
+    mov r0,T1     
+    pop {T1,T2}
+    _RET 
+
+/*******************************
+    get_curpos 
+    report cursor position 
+  input:
+    none 
+  output:
+    r0    row 
+    r1    column
+  use:
+    r2
+    r3 
+*******************************/
+    _GBL_FUNC get_curpos 
+    push {r2,r3}   
+    _CALL uart_flush_queue 
+    _CALL send_escape 
+    mov r0,#'6'
+    _CALL uart_putc
+    mov r0,#'n'
+    _CALL uart_putc  
+    _CALL uart_getc 
+    cmp r0,#ESC 
+    bne 9f 
+    _CALL uart_getc 
+    cmp r0,#'[' 
+    bne 9f 
+    _CALL get_param 
+    mov r2,r0 
+    _CALL get_param 
+    mov r1,r0 
+    mov r0,r2 
+9:  pop {r2,r3}
+    _RET 

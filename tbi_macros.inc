@@ -156,6 +156,7 @@
   .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
   .equ VARS_SIZE, 4*26 // space used by 26 BASIC variables (A-Z)
   .equ ARRAY_ADR,VARS+VARS_SIZE // array address at bottom of pad  
+  .equ BASIC_START,ARRAY_ADR+4 // BASIC area start after variables 
 
 /* flags used by BASIC interpreter */ 
 	.equ FRUN,(1<<0) // programm running
@@ -241,3 +242,24 @@
  \label: .asciz "\text"
  .p2align 2 
  .endm 
+
+// command line only 
+  .macro _CLO 
+  ldr r0,[UPP,#FLAGS]
+  tst r0,#FRUN 
+  beq 1f 
+  mov r0,#ERR_CMD_ONLY
+  b tb_error
+1: 
+  .endm 
+
+// run time only 
+  .macro RTO 
+  ldr r0,[UPP,#FLAGS]
+  tst r0,#FRUN 
+  bne 1f 
+  mov r0,#ERR_CMD_ONLY
+  b tb_error
+1:
+  .endm 
+

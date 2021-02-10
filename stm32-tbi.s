@@ -222,57 +222,26 @@ user_reboot_msg:
     bl	init_devices	 	/* RCC, GPIOs */
     bl  uart_init
     bl  cold_start  /* initialize BASIC SYSTEM */ 
-    bl  tbi_test 
+    bl  test 
     b .  
 
     _FUNC test
-/*
-  // page erase test 
-    _MOV32 r0,0x800fff0 
-    _CALL erase_page 
-    _MOV32 R1,0x800fff0 
-    ldr r1,[r1]
-    cmp r1,#-1 
-    beq 0f
-    ldr r0,per_error
-    _CALL uart_puts
-    b 1f 
-  0:     
-  // flash write test
-    _MOV32 r0,0x01020304
-    _MOV32 r1,0x0800fff0
-    _CALL flash_store 
-    _MOV32 r1,0x800fff0 
-    ldr r1,[r1]
-    _MOV32 r0,0X01020304
-    cmp r0,r1 
-    beq 1f
-    ldr r0,wr_error 
-    _CALL uart_puts 
+  _MOV32 UPP,RAM_ADR
+  add UPP,#0x130
+  _CALL get_curpos 
+  push {r1} 
+  mov r1,#10 
+  _CALL print_int 
+  mov r0,#','
+  _CALL uart_putc 
+  pop {r0}
+  mov r1,#10  
+  _CALL print_int 
+  _RET 
 
-    _MOV32 r0,RAM_ADR 
-    mov r1,#0x130 
-    _CALL dump  
-*/
-1: // readln test 
-    ldr r0,tib_addr   
-    mov r1,#80
-    _CALL readln
-2:  _CALL uart_puts 
-    mov r0,#CR 
-    _CALL uart_putc 
-    b 1b
-    _RET 
   tib_addr: 
     .word _tib
-/*
-  wr_error:
-    .asciz "flash write error!\r"
-    .p2align 2
-  per_error:
-    .asciz "per error!\r"
-    .p2align 2 
-*/
+
 
 // tranfert isr_vector to RAM at 0x20000000
     _FUNC remap 
@@ -384,6 +353,24 @@ wait_sws:
   orr r1,#32   
   str r1,[r0,#NVIC_ISER1]
   bx lr 
+
+/***************************
+    uart_flush_queue
+    flush rx queue
+  input:
+    none
+  output:
+    none 
+  use:
+    T1 temp
+***************************/
+    _GBL_FUNC uart_flush_queue
+    push {T1}
+    eor T1,T1 
+    str T1,[UPP,#RX_HEAD]
+    str T1,[UPP,#RX_TAIL]
+    pop {T1}
+    _RET 
 
 /****************************
     UART_PUTC
