@@ -1,3 +1,14 @@
+#### 2021-02-10
+
+* Déboguer **next_token** et **interpreter**.
+
+* Écris et testé mots BASIC **TICKS**,**TIMER**,**TIMEOUT**,**PAUSE**,**NOT**
+
+* Écris et testé mots BASIC **FOR**,**TO**,**STEP** et **NEXT**. 
+
+* Écris et testé mots BASIC **GOSUB** et **RETURN**.
+
+
 #### 2021-02-09
 
 * Corrigé bogue dans **is_digit** 

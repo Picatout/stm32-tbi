@@ -232,6 +232,13 @@
   stmdb DP!,{\reg}
   .endm 
 
+  // drop n parameters on dstack 
+  .macro _DROP n
+  mov r0,#4*\n
+  add DP,R0 
+  .endm 
+
+  // back to previous token in list 
   .macro _UNGET_TOKEN 
   ldr IN,[UPP,#IN_SAVED]
   ldr BPTR,[UPP,#BASICPTR] 

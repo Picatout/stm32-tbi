@@ -527,40 +527,47 @@ ARM GAS  terminal.s 			page 1
  232              	  stmdb DP!,{\reg}
  233              	  .endm 
  234              	
- 235              	  .macro _UNGET_TOKEN 
- 236              	  ldr IN,[UPP,#IN_SAVED]
- 237              	  ldr BPTR,[UPP,#BASICPTR] 
- 238              	  .endm 
- 239              	
- 240              	 // create a text data 
- 241              	 .macro _TEXT label,text
- 242              	 \label: .asciz "\text"
- 243              	 .p2align 2 
- 244              	 .endm 
- 245              	
+ 235              	  // drop n parameters on dstack 
+ 236              	  .macro _DROP n
+ 237              	  mov r0,#4*\n
+ 238              	  add DP,R0 
+ 239              	  .endm 
+ 240              	
+ 241              	  // back to previous token in list 
+ 242              	  .macro _UNGET_TOKEN 
+ 243              	  ldr IN,[UPP,#IN_SAVED]
+ 244              	  ldr BPTR,[UPP,#BASICPTR] 
+ 245              	  .endm 
 ARM GAS  terminal.s 			page 10
 
 
- 246              	// command line only 
- 247              	  .macro _CLO 
- 248              	  ldr r0,[UPP,#FLAGS]
- 249              	  tst r0,#FRUN 
- 250              	  beq 1f 
- 251              	  mov r0,#ERR_CMD_ONLY
- 252              	  b tb_error
- 253              	1: 
- 254              	  .endm 
- 255              	
- 256              	// run time only 
- 257              	  .macro RTO 
- 258              	  ldr r0,[UPP,#FLAGS]
- 259              	  tst r0,#FRUN 
- 260              	  bne 1f 
- 261              	  mov r0,#ERR_CMD_ONLY
- 262              	  b tb_error
- 263              	1:
- 264              	  .endm 
- 265              	
+ 246              	
+ 247              	 // create a text data 
+ 248              	 .macro _TEXT label,text
+ 249              	 \label: .asciz "\text"
+ 250              	 .p2align 2 
+ 251              	 .endm 
+ 252              	
+ 253              	// command line only 
+ 254              	  .macro _CLO 
+ 255              	  ldr r0,[UPP,#FLAGS]
+ 256              	  tst r0,#FRUN 
+ 257              	  beq 1f 
+ 258              	  mov r0,#ERR_CMD_ONLY
+ 259              	  b tb_error
+ 260              	1: 
+ 261              	  .endm 
+ 262              	
+ 263              	// run time only 
+ 264              	  .macro RTO 
+ 265              	  ldr r0,[UPP,#FLAGS]
+ 266              	  tst r0,#FRUN 
+ 267              	  bne 1f 
+ 268              	  mov r0,#ERR_CMD_ONLY
+ 269              	  b tb_error
+ 270              	1:
+ 271              	  .endm 
+ 272              	
   40              	
   41              	
   42              	    .section .text, "ax", %progbits 
@@ -591,6 +598,9 @@ ARM GAS  terminal.s 			page 1
   65 0010 80EA0000 	0:  eor r0,r0
   66 0014 04BC     	    pop {r2}
   67 0016 7047     	    _RET
+ARM GAS  terminal.s 			page 11
+
+
   68 0018 00B5FFF7 	1: _CALL  uart_getc 
   68      FEFF5DF8 
   68      04EB
@@ -598,9 +608,6 @@ ARM GAS  terminal.s 			page 1
   70              	2:
   71 0026 1178     	    ldrb r1,[r2]
   72 0028 0940     	    ands r1,r1 
-ARM GAS  terminal.s 			page 11
-
-
   73 002a F1D0     	    beq 0b 
   74 002c 8842     	    cmp r0,r1 
   75 002e 02D0     	    beq 4f
@@ -651,6 +658,9 @@ ARM GAS  terminal.s 			page 1
  116              	    _GBL_FUNC uart_puts 
  117 0060 4DF8048D 	    push {T1}
  118 0064 8046     	    mov T1,r0 
+ARM GAS  terminal.s 			page 12
+
+
  119 0066 18F8010B 	1:  ldrb r0,[T1],#1
  120 006a 28B1     	    cbz r0,9f 
  121 006c 00B5FFF7 	    _CALL uart_putc 
@@ -658,9 +668,6 @@ ARM GAS  terminal.s 			page 1
  121      04EB
  122 0076 F6E7     	    b 1b 
  123 0078 5DF8048B 	9:  pop {T1}
-ARM GAS  terminal.s 			page 12
-
-
  124 007c 7047     	    _RET 
  125              	
  126              	/***********************************
@@ -711,6 +718,9 @@ ARM GAS  terminal.s 			page 1
  171 00b4 DFF85A90 	    ldr T2,pad 
  172 00b8 09F18009 	    add T2,#PAD_SIZE 
  173 00bc 80EA0000 	    eor r0,r0 
+ARM GAS  terminal.s 			page 13
+
+
  174 00c0 09F8010D 	    strb r0,[T2,#-1]!
  175 00c4 00F12000 	    add r0,#SPACE 
  176 00c8 09F8010D 	    strb r0,[T2,#-1]!
@@ -718,9 +728,6 @@ ARM GAS  terminal.s 			page 1
  178 00d0 B8F10A0F 	    cmp T1,#10 
  179 00d4 04D1     	    bne 0f 
  180 00d6 17F00040 	    ands r0,r7,#(1<<31)
-ARM GAS  terminal.s 			page 13
-
-
  181 00da 01D0     	    beq 0f 
  182 00dc C7F10007 	    rsb r7,#0 
  183 00e0 01B4     	0:  push {r0}
@@ -771,6 +778,9 @@ ARM GAS  terminal.s 			page 1
  222              	// output:
  223              	     none 
  224              	   use:
+ARM GAS  terminal.s 			page 14
+
+
  225              	     none 
  226              	******************************/
  227 012e 00BF     	    _GBL_FUNC print_hex
@@ -778,9 +788,6 @@ ARM GAS  terminal.s 			page 1
  229 0132 4FEA1010 		lsr r0,#4  
  230 0136 00B5FFF7 		_CALL  digit_to_char 
  230      FEFF5DF8 
-ARM GAS  terminal.s 			page 14
-
-
  230      04EB
  231 0140 00B5FFF7 		_CALL  uart_putc 
  231      FEFF5DF8 
@@ -831,6 +838,9 @@ ARM GAS  terminal.s 			page 1
  269 0184 4DF8048D 	    push {T1}
  270 0188 00B500F0 	    _CALL send_escape
  270      3BF85DF8 
+ARM GAS  terminal.s 			page 15
+
+
  270      04EB
  271 0192 00B500F0 	    _CALL send_parameter 
  271      48F85DF8 
@@ -838,9 +848,6 @@ ARM GAS  terminal.s 			page 1
  272 019c 4FF02000 	    mov r0,#SPACE 
  273 01a0 00B5FFF7 	    _CALL uart_putc 
  273      FEFF5DF8 
-ARM GAS  terminal.s 			page 15
-
-
  273      04EB
  274 01aa 4FF07100 	    mov r0,#'q' 
  275 01ae 00B5FFF7 	    _CALL uart_putc 
@@ -891,6 +898,9 @@ ARM GAS  terminal.s 			page 1
  312 01f2 00B5FFF7 	    _CALL  bksp 
  312      E4FF5DF8 
  312      04EB
+ARM GAS  terminal.s 			page 16
+
+
  313 01fc 013A     	    subs r2,#1 
  314 01fe F8D1     		bne 1b 
  315 0200 04BC     	    pop {r2}
@@ -898,9 +908,6 @@ ARM GAS  terminal.s 			page 1
  317              	
  318              	
  319              	//--------------------------
-ARM GAS  terminal.s 			page 16
-
-
  320              	// send ANSI escape sequence
  321              	// ANSI: ESC[
  322              	// note: ESC is ASCII 27
@@ -951,6 +958,9 @@ ARM GAS  terminal.s 			page 1
  361 023e 08F10108 	    add T1,#1 
  362 0242 01B4     	    push {r0}
  363 0244 0846     	    mov r0,r1 
+ARM GAS  terminal.s 			page 17
+
+
  364 0246 0040     	    ands r0,r0
  365 0248 F2D1     	    bne 1b 
  366 024a 01BC     	2:  pop {r0}
@@ -958,9 +968,6 @@ ARM GAS  terminal.s 			page 1
  367      FEFF5DF8 
  367      04EB
  368 0256 B8F10108 	    subs T1,#1
-ARM GAS  terminal.s 			page 17
-
-
  369 025a F6D1     	    bne 2b 
  370 025c 5DF8048B 		pop {T1}
  371 0260 7047     	    _RET 
@@ -1011,6 +1018,9 @@ ARM GAS  terminal.s 			page 1
  404      04EB
  405 02aa 7047     	    _RET 
  406              	
+ARM GAS  terminal.s 			page 18
+
+
  407              	/*********************************
  408              	// print n spaces on terminal
  409              	// input:
@@ -1018,9 +1028,6 @@ ARM GAS  terminal.s 			page 1
  411              	// output:
  412              	//	none
  413              	// use:
-ARM GAS  terminal.s 			page 18
-
-
  414              	     T1    counter  
  415              	********************************/
  416              	    _GBL_FUNC spaces
@@ -1071,6 +1078,9 @@ ARM GAS  terminal.s 			page 1
  459              	    ld a,(CHAR,sp)
  460              	    ld (y),a
  461              	    incw y  
+ARM GAS  terminal.s 			page 19
+
+
  462              	    ld a,(IPOS,sp)
  463              	    _CALL  move_left
  464              	    _MOV32 r0,tib 
@@ -1078,9 +1088,6 @@ ARM GAS  terminal.s 			page 1
  466              	    ld a,(LLEN,sp)
  467              	    sub a,(IPOS,sp) 
  468              	    _CALL  move_left 
-ARM GAS  terminal.s 			page 19
-
-
  469              	*/
  470 02d0 7047     		_RET 
  471              	
@@ -1131,6 +1138,9 @@ ARM GAS  terminal.s 			page 1
  516              	//   none 
  517              	   use:
  518              	     r0 
+ARM GAS  terminal.s 			page 20
+
+
  519              	********************************/
  520 02d6 00BF     	    _FUNC delete_line
  521 02d8 01B4     	    push {r0}
@@ -1138,9 +1148,6 @@ ARM GAS  terminal.s 			page 1
  522      92FF5DF8 
  522      04EB
  523 02e4 4FF03200 		mov r0,#'2'
-ARM GAS  terminal.s 			page 20
-
-
  524 02e8 00B5FFF7 		_CALL  uart_putc 
  524      FEFF5DF8 
  524      04EB
@@ -1191,6 +1198,9 @@ ARM GAS  terminal.s 			page 1
  559 0334 01B4     	    push {r0}
  560 0336 00B5FFF7 	    _CALL send_escape
  560      64FF5DF8 
+ARM GAS  terminal.s 			page 21
+
+
  560      04EB
  561 0340 4FF04700 	    mov r0,#'G' 
  562 0344 00B5FFF7 	    _CALL uart_putc 
@@ -1198,9 +1208,6 @@ ARM GAS  terminal.s 			page 1
  562      04EB
  563 034e 01BC     	    pop {r0}
  564 0350 7047     	    _RET 
-ARM GAS  terminal.s 			page 21
-
-
  565              	
  566              	/************************************
  567              	   update_line 
@@ -1251,6 +1258,9 @@ ARM GAS  terminal.s 			page 1
  608 0374 88EA0808 	  eor T1,T1 // overwrite mode 
  609 0378 8346     	  mov r11,r0 
  610 037a A1F10109 	  sub T2,r1,#1  // buffer size -1
+ARM GAS  terminal.s 			page 22
+
+
  611 037e 8AEA0A0A 	  eor r10,r10  // 0 line length 
  612 0382 80EA0000 	  eor r0,r0
  613 0386 0BF80900 	  strb r0,[r11,T2]  
@@ -1258,9 +1268,6 @@ ARM GAS  terminal.s 			page 1
  614      FEFF5DF8 
  614      04EB
  615              	readln_loop:
-ARM GAS  terminal.s 			page 22
-
-
  616 0394 00B5FFF7 	  _CALL uart_getc 
  616      FEFF5DF8 
  616      04EB
@@ -1311,6 +1318,9 @@ ARM GAS  terminal.s 			page 1
  652      60FF5DF8 
  652      04EB
  653 041c 87EA0707 	  eor r7,r7   
+ARM GAS  terminal.s 			page 23
+
+
  654 0420 8AEA0A0A 	  eor r10,r10
  655 0424 B6E7     	  b readln_loop 
  656 0426 1228     	3: cmp r0,#CTRL_R    
@@ -1318,9 +1328,6 @@ ARM GAS  terminal.s 			page 1
  658              	// edit last entered line if  available 
  659 042a 1AEA0A0A 	  ands r10,r10 
  660 042e B1D1     	  bne readln_loop
-ARM GAS  terminal.s 			page 23
-
-
  661 0430 5846     	  mov r0,r11  
  662 0432 00B5FFF7 	  _CALL strlen
  662      FEFF5DF8 
@@ -1371,6 +1378,9 @@ ARM GAS  terminal.s 			page 1
  695      DAFE5DF8 
  695      04EB
  696 04b4 A7F10107 	   sub r7,#1
+ARM GAS  terminal.s 			page 24
+
+
  697 04b8 6CE7     	   b readln_loop
  698              	try_right:
  699 04ba 8128     	   cmp r0,#ARROW_RIGHT 
@@ -1378,9 +1388,6 @@ ARM GAS  terminal.s 			page 1
  701 04be 5745     	   cmp r7,r10
  702 04c0 3FF468AF 	   beq readln_loop
  703 04c4 07F10107 	   add r7,#1
-ARM GAS  terminal.s 			page 24
-
-
  704 04c8 4FF00100 	   mov r0,#1  
  705 04cc 00B5FFF7 	   _CALL move_right  
  705      DBFE5DF8 
@@ -1431,6 +1438,9 @@ ARM GAS  terminal.s 			page 1
  741      04EB
  742 0554 BDE80101 	  pop {r0,T1}
  743 0558 0BF80700 	  strb r0,[r11,r7] 
+ARM GAS  terminal.s 			page 25
+
+
  744 055c 07F10107 	  add r7,#1
  745 0560 0AF1010A 	  add r10,#1 
  746 0564 80EA0000 	  eor r0,r0 
@@ -1438,9 +1448,6 @@ ARM GAS  terminal.s 			page 1
  748 056c 5846     	  mov r0,r11   
  749 056e 00B5FFF7 	  _CALL update_line
  749      F0FE5DF8 
-ARM GAS  terminal.s 			page 25
-
-
  749      04EB
  750 0578 07F10100 	  add r0,r7,#1 
  751 057c 00B5FFF7 	  _CALL cursor_x  
@@ -1491,6 +1498,9 @@ ARM GAS  terminal.s 			page 1
  786              	    get_param 
  787              	    read ANSI parameter 
  788              	    input:
+ARM GAS  terminal.s 			page 26
+
+
  789              	      none 
  790              	    output:
  791              	      r0   value 
@@ -1498,9 +1508,6 @@ ARM GAS  terminal.s 			page 1
  793              	      T1   temp
  794              	      T2   base 10  
  795              	*******************************/
-ARM GAS  terminal.s 			page 26
-
-
  796 05f2 00BF     	    _FUNC get_param
  797 05f4 2DE90003 	    push {T1,T2}
  798 05f8 88EA0808 	    eor T1,T1 
@@ -1551,6 +1558,9 @@ ARM GAS  terminal.s 			page 1
  831 065a 00B5FFF7 	    _CALL uart_getc 
  831      FEFF5DF8 
  831      04EB
+ARM GAS  terminal.s 			page 27
+
+
  832 0664 1B28     	    cmp r0,#ESC 
  833 0666 13D1     	    bne 9f 
  834 0668 00B5FFF7 	    _CALL uart_getc 
@@ -1558,9 +1568,6 @@ ARM GAS  terminal.s 			page 1
  834      04EB
  835 0672 5B28     	    cmp r0,#'[' 
  836 0674 0CD1     	    bne 9f 
-ARM GAS  terminal.s 			page 27
-
-
  837 0676 00B5FFF7 	    _CALL get_param 
  837      BCFF5DF8 
  837      04EB

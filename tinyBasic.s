@@ -1019,19 +1019,39 @@ escaped: .asciz "abtnvfr"
     r1    temp 
 *********************************/
     _FUNC tb_error 
+    ldr r1,[UPP,#FLAGS]
+    tst r1,#FCOMP
+    bne compile_error
+rt_error:
+    push {r0}
+    ldr r0,=rt_error_msg 
+    _CALL uart_puts 
+    pop {r0}
+    ldr r1,=err_msg  
+    lsl r0,#2 
+    ldr r0,[r1,r0]
+    _CALL uart_puts
+    ldr BPTR,[UPP,#BASICPTR]
+    ldr IN,[UPP,#IN_SAVED]
+    _CALL next_token
+    push {r1}
+    mov r1,#10 
+    _CALL print_int 
+    mov r0,#',' 
+    _CALL uart_putc 
+    pop {r0}
+    mov r1,#10 
+    _CALL print_int 
+    b warm_start 
+compile_error:
     ldr r1,=err_msg 
     lsl r0,#2 
     ldr r0,[r1,r0]
     _CALL uart_puts
-    ldr r0,[UPP,#FLAGS]
-    tst r0,#FCOMP
-    bne compile_error
-interpret_error:
-    
-    b warm_start 
-compile_error:
     ldr r0,[UPP,#BASICPTR]
-    _CALL uart_puts 
+    _CALL uart_puts
+    mov r0,#CR 
+    _CALL uart_putc  
     ldr r0,[UPP,#IN_SAVED]
     _CALL spaces 
     mov r0,#'^' 
@@ -1040,6 +1060,9 @@ compile_error:
     _CALL uart_putc   
     b  warm_start  
     
+rt_error_msg:
+  .asciz "\nRuntime error\n"
+
 err_msg:
 	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
 	.word err_run_only,err_cmd_only,err_duplicate,err_not_file,err_bad_value
@@ -1306,7 +1329,7 @@ dstack: .word _dstack
 tib: .word _tib 
 pad: .word _pad 
 array: .word _pad - 4 
-ready: .asciz "READY" 
+ready: .asciz "\nREADY" 
 
 /**********************************
     warm_start 
@@ -1349,46 +1372,27 @@ ready: .asciz "READY"
     beq 1b  // tokens stored in text area 
 // interpret tokenized line 
 interpreter:
-/*
-   ldr r0,[UPP,#COUNT]
-   cmp IN,r0  
-   bmi interp_loop
-// end of line reached     
-next_line:
-  ldr r0,[UPP,#FLAGS]
-  tst r0,#FRUN 
-  beq cmd_line 
-  ldr r0,[UPP,#COUNT]
-  add BPTR,r0 
-  ldr r0,[UPP,#TXTEND]
-  cmp BPTR,r0 
-  bmi 1f 
-  b warm_start 
-1:
-  mov IN,#3
-*/ 
-interp_loop:
   _CALL next_token 
   cmp r0,#TK_NONE 
-  beq warm_start  
+  beq interpreter   
   cmp r0,#TK_CMD 
   bne 2f
   mov r0,r1 
   bl execute  
-  b interp_loop   
+  b interpreter   
 2: 
   cmp r0,#TK_VAR 
   bne 3f 
   b let_var 
-  b interp_loop 
+  b interpreter 
 3: 
   cmp r0,#TK_ARRAY 
   bne 4f
   b let_array 
-  b interp_loop
+  b interpreter
 4: 
   cmp r0,#TK_COLON
-  beq interp_loop
+  beq interpreter
   b syntax_error
 
 /*****************************
@@ -1422,15 +1426,20 @@ interp_loop:
     ldr r0,[UPP,#COUNT]
     cmp IN,r0 
     bmi 0f
+new_line:
     ldrh r1,[BPTR] // line #
-    cbz r1, 9f  // command line  
+    cbnz r1, end_of_line  // command line
+    b warm_start
+end_of_line:        
     add BPTR,r0 // next line 
     ldr r0,[UPP,#TXTEND]
     cmp BPTR,r0 
-    bpl 9f // end of program
+    bpl warm_start // end of program
     ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT] 
-    mov IN,#3   
+    mov IN,#3
+    mov r0,#TK_COLON 
+    b 9f    
 0: 
     str IN,[UPP,#IN_SAVED]
     str BPTR,[UPP,#BASICPTR]
@@ -1622,7 +1631,7 @@ tok_jmp: // token id  tbb offset
     cmp r0,#TK_CFUNC 
     bne 6f 
 5:  mov r0,r1  
-    bl execute
+    _CALL execute
     b 8f 
 6:  _UNGET_TOKEN      
     mov r0,#TK_NONE
@@ -2217,13 +2226,117 @@ fn_table:
     _FUNC fcpu
     _RET 
 
-    _FUNC for
-    _RET 
-
     _FUNC forget
     _RET 
 
+/**************************************************
+  BASIC: FOR var=expr TO expr [STEP exp] ... NEXT 
+  introdure FOR...NEXT loop 
+**************************************************/
+    _FUNC for
+    stmdb r12!,{VADR,LIMIT,INCR}
+    mov INCR,#1
+    _CALL next_token
+    cmp r0,#TK_VAR
+    bne syntax_error
+    push {r1} 
+    _CALL let_var 
+    pop {VADR}
+    lsl VADR,#2
+    add VADR,UPP 
+    add VADR,#VARS 
+    _RET 
+
+/***************************************
+  BASIC: TO expr 
+  set limit of FOR...NEXT loop 
+**************************************/
+    _FUNC to
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    mov LIMIT,r1
+    // save loop back parameters 
+    ldr r0,[UPP,#COUNT]
+    stmdb r12!,{r0,IN,BPTR}
+    _RET 
+
+/********************************************
+  BASIC: STEP expr 
+  set increment for FOR...NEXT loop 
+********************************************/
+    _FUNC step
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    mov INCR,r1
+    // replace parameters left by TO
+    ldr r0,[UPP,#COUNT]
+    stmia r12, {r0,IN,BPTR}
+    _RET 
+
+/********************************************
+  BASIC: NEXT var 
+  incrment FOR...NEXT loop variable
+  exit if variable cross LIMIT 
+********************************************/
+    _FUNC next
+    _CALL next_token 
+    cmp r0,#TK_VAR 
+    bne syntax_error 
+    lsl r1,#2 
+    add r1,UPP 
+    add r1,#VARS 
+    cmp r1,VADR
+    bne syntax_error 
+    ldr r0,[VADR]
+    add r0,INCR 
+    str r0,[VADR]
+    cmp INCR,#0
+    bmi 2f
+    cmp r0,LIMIT 
+    bgt 8f  
+    b 9f  
+2:  cmp r0,LIMIT 
+    bge 9f  
+8: // exit for...next
+  //  drop branch parameters
+    _DROP 3
+  // restore outer loop parameters
+    ldmia r12!,{VADR,LIMIT,INCR}
+    _RET 
+9:  ldmia r12,{r0,IN,BPTR}
+    str r0,[UPP,#COUNT]
+    _RET 
+
+/*********************************
+  BASIC: GOSUB expr 
+  call a subroutine at line# 
+*********************************/
     _FUNC gosub
+    _CALL expression
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    mov r0,r1 
+    _CALL search_lineno  
+    cbz r1,1f 
+    mov r0,#ERR_BAD_VALUE 
+    b tb_error 
+1:  ldr r1,[UPP,#COUNT]
+    stmdb r12!,{r1,IN,BPTR}
+    mov BPTR,r0 
+    mov IN,#3 
+    ldrb r0,[BPTR,#2]
+    str r0,[UPP,#COUNT]
+    _RET 
+
+/**********************************
+  BASIC: RETURN 
+  leave a subroutine 
+*********************************/
+    _FUNC return 
+    ldmia r12!,{r0,IN,BPTR}
+    str r0,[UPP,#COUNT]
     _RET 
 
 /**********************************
@@ -2340,14 +2453,20 @@ let_array:
     _FUNC muldiv
     _RET 
 
-    _FUNC next
-    _RET 
-
     _FUNC new
     _RET  
 
-    _FUNC func_not
-    _RET 
+/************************************
+  BASIC: NOT relation  
+  invert logical value or relation
+************************************/
+      _FUNC func_not
+      _CALL relation 
+      cbz r1,8f 
+      eor r1,r1
+      b 9f 
+  8:  mov r1,#-1
+  9:  _RET 
 
     _FUNC const_odr
     _RET 
@@ -2358,7 +2477,20 @@ let_array:
     _FUNC pad_ref
     _RET 
 
+/***********************
+  BASIC: PAUSE expr 
+  suspend execution for 
+  expr milliseconds 
+************************/
     _FUNC pause
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    ldr r0,[UPP,#TICKS]
+    add r0,r1 
+1:  ldr r1,[UPP,#TICKS]
+    cmp r0,r1 
+    bne 1b     
     _RET 
 
     _FUNC pin_mode
@@ -2464,9 +2596,6 @@ print_exit:
     _FUNC restore
     _RET 
 
-    _FUNC return
-    _RET 
-
     _FUNC  random
     _RET 
 
@@ -2516,22 +2645,40 @@ print_exit:
     _FUNC spi_write
     _RET 
 
-    _FUNC step
-    _RET 
-
     _FUNC stop
     _RET 
 
+/**************************
+  BASIC: TICKS 
+  return msec counter
+**************************/  
     _FUNC get_ticks
+    ldr r1,[UPP,#TICKS]
+    mov r0,#TK_INTGR
     _RET  
 
+/*************************
+  BASIC: TIMER expr 
+  set countdown timer 
+************************/
     _FUNC set_timer
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    str r1,[UPP,#TIMER]
     _RET 
 
+/***************************
+  BASIC: TIMEOUT
+  check for timer expiration 
+  return -1 true || 0 false
+****************************/
     _FUNC timeout
-    _RET 
-
-    _FUNC to
+    eor r1,r1 
+    ldr r0,[UPP,#TIMER]
+    cbnz r0,9f 
+    mvn r1,r1 
+9:  mov r0,#TK_INTGR    
     _RET 
 
     _FUNC tone
