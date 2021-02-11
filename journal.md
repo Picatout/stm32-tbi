@@ -8,6 +8,9 @@
 
 * Écris et testé mots BASIC **GOSUB** et **RETURN**.
 
+* Ajout de la commande BASIC **NEW**.
+
+* Travail sur commande BASIC **LIST**. 
 
 #### 2021-02-09
 

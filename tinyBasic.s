@@ -496,7 +496,7 @@ lt:
     ldrb r1,[T1,r3]
     cmp r1,#'>' 
     beq 1f
-    b store_r0 
+    b 2f 
 gt:
     mov r0,#TK_GT 
     ldrb r1,[T1,r3]
@@ -1032,6 +1032,11 @@ rt_error:
     ldr r0,[r1,r0]
     _CALL uart_puts
     ldr BPTR,[UPP,#BASICPTR]
+    ldrh r0,[BPTR]
+    mov r1,#10
+    _CALL print_int 
+    mov r0,#',' 
+    _CALL uart_putc 
     ldr IN,[UPP,#IN_SAVED]
     _CALL next_token
     push {r1}
@@ -1173,6 +1178,32 @@ tk_id: .asciz "last token id: "
 9: pop {r2,r3,T1,T2}
    _RET 
 
+/********************************************
+    bc_to_name 
+    search bytecode in dictionary and 
+    return its name 
+  input:
+    r0    keyword bytecode 
+  ouput:
+    r0    name string 
+  use:
+    T1    link 
+    T2    tmp 
+*********************************************/
+    _FUNC bc_to_name 
+    push {T1,T2}
+    ldr T1,=kword_dict 
+1:  ldr T2,[T1,#-8]
+    cmp T2,r0 
+    beq 2f 
+    ldr T1,[T1,#-12]
+    cmp T1,#0
+    bne 1b  
+2:  mov r0,T1 
+    pop {T1,T2}
+    _RET
+
+
 /**************************
     INTERPRETER 
 *************************/
@@ -1279,7 +1310,7 @@ version:
 /*****************************
    clear_basic 
    reset BASIC system variables 
-   and clear variables 
+   and clear variables and RAM 
 *****************************/
     _FUNC clear_basic
   	eor r0,r0
@@ -1296,7 +1327,13 @@ version:
     and r0,r1 
     str r0,[UPP,#TXTBGN]
     str r0,[UPP,#TXTEND]
-    _CALL clear_vars 
+    _CALL clear_vars
+    ldr r0,[UPP,#TXTBGN]
+    ldr r1,tib 
+    eor r2,r2 
+1:  str r2,[r0],#4
+    cmp r0,r1 
+    bmi 1b 
     _RET  
 
 /***********************************
@@ -1383,12 +1420,12 @@ interpreter:
 2: 
   cmp r0,#TK_VAR 
   bne 3f 
-  b let_var 
+  _CALL let_var 
   b interpreter 
 3: 
   cmp r0,#TK_ARRAY 
   bne 4f
-  b let_array 
+  _CALL let_array 
   b interpreter
 4: 
   cmp r0,#TK_COLON
@@ -2438,8 +2475,125 @@ let_array:
     str r1,[r0]
     _RET  
 
+/***************************************
+  BASIC: LIST [[first,]last]
+  use:
+    T1 
+**************************************/  
     _FUNC list
+    _CLO
+    push {T1} 
+//  _CALL arg_list 
+    ldr BPTR,[UPP,#TXTBGN]
+    ldr T1,[UPP,#TXTEND]
+1:  cmp BPTR,T1 
+    bpl 9f
+    mov r0,BPTR  
+    _CALL print_basic_line
+    ldrb r0,[BPTR,#2]
+    add BPTR,r0 
+    b 1b
+9:  b warm_start 
+
+/****************************
+  decotonize and print line 
+  input:
+    BPTR   line address 
+  output:
+    none:
+  use:
+    r0,r1 
+****************************/
+    _FUNC print_basic_line 
+    push {r0,r1}
+    mov IN,#0
+    ldrh r0,[BPTR,IN]
+    add IN,#2
+    mov r1,#10 
+    _CALL print_int
+    ldrb r0, [BPTR,IN]
+    add IN,#1 
+    str r0,[UPP,#COUNT]
+token_loop:  
+    _CALL next_token
+    cmp r0,#TK_NONE 
+    beq 9f  
+    cmp r0,#TK_INTGR 
+    bne 2f 
+    mov r0,r1 
+    ldr r1,[UPP,#BASE]
+    _CALL print_int 
+    b token_loop 
+2:  cmp r0,#TK_CHAR 
+    bne 3f 
+    add r0,r1,#'A' 
+    _CALL uart_putc
+    mov r0,#SPACE 
+    _CALL uart_putc
+    b token_loop 
+3:  cmp r0,#TK_QSTR 
+    bne 4f 
+    mov r0,#'"'
+    _CALL uart_putc 
+    mov r0,r1 
+    _CALL uart_puts
+    mov r0,#'"'
+    _CALL uart_putc 
+    b token_loop
+4:  cmp r0,#TK_CMD
+    bmi 5f 
+    cmp r0,#TK_INTGR 
+    bpl 5f
+    mov r0,#SPACE 
+    _CALL uart_putc  
+    mov r0,r1
+    cmp r0,#PRT_IDX 
+    bne 1f  
+    mov r0,#'?'
+    _CALL uart_putc 
+    b 3f 
+1:  _CALL bc_to_name
+2:  _CALL uart_puts
+3:  mov r0,#SPACE 
+    _CALL uart_putc 
+    b token_loop
+5:  push {r0}
+    ldr r1,=single_char 
+    ldrb r0,[r1,r0]
+    pop {r1}
+    cbz r0,6f 
+    _CALL uart_putc
+    b token_loop
+6:  cmp r1,#TK_GE 
+    bne 7f 
+    ldr r0,=ge_str
+    b 2b 
+7:  cmp r1,#TK_LE 
+    bne 8f
+    ldr r0,=le_str
+    b 2b
+8:  cmp r1,#TK_NE 
+    bne 9f 
+    ldr r0,=ne_str 
+    b 2b 
+9:  mov r0,#CR 
+    _CALL uart_putc 
+    pop {r0,r1}
     _RET 
+
+ge_str: .asciz ">="
+le_str: .asciz "<="
+ne_str: .asciz "<>"
+
+single_char:
+  .byte 0,':',0,0,0,'@','(',')',',','#' // 0..9
+  .space 6
+  .byte '+','-'
+  .space 14
+  .byte '*','/','%'
+  .space 14
+  .byte '>','=',0,'<',0,0
+
 
     _FUNC load
     _RET 
@@ -2453,8 +2607,15 @@ let_array:
     _FUNC muldiv
     _RET 
 
+/***********************************
+  BASIC: NEW 
+  delete existing program in memory
+  and clear variables and RAM 
+***********************************/
     _FUNC new
-    _RET  
+    _CLO 
+    _CALL clear_basic 
+    b warm_start   
 
 /************************************
   BASIC: NOT relation  
