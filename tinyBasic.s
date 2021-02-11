@@ -299,9 +299,9 @@ move_from_end: // move from high address toward low
     delete_line 
     delete BASIC line at addr 
     input:
-      r0    address 
+      r0    address line to delete 
     output:
-      r0    address  
+      r0    same as input 
     use: 
       r1    dest adr
       r2    bytes to move 
@@ -317,7 +317,7 @@ move_from_end: // move from high address toward low
     sub r2,T2,r0 // bytes to move 
     _CALL cmove
     sub T2,T1 // txtend-count 
-    str T1,[UPP,#TXTEND] 
+    str T2,[UPP,#TXTEND] 
     pop {r0,r1,r2,T1,T2}
     _RET 
 
@@ -367,7 +367,7 @@ move_from_end: // move from high address toward low
 // already exist 
     _CALL delete_line // delete old one 
     ldrb T2,[T1,#2] // buffer line length 
-    cmp T2,#3 
+    cmp T2,#4 // empty line length==4  
     beq 9f
 1: //insert new line 
     ldrb r1,[T1,#2]
@@ -537,6 +537,9 @@ tick:
     add r0,T1,r3 
     mov r1,T2 
     _CALL strcpy 
+    _CALL strlen 
+    add T2,r0
+    add T2,#1
     ldr r3,[UPP,#COUNT]
     b token_exit
 store_r0: 
@@ -1097,6 +1100,16 @@ tk_id: .asciz "last token id: "
 
 
     .section  .text , "ax", %progbits 
+
+/*********************************
+   skip_line 
+   data and remark line are skipped
+   by the interpreter 
+***********************************/
+    _FUNC skip_line 
+    ldr IN,[UPP,#COUNT]
+    _RET 
+
 
 /*********************************
    BASIC: BTGL adr, mask   
@@ -2073,13 +2086,13 @@ kword_dict: // first name field
 fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
 	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
-	.word const_cr1,data,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
+	.word const_cr1,skip_line,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
 	.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
 	.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
 	.word let,list,load,log2,lshift,muldiv,next,new // 40..47
 	.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
 	.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..63
-	.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,remark // 64..71 
+	.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,skip_line // 64..71 
 	.word restore,return, random,rshift,run,save,show,size // 72..79
 	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
 	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
@@ -2225,11 +2238,116 @@ fn_table:
     _FUNC const_cr1
     _RET 
 
-    _FUNC data
+
+/**************************
+  BASIC: DATALN expr 
+  set data pointer to line#
+  specified by expr. 
+  if line# not valid program 
+  end with error.
+  use:
+
+**************************/
+    _FUNC data_line
+    _RTO // run time only 
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    mov r0,r1 
+    _CALL search_lineno
+    cmp r1,#0
+    beq 1f 
+0:  mov r0,#ERR_BAD_VALUE
+    b syntax_error 
+1:  ldrb r1,[r0,#3]
+    cmp r1,#TK_CMD 
+    bne 0b
+    ldrb r1,[r0,#4]
+    cmp r1,#DATA_IDX 
+    bne 0b  
+    str r0,[UPP,#DATAPTR]
+    ldrb r1,[r0,#2]
+    str r1,[UPP,#DATALEN]
+    mov r1,#5 // position of first data item  
+    str r1,[UPP,#DATA]
     _RET 
 
-    _FUNC data_line
-    _RET 
+/*****************************
+  BASIC: READ 
+  read next data item 
+  the value can be assigned to
+  variable or used in expression
+*****************************/
+    _FUNC read
+    _RTO
+    ldr r0,[UPP,#DATALEN] // line length 
+    ldr r1,[UPP,#DATAPTR] // line address 
+    ldr r2,[UPP,#DATA] // item on line  
+    cmp r2,r0
+    beq seek_next
+1:  ldrb r0,[r1,r2]
+    add r2,#1
+    cmp r0,#TK_NONE
+    beq seek_next
+    cmp r0,#TK_COMMA
+    beq 1b  
+    cmp r0,#TK_INTGR 
+    bne syntax_error  
+    ldr r1,[r1,r2]
+    add r2,#4
+    str r2,[UPP,#DATA]
+    b 9f  
+seek_next: // is next line data ?
+    ldrb r0,[R1,#2]
+    add r1,r0 
+    ldrb r0,[R1,#3]
+    cmp r0,#TK_CMD
+    bne 2f 
+    ldrb r0,[r1,#4]
+    cmp r0,#DATA_IDX 
+    bne 2f 
+    str r1,[UPP,#DATAPTR]
+    ldrb r0,[r1,#2]
+    str  r0,[UPP,#DATALEN]
+    mov r2,#5 
+    str r2,[UPP,#DATA]
+    b 1b 
+2:  mov r0,#ERR_NO_DATA
+    b tb_error 
+9:  _RET 
+
+/********************************
+  BASIC: RESTORE 
+  seek first data line 
+********************************/
+    _FUNC restore
+    _RTO 
+    ldr r1,[UPP,#TXTBGN]
+1:  ldr r0,[UPP,#TXTEND]
+    beq no_data_line 
+    ldrb r0,[r1,#4]
+    cmp r0,#DATA_IDX
+    bne try_next_line
+    ldrb r0,[r1,#3]
+    cmp r0,#TK_CMD
+    bne try_next_line
+// this a the first data line 
+    str r1,[UPP,#DATAPTR]
+    ldrb r0,[r1,#2]
+    str r0,[UPP,#DATALEN]
+    mov r0,#5 
+    str r0,[UPP,#DATA]
+    b 9f
+try_next_line:
+    ldrb r0,[r1,#2]
+    add r1,r0 
+    b 1b 
+no_data_line:
+    eor r0,r0 
+    str r0,[UPP,#DATAPTR]
+    str r0,[UPP,#DATA]
+    str r0,[UPP,#DATALEN]
+9:  _RET 
 
     _FUNC const_ddr
     _RET 
@@ -2552,6 +2670,14 @@ token_loop:
     mov r0,#'?'
     _CALL uart_putc 
     b 3f 
+1:  cmp r0,#REM_IDX
+    bne 1f
+    mov r0,#'\''
+    _CALL uart_putc 
+    add r0,BPTR,IN  
+    _CALL uart_puts 
+    ldr IN,[UPP,#COUNT]
+    b 9f 
 1:  _CALL bc_to_name
 2:  _CALL uart_puts
 3:  mov r0,#SPACE 
@@ -2706,11 +2832,8 @@ single_char:
     str r1,[UPP,#TAB_WIDTH]
 6:  _CALL next_token 
     cmp r0,#TK_COMMA 
-    bne 7f
-    mov T1,#1
-    b 0b  
-7:  cmp r0,#2 
-    bpl syntax_error  
+    beq 0b
+    _UNGET_TOKEN 
 print_exit:
       ands T1,T1 
       bne 9f
@@ -2748,15 +2871,6 @@ print_exit:
     _FUNC qkey
     _RET 
 
-    _FUNC read
-    _RET 
-
-    _FUNC remark
-    _RET  
-
-    _FUNC restore
-    _RET 
-
     _FUNC  random
     _RET 
 
@@ -2776,7 +2890,12 @@ print_exit:
     ldrb r1,[r0,#2]
     str r1,[UPP,#COUNT]
     mov BPTR,r0 
-    mov IN,#3 
+    mov IN,#3
+    // reset dataline pointers 
+    eor r0,r0 
+    str r0,[UPP,#DATAPTR]
+    str r0,[UPP,#DATA]
+    str r0,[UPP,#DATALEN] 
     ldr r0,[UPP,#FLAGS]
     orr r0,#FRUN 
     str r0,[UPP,#FLAGS]

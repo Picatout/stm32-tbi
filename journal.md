@@ -1,3 +1,16 @@
+#### 2021-02-11
+
+* Déboguer commande **PRINT** qui ne fesait le CR lorsque le dernier argument éait une expression.
+
+* Ajout des mots BASIC  **DATA**,**DATALN**,**READ** et **RESTORE**.
+
+* Déboguer fonctions d'éditions, **inster_line**, **create_gap**, **delete_line** 
+
+* Corrigé **compile** qui ne traitait pas les commentaires correctement.
+
+* Corrigé commande **LIST** qui n'affichait pas les commentaires.
+
+
 #### 2021-02-10
 
 * Déboguer **next_token** et **interpreter**.

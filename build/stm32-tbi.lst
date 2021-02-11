@@ -560,7 +560,7 @@ ARM GAS  stm32-tbi.s 			page 1
  261              	  .endm 
  262              	
  263              	// run time only 
- 264              	  .macro RTO 
+ 264              	  .macro _RTO 
  265              	  ldr r0,[UPP,#FLAGS]
  266              	  tst r0,#FRUN 
  267              	  bne 1f 

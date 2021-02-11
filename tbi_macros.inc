@@ -261,7 +261,7 @@
   .endm 
 
 // run time only 
-  .macro RTO 
+  .macro _RTO 
   ldr r0,[UPP,#FLAGS]
   tst r0,#FRUN 
   bne 1f 
