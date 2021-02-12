@@ -1,3 +1,11 @@
+#### 2021-02-12
+
+* Ajout de **CHAR** 
+
+* Améliorer commmande **DUMP** pour aligner la colonne des octetes à la position 11.
+
+* Améliorer **PRINT** pour tenir compte de la largeur des colonnes **TAB_WIDTH**.
+
 #### 2021-02-11
 
 * Ajout des fonctions BASIC **AND**,**OR**,**XOR**,**ASC** 

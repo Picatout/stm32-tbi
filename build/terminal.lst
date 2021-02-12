@@ -604,7 +604,7 @@ ARM GAS  terminal.s 			page 1
   68 0018 00B5FFF7 	1: _CALL  uart_getc 
   68      FEFF5DF8 
   68      04EB
-  69 0022 DFF87026 	    ldr r2,=convert_table
+  69 0022 DFF8A026 	    ldr r2,=convert_table
   70              	2:
   71 0026 1178     	    ldrb r1,[r2]
   72 0028 0940     	    ands r1,r1 
@@ -1578,8 +1578,31 @@ ARM GAS  terminal.s 			page 1
  840 068c 0146     	    mov r1,r0 
  841 068e 1046     	    mov r0,r2 
  842 0690 0CBC     	9:  pop {r2,r3}
- 843 0692 70475400 	    _RET 
- 843      0000
+ 843 0692 7047     	    _RET 
+ 844              	
+ 845              	/***********************************
+ 846              	    tabulation 
+ 847              	    set cursor column to next 
+ 848              	    tabulation stop 
+ 849              	**********************************/
+ 850              	    _GBL_FUNC tabulation 
+ 851 0694 07B4     	    push {r0,r1,r2}
+ 852 0696 00B5FFF7 	    _CALL get_curpos 
+ 852      FEFF5DF8 
+ 852      04EB
+ 853 06a0 A1F10100 	    sub r0,r1,#1 
+ 854 06a4 616C     	    ldr r1,[UPP,#TAB_WIDTH]
+ 855 06a6 00B5FFF7 	    _CALL modulo
+ 855      FEFF5DF8 
+ 855      04EB
+ 856 06b0 606C     	    ldr r0,[UPP,#TAB_WIDTH]
+ 857 06b2 A0EB0100 	    sub r0,r1 
+ 858 06b6 00B5FFF7 	    _CALL spaces 
+ 858      FEFF5DF8 
+ 858      04EB
+ 859 06c0 07BC     	9:  pop {r0,r1,r2}
+ 860 06c2 7047     	    _RET 
+ 861 06c4 54000000 	
 ARM GAS  terminal.s 			page 28
 
 
@@ -1902,7 +1925,8 @@ DEFINED SYMBOLS
           terminal.s:707    .text:00000000000004d8 try_suprim
           terminal.s:796    .text:00000000000005f4 get_param
           terminal.s:823    .text:0000000000000628 get_curpos
-          terminal.s:843    .text:0000000000000694 $d
+          terminal.s:850    .text:0000000000000694 tabulation
+          terminal.s:861    .text:00000000000006c4 $d
 
 UNDEFINED SYMBOLS
 uart_getc
@@ -1912,3 +1936,4 @@ cmove
 strlen
 is_digit
 uart_flush_queue
+modulo

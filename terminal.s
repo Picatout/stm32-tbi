@@ -841,3 +841,21 @@ readln_exit:
     mov r0,r2 
 9:  pop {r2,r3}
     _RET 
+
+/***********************************
+    tabulation 
+    set cursor column to next 
+    tabulation stop 
+**********************************/
+    _GBL_FUNC tabulation 
+    push {r0,r1,r2}
+    _CALL get_curpos 
+    sub r0,r1,#1 
+    ldr r1,[UPP,#TAB_WIDTH]
+    _CALL modulo
+    ldr r0,[UPP,#TAB_WIDTH]
+    sub r0,r1 
+    _CALL spaces 
+9:  pop {r0,r1,r2}
+    _RET 
+

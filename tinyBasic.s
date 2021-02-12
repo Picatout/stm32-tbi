@@ -182,16 +182,21 @@ move_from_end: // move from high address toward low
       r0    address+count 
     use:
       r2    address 
-      r3    count 
+      r3    count
+      T1    tab_width  
 ****************************************/
     _FUNC prt_row 
-    push {r0,r1,r2,r3}
+    push {r0,r1,r2,r3,T1}
     mov r2,r0
+    ldr T1,[UPP,#TAB_WIDTH]
+    mov r0,#10
+    str r0,[UPP,#TAB_WIDTH]
+    mov r0,r2 
     mov r3,r1  
     mov r1,#16 
     _CALL print_int 
-    mov r0,#3
-    _CALL spaces  
+    _CALL tabulation
+    str T1,[UPP,#TAB_WIDTH]
 // print bytes values in hexadecimal 
 1:  ldrb r0,[r2],#1 
     _CALL print_hex
@@ -205,7 +210,7 @@ move_from_end: // move from high address toward low
     mov r0,#CR 
     _CALL uart_putc 
     mov r0,r2
-    pop {r2,r3}      
+    pop {r2,r3,T1}      
     _RET 
 
 /************************************
@@ -1069,6 +1074,25 @@ single_char:
 
 
 /**********************************
+  modulo 
+  compute r0 mod r1
+  input:
+    r0   dividend
+    r1   divisor 
+  output:
+    r0   TK_INTGR 
+    r1   r0 mod r1 
+*********************************/
+    _GBL_FUNC modulo 
+    push {r0}
+    udiv r0,r1 
+    mul  r0,r1 
+    pop {r1}
+    sub r1,r0
+    mov r0,#TK_INTGR
+    _RET 
+
+/**********************************
       BASIC commands 
 **********************************/
 
@@ -1728,8 +1752,6 @@ tok_jmp: // token id  tbb offset
     _CALL get_var 
     b 8f 
 4:  cmp r0,#TK_IFUNC 
-    beq 5f 
-    cmp r0,#TK_CFUNC 
     bne 6f 
 5:  mov r0,r1  
     _CALL execute
@@ -2330,7 +2352,16 @@ fn_table:
     _FUNC bye
     _RET 
 
+/*********************************
+  BASIC: CHAR(expr)
+  convert expr in character 
+********************************/
     _FUNC char
+    _CALL func_args
+    cmp r0,#1
+    bne syntax_error 
+    and r1,#127 
+    mov r0,#TK_CHAR
     _RET 
 
     _FUNC const_cr2
@@ -2842,7 +2873,7 @@ let_array:
     mov r0,r1
     ldr r1,[UPP,#BASE]
     _CALL print_int
-    b 6f 
+    b 7f 
 1:  _CALL next_token
     cmp r0,#TK_COLON 
     bgt 2f
@@ -2853,29 +2884,36 @@ let_array:
     bne 4f
     mov r0,r1 
     _CALL uart_puts  
-    b 6f 
-4:  cmp r0,#TK_CHAR 
-    bne 5f 
+    b 7f 
+4:  cmp r0,#TK_CFUNC
+    bne 5f
+    mov r0,r1
+    _CALL execute 
+5:  cmp r0,#TK_CHAR 
+    bne 6f 
     mov r0,r1 
     _CALL uart_putc 
-    b 6f 
-5:  cmp r0,#TK_SHARP
+    b 7f 
+6:  cmp r0,#TK_SHARP
     bne syntax_error 
     _CALL next_token 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
-6:  eor T1,T1 
+    b 8f 
+7:  
+    _CALL tabulation 
+8:  eor T1,T1 
     _CALL next_token 
     cmp r0,#TK_COMMA 
     beq 0b
     _UNGET_TOKEN 
 print_exit:
-      ands T1,T1 
-      bne 9f
-      mov r0,#CR 
-      _CALL uart_putc 
-  9:  _RET 
+    ands T1,T1 
+    bne 9f
+    mov r0,#CR 
+    _CALL uart_putc 
+9:  _RET 
 
     _FUNC const_porta
     _RET 
