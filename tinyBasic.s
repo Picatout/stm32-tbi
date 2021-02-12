@@ -234,35 +234,6 @@ move_from_end: // move from high address toward low
     pop {r2}
     _RET 
 
-/****************************************
-  BASIC: DUMP adr, count 
-    command line only  
-    print memory content in hexadecimal 
-    16 bytes per row 
-    ouput:
-      none 
-    use:
-      r2   byte counter  
-****************************************/
-    _FUNC dump 
-    push {r2}
-    ldr r2,[UPP,#FLAGS]
-    tst r2,#FRUN 
-    beq 0f
-    mov r0,#ERR_CMD_ONLY 
-    b tb_error  
-0:  _CALL arg_list 
-    cmp r0,#2
-    bne syntax_error 
-    _POP r2   // count 
-    _POP  r0  // adr 
-1:  mov r1,#16
-    _CALL prt_row 
-    subs r2,#16 
-    bpl 1b 
-2:  pop {r2}
-    _RET 
-
 /***************************************
     search_lineno 
     localize BASIC line from its number 
@@ -964,32 +935,137 @@ escaped: .asciz "abtnvfr"
     DECOMPILER 
 *******************/
 
-/**********************************
+/********************************************
     cmd_name 
-    reverse dictionary search 
-    from CMD_IDX to NAME 
+    search bytecode in dictionary and 
+    return its name 
   input:
-    r0    CMD_IDX 
-  output:
-    r0    *NAME | 0 
+    r0    keyword bytecode 
+  ouput:
+    r0    name string 
   use:
-    r1    dictionary link
-    r2    tmp 
-**********************************/
-    _FUNC cmd_name
-    push {r1,r2}
-    ldr r1,=kword_dict  
-1:  ldrb r2,[r1]
-    cbz r2,3f 
-    ldr r2,[r1,#-8] // cmd_idx field 
-    cmp r0,r2 
+    T1    link 
+    T2    tmp 
+*********************************************/
+    _FUNC cmd_name 
+    push {T1,T2}
+    ldr T1,=kword_dict 
+1:  ldr T2,[T1,#-8]
+    cmp T2,r0 
     beq 2f 
-    ldr r1,[r1,#-12] // link field 
-    b 1b
-2:  mov r2,r1
-3:  mov r0,r2 
-    pop {r1,r2}
+    ldr T1,[T1,#-12]
+    cmp T1,#0
+    bne 1b  
+2:  mov r0,T1 
+    pop {T1,T2}
+    _RET
+
+/****************************
+  detokenize and print line 
+  input:
+    BPTR   line address 
+  output:
+    none:
+  use:
+    r0,r1 
+****************************/
+    _FUNC print_basic_line 
+    push {r0,r1}
+    mov IN,#0
+    ldrh r0,[BPTR,IN]
+    add IN,#2
+    mov r1,#10 
+    _CALL print_int
+    ldrb r0, [BPTR,IN]
+    add IN,#1 
+    str r0,[UPP,#COUNT]
+token_loop:  
+    _CALL next_token
+    cmp r0,#TK_NONE 
+    beq 9f  
+    cmp r0,#TK_INTGR 
+    bne 2f 
+    mov r0,r1 
+    ldr r1,[UPP,#BASE]
+    _CALL print_int 
+    b token_loop 
+2:  cmp r0,#TK_CHAR 
+    bne 3f 
+    add r0,r1,#'A' 
+    _CALL uart_putc
+    mov r0,#SPACE 
+    _CALL uart_putc
+    b token_loop 
+3:  cmp r0,#TK_QSTR 
+    bne 4f 
+    mov r0,#'"'
+    _CALL uart_putc 
+    mov r0,r1 
+    _CALL uart_puts
+    mov r0,#'"'
+    _CALL uart_putc 
+    b token_loop
+4:  cmp r0,#TK_CMD
+    bmi 5f 
+    cmp r0,#TK_INTGR 
+    bpl 5f
+    mov r0,#SPACE 
+    _CALL uart_putc  
+    mov r0,r1
+    cmp r0,#PRT_IDX 
+    bne 1f  
+    mov r0,#'?'
+    _CALL uart_putc 
+    b 3f 
+1:  cmp r0,#REM_IDX
+    bne 1f
+    mov r0,#'\''
+    _CALL uart_putc 
+    add r0,BPTR,IN  
+    _CALL uart_puts 
+    ldr IN,[UPP,#COUNT]
+    b 9f 
+1:  _CALL cmd_name
+2:  _CALL uart_puts
+3:  mov r0,#SPACE 
+    _CALL uart_putc 
+    b token_loop
+5:  push {r0}
+    ldr r1,=single_char 
+    ldrb r0,[r1,r0]
+    pop {r1}
+    cbz r0,6f 
+    _CALL uart_putc
+    b token_loop
+6:  cmp r1,#TK_GE 
+    bne 7f 
+    ldr r0,=ge_str
+    b 2b 
+7:  cmp r1,#TK_LE 
+    bne 8f
+    ldr r0,=le_str
+    b 2b
+8:  cmp r1,#TK_NE 
+    bne 9f 
+    ldr r0,=ne_str 
+    b 2b 
+9:  mov r0,#CR 
+    _CALL uart_putc 
+    pop {r0,r1}
     _RET 
+
+ge_str: .asciz ">="
+le_str: .asciz "<="
+ne_str: .asciz "<>"
+
+single_char:
+  .byte 0,':',0,0,0,'@','(',')',',','#' // 0..9
+  .space 6
+  .byte '+','-'
+  .space 14
+  .byte '*','/','%'
+  .space 14
+  .byte '>','=',0,'<',0,0
 
 
 /**********************************
@@ -1190,31 +1266,6 @@ tk_id: .asciz "last token id: "
    ldr r1,[T2,#-8]  // command index 
 9: pop {r2,r3,T1,T2}
    _RET 
-
-/********************************************
-    bc_to_name 
-    search bytecode in dictionary and 
-    return its name 
-  input:
-    r0    keyword bytecode 
-  ouput:
-    r0    name string 
-  use:
-    T1    link 
-    T2    tmp 
-*********************************************/
-    _FUNC bc_to_name 
-    push {T1,T2}
-    ldr T1,=kword_dict 
-1:  ldr T2,[T1,#-8]
-    cmp T2,r0 
-    beq 2f 
-    ldr T1,[T1,#-12]
-    cmp T1,#0
-    bne 1b  
-2:  mov r0,T1 
-    pop {T1,T2}
-    _RET
 
 
 /**************************
@@ -2135,10 +2186,40 @@ fn_table:
     _FUNC analog_read
     _RET
 
+/************************************
+  BASIC: AND(expr1,expr2)
+  logical ANND bit to between expr1,expr2
+************************************/
     _FUNC bit_and
+    _CALL func_args 
+    cmp r0,#2 
+    bne syntax_error 
+    _POP r0 
+    _POP r1 
+    and r1,r0 
+    mov r0,#TK_INTGR
     _RET
 
+/*******************************************
+  BASIC: ASC(string|char)
+  return ASCII code of char of first char 
+  of string 
+*******************************************/
     _FUNC ascii
+    mov r0,#TK_LPAREN 
+    _CALL expect 
+    _CALL next_token 
+    cmp r0,#TK_QSTR
+    beq 2f 
+    cmp r0,#TK_CHAR 
+    bne syntax_error 
+    b 9f 
+2:  ldrb r1,[r1]
+9:  _PUSH r1 
+    mov r0,#TK_RPAREN 
+    _CALL expect 
+    mov r0,#TK_INTGR 
+    _POP r1 
     _RET
 
     _FUNC autorun
@@ -2223,7 +2304,27 @@ fn_table:
     str r1,[r0]
     _RET  
 
+/********************************
+  BASIC: BTEST(addr,bit)
+  return bit state at address
+********************************/
     _FUNC bit_test
+    _CALL func_args
+    cmp r0,#2 
+    bne syntax_error 
+    _POP r1
+    mov r0,#1
+    and r1,#31  
+1:  cbz r1, 2f
+    lsl r0,#1
+    sub r1,#1
+    b 1b 
+2:  _POP r1
+    ldr r1,[r1]
+    and r1,r0 
+    cbz r1,9f 
+    mov r1,#1
+9:  mov r0,#TK_INTGR    
     _RET 
 
     _FUNC bye
@@ -2366,6 +2467,37 @@ no_data_line:
 
     _FUNC digital_write
     _RET  
+
+
+/****************************************
+  BASIC: DUMP adr, count 
+    command line only  
+    print memory content in hexadecimal 
+    16 bytes per row 
+    ouput:
+      none 
+    use:
+      r2   byte counter  
+****************************************/
+    _FUNC dump 
+    push {r2}
+    ldr r2,[UPP,#FLAGS]
+    tst r2,#FRUN 
+    beq 0f
+    mov r0,#ERR_CMD_ONLY 
+    b tb_error  
+0:  _CALL arg_list 
+    cmp r0,#2
+    bne syntax_error 
+    _POP r2   // count 
+    _POP  r0  // adr 
+1:  mov r1,#16
+    _CALL prt_row 
+    subs r2,#16 
+    bpl 1b 
+2:  pop {r2}
+    _RET 
+
 
 /*******************************
   BASIC: END 
@@ -2613,114 +2745,6 @@ let_array:
     b 1b
 9:  b warm_start 
 
-/****************************
-  decotonize and print line 
-  input:
-    BPTR   line address 
-  output:
-    none:
-  use:
-    r0,r1 
-****************************/
-    _FUNC print_basic_line 
-    push {r0,r1}
-    mov IN,#0
-    ldrh r0,[BPTR,IN]
-    add IN,#2
-    mov r1,#10 
-    _CALL print_int
-    ldrb r0, [BPTR,IN]
-    add IN,#1 
-    str r0,[UPP,#COUNT]
-token_loop:  
-    _CALL next_token
-    cmp r0,#TK_NONE 
-    beq 9f  
-    cmp r0,#TK_INTGR 
-    bne 2f 
-    mov r0,r1 
-    ldr r1,[UPP,#BASE]
-    _CALL print_int 
-    b token_loop 
-2:  cmp r0,#TK_CHAR 
-    bne 3f 
-    add r0,r1,#'A' 
-    _CALL uart_putc
-    mov r0,#SPACE 
-    _CALL uart_putc
-    b token_loop 
-3:  cmp r0,#TK_QSTR 
-    bne 4f 
-    mov r0,#'"'
-    _CALL uart_putc 
-    mov r0,r1 
-    _CALL uart_puts
-    mov r0,#'"'
-    _CALL uart_putc 
-    b token_loop
-4:  cmp r0,#TK_CMD
-    bmi 5f 
-    cmp r0,#TK_INTGR 
-    bpl 5f
-    mov r0,#SPACE 
-    _CALL uart_putc  
-    mov r0,r1
-    cmp r0,#PRT_IDX 
-    bne 1f  
-    mov r0,#'?'
-    _CALL uart_putc 
-    b 3f 
-1:  cmp r0,#REM_IDX
-    bne 1f
-    mov r0,#'\''
-    _CALL uart_putc 
-    add r0,BPTR,IN  
-    _CALL uart_puts 
-    ldr IN,[UPP,#COUNT]
-    b 9f 
-1:  _CALL bc_to_name
-2:  _CALL uart_puts
-3:  mov r0,#SPACE 
-    _CALL uart_putc 
-    b token_loop
-5:  push {r0}
-    ldr r1,=single_char 
-    ldrb r0,[r1,r0]
-    pop {r1}
-    cbz r0,6f 
-    _CALL uart_putc
-    b token_loop
-6:  cmp r1,#TK_GE 
-    bne 7f 
-    ldr r0,=ge_str
-    b 2b 
-7:  cmp r1,#TK_LE 
-    bne 8f
-    ldr r0,=le_str
-    b 2b
-8:  cmp r1,#TK_NE 
-    bne 9f 
-    ldr r0,=ne_str 
-    b 2b 
-9:  mov r0,#CR 
-    _CALL uart_putc 
-    pop {r0,r1}
-    _RET 
-
-ge_str: .asciz ">="
-le_str: .asciz "<="
-ne_str: .asciz "<>"
-
-single_char:
-  .byte 0,':',0,0,0,'@','(',')',',','#' // 0..9
-  .space 6
-  .byte '+','-'
-  .space 14
-  .byte '*','/','%'
-  .space 14
-  .byte '>','=',0,'<',0,0
-
-
     _FUNC load
     _RET 
 
@@ -2758,7 +2782,18 @@ single_char:
     _FUNC const_odr
     _RET 
 
+/******************************************
+  BASIC: OR(expr1,expr2)
+  binary OR between 2 expressions
+******************************************/
     _FUNC bit_or
+    _CALL func_args
+    cmp r0,#2
+    bne syntax_error
+    _POP r0 
+    _POP r1
+    orr r1,r0 
+    mov r0,#TK_INTGR
     _RET 
 
     _FUNC pad_ref
@@ -2800,8 +2835,8 @@ single_char:
   print list of arguments 
 ****************************/
     _FUNC print
-    eor T1,T1 // no comma 
-0:  _CALL expression
+0:  mov T1,#-1
+    _CALL expression
     cmp r0,#TK_INTGR
     bne 1f 
     mov r0,r1
@@ -2830,7 +2865,8 @@ single_char:
     cmp r0,#TK_INTGR 
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
-6:  _CALL next_token 
+6:  eor T1,T1 
+    _CALL next_token 
     cmp r0,#TK_COMMA 
     beq 0b
     _UNGET_TOKEN 
@@ -2871,7 +2907,27 @@ print_exit:
     _FUNC qkey
     _RET 
 
-    _FUNC  random
+/******************************************
+  BASIC RANDOM(expr)
+  generate random number between 0..expr-1
+******************************************/
+    _FUNC random
+    _CALL func_args 
+    cmp r0,#1
+    bne syntax_error 
+    ldr r0,[UPP,#SEED]
+    lsl r1,r0,#13
+    eor r1,r0
+    lsr r0,r1,#17
+    eor r1,r0
+    lsl r0,r1,#5
+    eor r1,r0
+    str r1,[UPP,#SEED]
+    _POP r0 
+    udiv r2,r1,r0  
+    mul r2,r0 
+    sub r1,r2 
+    mov r0,#TK_INTGR
     _RET 
 
     _FUNC rshift
@@ -3023,7 +3079,18 @@ print_exit:
     _FUNC write
     _RET 
 
+/**************************************
+  BASIC: XOR(expr1,expr2)
+  binary exclusive or between 2 expressions
+**************************************/
     _FUNC bit_xor
+    _CALL func_args
+    cmp r0,#2
+    bne syntax_error
+    _POP r0
+    _POP r1 
+    eor r1,r0 
+    mov r0,#TK_INTGR
     _RET 
 
     _FUNC transmit

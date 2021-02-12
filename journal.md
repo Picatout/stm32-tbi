@@ -1,5 +1,7 @@
 #### 2021-02-11
 
+* Ajout des fonctions BASIC **AND**,**OR**,**XOR**,**ASC** 
+
 * Déboguer commande **PRINT** qui ne fesait le CR lorsque le dernier argument éait une expression.
 
 * Ajout des mots BASIC  **DATA**,**DATALN**,**READ** et **RESTORE**.
