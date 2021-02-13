@@ -599,23 +599,24 @@ pad: .word _pad
     r1  line length  
   use:
     r2  cmove count 
+    r5 line length 
+    r6 *buffer   
     r7  cursor position 
     T1  ovwr|insert flag 
     T2  buffer size -1 
-    r10 line length 
-    r11 *buffer   
 *************************************/
   _GBL_FUNC readln
-  push {r2,r7,T1,T2,r10,r11}
+  push {r2,r5,r6,r7,T1,T2}
   eor r7,r7  // cursor position 
   eor T1,T1 // overwrite mode 
-  mov r11,r0 
+  mov r6,r0 // *buffer 
   sub T2,r1,#1  // buffer size -1
-  eor r10,r10  // 0 line length 
-  eor r0,r0
-  strb r0,[r11,T2]  
+  eor r5,r5  // line length 
+  eor r0,r0 // blinking block shape
   _CALL cursor_shape
 readln_loop:
+  eor r0,r0
+  strb r0,[r6,r5]  
   _CALL uart_getc 
   cmp r0,#CR
   bne 0f
@@ -626,18 +627,18 @@ readln_loop:
 //delete char. left  
   ands r7,r7 
   beq readln_loop 
-  cmp r7,r10 
+  cmp r7,r5 
   beq 1f
 // in middle of line 
-  add r0,r11,r7 
+  add r0,r6,r7 
   sub r1,r0,#1 
-  sub r2,r10,r7 
+  sub r2,r5,r7 
   _CALL cmove
-  sub r10,#1 
+  sub r5,#1 
   sub r7,#1
   eor r0,r0
-  strb r0,[r11,r10] 
-  mov r0,r11
+  strb r0,[r6,r5] 
+  mov r0,r6
   _CALL update_line 
   add r0,r7,#1 
   _CALL cursor_x 
@@ -645,18 +646,18 @@ readln_loop:
 1: // at end of line 
   _CALL bksp 
   sub r7,#1
-  sub r10,#1
+  sub r5,#1
   b readln_loop 
 2: cmp r0,#CTRL_D 
    bne 3f 
 // delete whole line  
   _CALL delete_line  
   eor r7,r7   
-  eor r10,r10
+  eor r5,r5
   b readln_loop 
 3: cmp r0,#CTRL_E 
   bne 3f 
-  mov r0,r11 // buffer 
+  mov r0,r6 // buffer 
   mov r1,#10  
   _CALL atoi
   cmp r0,#0 
@@ -665,24 +666,24 @@ readln_loop:
   _CALL search_lineno 
   cmp r1,#0 // not found 
   bne readln_loop 
-  mov r1,r11 
+  mov r1,r6 
   _CALL decompile_line
   _CALL update_line 
-  mov r0,r11 
+  mov r0,r6 
   _CALL strlen 
   mov r7,r0 
-  mov r10,r0 
+  mov r5,r0 
   b readln_loop   
 3: cmp r0,#CTRL_R    
   bne 4f 
 // edit last entered line if  available 
-  ands r10,r10 
+  ands r5,r5 
   bne readln_loop
-  mov r0,r11  
+  mov r0,r6 
   _CALL strlen
-  mov r10,r0
+  mov r5,r0
   mov r7,r0 
-  mov r0,r11  
+  mov r0,r6  
   _CALL uart_puts
   b readln_loop     
 4: cmp r0,#CTRL_O 
@@ -702,9 +703,9 @@ readln_loop:
 try_end:
    cmp r0,#END 
    bne try_left 
-   add r0,r10,#1
+   add r0,r5,#1
    _CALL cursor_x 
-   mov r7,r10 
+   mov r7,r5 
    b readln_loop 
 try_left: 
    cmp r0,#ARROW_LEFT
@@ -718,7 +719,7 @@ try_left:
 try_right:
    cmp r0,#ARROW_RIGHT 
    bne try_suprim 
-   cmp r7,r10
+   cmp r7,r5
    beq readln_loop
    add r7,#1
    mov r0,#1  
@@ -728,52 +729,50 @@ try_suprim:
    cmp r0,#SUP
    bne readln_loop 
 // delete character at cursor 
-   cmp r7,r10
+   cmp r7,r5
    beq readln_loop 
-   add r1,r7,r11 
+   add r1,r7,r6 
    add r0,r1,#1 
-   sub r2,r10,r7
+   sub r2,r5,r7
    _CALL cmove 
-   sub r10,#1 
+   sub r5,#1 
    eor r0,r0 
-   strb r0,[r11,r10]
-   mov r0,r11 
+   strb r0,[r6,r5]
+   mov r0,r6 
    _CALL update_line
    add  r0,r7,#1 
    _CALL cursor_x 
    b readln_loop      
 character:
-   cmp r7,r10 
+   cmp r7,r5 
    beq 5f // cursor at eol 
 // cursor in middle of line 
 // action depend on edit mode 
   ands T1,T1  //check edit mode 
   beq 2f 
 // insert mode
-  cmp T2,r10 
+  cmp T2,r5 
   beq readln_loop // buffer full  
-  push {r0,T1}
-  add r0,r11,r7  // src 
+  push {r0,r2}
+  add r0,r6,r7  // src 
   add r1,r0,#1   // dest 
-  sub T1,r10,r7  // move count 
+  sub r2,r5,r7  // move count 
   _CALL cmove   
-  pop {r0,T1}
-  strb r0,[r11,r7] 
+  pop {r0,r2}
+  strb r0,[r6,r7] 
   add r7,#1
-  add r10,#1 
+  add r5,#1 
   eor r0,r0 
-  strb r0,[r11,r10]
-  mov r0,r11   
+  strb r0,[r6,r5]
+  mov r0,r6   
   _CALL update_line
   add r0,r7,#1 
   _CALL cursor_x  
   b readln_loop   
 2: // overwrite mode 
-  strb r0,[r11,r7]
+  strb r0,[r6,r7]
   add r7,#1
-  eor r0,r0 
-  strb r0,[r11,r10] 
-  mov r0,r11 
+  mov r0,r6 
   _CALL update_line 
   add r0,r7,#1 
   _CALL cursor_x 
@@ -785,18 +784,18 @@ character:
 6: // only accept char>=32  
    cmp r0,#SPACE 
    bmi readln_loop 
-   strb r0,[r11,r7] 
+   strb r0,[r6,r7] 
    _CALL uart_putc
    add r7,#1
-   mov r10,r7
+   mov r5,r7
    b readln_loop  
 readln_exit:
   _CALL uart_putc 
   eor r0,r0 
-  strb r0,[r11,r10]
-  mov r1,r10  // line length
-  mov r0,r11  // *buffer  
-  pop {r2,r7,T1,T2,r10,r11}
+  strb r0,[r6,r5]
+  mov r1,r5  // line length
+  mov r0,r6  // *buffer  
+  pop {r2,r5,r6,r7,T1,T2}
   _RET 
 
 

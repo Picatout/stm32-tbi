@@ -1,3 +1,7 @@
+#### 2021-02-13
+
+* Déboguer **decompile** et **readln**. 
+
 #### 2021-02-12
 
 * créer routine decompile reste à déboguer.

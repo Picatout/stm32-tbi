@@ -982,9 +982,11 @@ escaped: .asciz "abtnvfr"
     r0  *token list 
     r1  *output buffer 
   output:
-    r0  *buffer .asciz 
+    r0  *output buffer (.asciz) 
   use:
-    T1  *output buffer 
+    T1  *output buffer
+    BPTR  *token list
+    IN  offset in token list  
 ******************************/
     _GBL_FUNC decompile_line
     push {r1,T1} 
@@ -995,7 +997,6 @@ escaped: .asciz "abtnvfr"
     add IN,#2 
     mov r1,#10 
     _CALL itoa
-    ldr r0,pad
     mov r1,T1
     _CALL strcpy
     mov r0,T1 
@@ -1013,10 +1014,10 @@ decomp_loop:
     mov r0,r1 
     ldr r1,[UPP,#BASE]
     _CALL itoa
-    ldr r0,pad 
+    push {r0}
     mov r1,T1 
     _CALL strcpy
-    mov r0,pad 
+    pop {r0} 
     _CALL strlen
     add T1,r0 
     b decomp_loop 
@@ -1094,30 +1095,9 @@ decomp_loop:
     bne 9f 
     ldr r0,=ne_str 
     b 2b 
-9:  mov r0,#1 
+9:  eor r0,r0 
     strb r0,[T1]
     pop {r0,T1}
-    _RET 
-
-
-/****************************
-  detokenize and print line 
-  input:
-    BPTR   line address 
-  output:
-    none:
-  use:
-    r0,r1 
-****************************/
-    _FUNC print_basic_line 
-    push {r0,r1}
-    mov r0,BPTR 
-    mov r1,tib 
-    _CALL decompile_line 
-9:  _CALL uart_puts 
-    mov r0,#CR 
-    _CALL uart_putc 
-    pop {r0,r1}
     _RET 
 
 ge_str: .asciz ">="
@@ -2862,24 +2842,55 @@ let_array:
     _RET  
 
 /***************************************
-  BASIC: LIST [[first,]last]
+  BASIC: LIST [[first]-last]
   use:
-    T1 
+    r2   first line# 
+    r3   last line#
+    T1   *line 
+    T2   TXTEND 
 **************************************/  
     _FUNC list
     _CLO
-    push {T1} 
-//  _CALL arg_list 
-    ldr BPTR,[UPP,#TXTBGN]
-    ldr T1,[UPP,#TXTEND]
-1:  cmp BPTR,T1 
+    ldr T1,[UPP,#TXTBGN]
+    ldr T2,[UPP,#TXTEND]
+    ldrh r2,[T1]
+    mov r3,#32768
+    _CALL next_token 
+    cbz r0,6f 
+    cmp r0,#TK_INTGR
+    bne 1f 
+    mov r2,r1 // first line
+    _CALL next_token
+    cbz r0,4f
+1:  cmp r0,#TK_MINUS 
+    bne syntax_error 
+    _CALL next_token 
+    cbz r0,4f 
+    cmp r0,#TK_INTGR
+    bne syntax_error  
+    mov r3,r1 
+4:  // skip lines below r2 
+    ldrh r0,[T1]
+    cmp r0,r2 
+    bpl 6f 
+    ldrb r0,[T1,#2]
+    add T1,r0
+    b 4b 
+6:  cmp T1,T2  
     bpl 9f
-    mov r0,BPTR  
-    _CALL print_basic_line
-    ldrb r0,[BPTR,#2]
-    add BPTR,r0 
-    b 1b
+    mov r0,T1   
+    ldr r1,out_buff 
+    _CALL decompile_line 
+    _CALL uart_puts 
+    mov r0,#CR 
+    _CALL uart_putc 
+    ldrb r0,[T1,#2]
+    add T1,r0
+    ldrb r0,[T1]
+    cmp r0,r3 
+    ble 6b 
 9:  b warm_start 
+out_buff: .word _tib 
 
     _FUNC load
     _RET 
@@ -2978,6 +2989,7 @@ let_array:
     mov r0,r1
     ldr r1,[UPP,#BASE]
     _CALL print_int
+    _CALL tabulation 
     b 7f 
 1:  _CALL next_token
     cmp r0,#TK_COLON 
@@ -3008,7 +3020,6 @@ let_array:
     str r1,[UPP,#TAB_WIDTH]
     b 8f 
 7:  
-    _CALL tabulation 
 8:  eor T1,T1 
     _CALL next_token 
     cmp r0,#TK_COMMA 
