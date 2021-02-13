@@ -1,5 +1,11 @@
 #### 2021-02-12
 
+* créer routine decompile reste à déboguer.
+
+* Corrigé bogue dans **readln** 
+
+* Ajout de **THEN**, **BIT** , **DO** , **UNTIL**
+
 * Ajout de **CHAR** 
 
 * Améliorer commmande **DUMP** pour aligner la colonne des octetes à la position 11.

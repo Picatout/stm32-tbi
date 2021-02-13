@@ -164,7 +164,7 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
       T1   base 
       T2   *pad 
 *********************************/ 
-    _FUNC itoa
+    _GBL_FUNC itoa
     push {r7,T1,T2}
     mov r7,r0
     mov T1,r1  
@@ -581,14 +581,16 @@ pad: .word _pad
 /*************************************
   readln 
   read a line of text from terminal
-  CTRL_D delete line 
+  CTRL_D delete line
+  CTRL_E edit line#  
   CTRL_R edit last entered line
   CTRL_O toggle between overwrite|insert   
   LEFT_ARROW move cursor left 
   RIGHT_ARROW move cursor right
   HOME cursor at start of line 
   END  cursor at end of line  
-  BS  delete character left of cursor 
+  BS  delete character left of cursor
+  DEL delete character at cursor    
   input:
     r0  *buffer
     r1  buffer size 
@@ -596,6 +598,7 @@ pad: .word _pad
     r0  *buffer (asciz)  
     r1  line length  
   use:
+    r2  cmove count 
     r7  cursor position 
     T1  ovwr|insert flag 
     T2  buffer size -1 
@@ -603,7 +606,7 @@ pad: .word _pad
     r11 *buffer   
 *************************************/
   _GBL_FUNC readln
-  push {r7,T1,T2,r10,r11}
+  push {r2,r7,T1,T2,r10,r11}
   eor r7,r7  // cursor position 
   eor T1,T1 // overwrite mode 
   mov r11,r0 
@@ -625,13 +628,11 @@ readln_loop:
   beq readln_loop 
   cmp r7,r10 
   beq 1f
-// in mol 
+// in middle of line 
   add r0,r11,r7 
   sub r1,r0,#1 
-  push {T1}
-  sub T1,r10,r7 
+  sub r2,r10,r7 
   _CALL cmove
-  pop {T1} 
   sub r10,#1 
   sub r7,#1
   eor r0,r0
@@ -641,7 +642,7 @@ readln_loop:
   add r0,r7,#1 
   _CALL cursor_x 
   b readln_loop       
-1: // at eol 
+1: // at end of line 
   _CALL bksp 
   sub r7,#1
   sub r10,#1
@@ -653,6 +654,25 @@ readln_loop:
   eor r7,r7   
   eor r10,r10
   b readln_loop 
+3: cmp r0,#CTRL_E 
+  bne 3f 
+  mov r0,r11 // buffer 
+  mov r1,#10  
+  _CALL atoi
+  cmp r0,#0 
+  beq readln_loop 
+  mov r0,r1 // line# 
+  _CALL search_lineno 
+  cmp r1,#0 // not found 
+  bne readln_loop 
+  mov r1,r11 
+  _CALL decompile_line
+  _CALL update_line 
+  mov r0,r11 
+  _CALL strlen 
+  mov r7,r0 
+  mov r10,r0 
+  b readln_loop   
 3: cmp r0,#CTRL_R    
   bne 4f 
 // edit last entered line if  available 
@@ -712,10 +732,8 @@ try_suprim:
    beq readln_loop 
    add r1,r7,r11 
    add r0,r1,#1 
-   push {T1}
-   sub T1,r10,r7
+   sub r2,r10,r7
    _CALL cmove 
-   pop {T1}
    sub r10,#1 
    eor r0,r0 
    strb r0,[r11,r10]
@@ -778,7 +796,7 @@ readln_exit:
   strb r0,[r11,r10]
   mov r1,r10  // line length
   mov r0,r11  // *buffer  
-  pop {r7,T1,T2,r10,r11}
+  pop {r2,r7,T1,T2,r10,r11}
   _RET 
 
 

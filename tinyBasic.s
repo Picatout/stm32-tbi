@@ -253,7 +253,7 @@ move_from_end: // move from high address toward low
       r2   address end of text
       r3   target line#
 ****************************************/    
-    _FUNC search_lineno
+    _GBL_FUNC search_lineno
     push {r2,r3} 
     mov r3,r0 // target 
     ldr r0,[UPP,#TXTBGN] // search start adr 
@@ -605,54 +605,25 @@ token_ofs:
     r0   TK_INTGR|TK_NONE
     r1   int|0   
   use:
-    r0   char 
-    r1   save r3 
-    r2   int
-    r6   base 
-    r7   digit count 
-    r3   tib index   
-    T1   *tib 
-    T2   *pad  
+    r3   tib index updated     
 *****************************/
     _FUNC parse_int 
-    push {r6,r7}
-    eor r2,r2 // int 
-    mov r1,r3 
-    mov r6,#10 // default base 
-    eor r7,r7 // digit count 
+    mov r1,#10 // default base 
     ldrb r0,[T1,r3]
-    add r3,#1 
     cmp r0,'$' 
     bne 2f 
-    mov r6,#16 // hexadecimal number 
+    mov r1,#16 // hexadecimal number 
     b 3f  
 2:  cmp r0,#'&' 
     bne 4f
-    mov r6,#2 //binary number  
-3:  ldrb r0,[T1,r3]
-    add r3,#1
-4:  _CALL upper 
-    cmp r0,#'A'
-    bmi 5f
-    subs r0,#7  
-5:  subs r0,#'0' 
-    bmi 6f // not digit   
-    cmp r0,r6 
-    bpl 6f // not digit 
-    mul r2,r6 
-    add r2,r0
-    add r7,#1  
-    b 3b
-6:  sub r3,#1  // unget last char
-    cbz r7, 7f 
-    mov r0,#TK_INTGR  
-    mov r1,r2 
-    b 9f 
-7: // not a number 
-    mov r3,r1 // restore r3 
-    eor r0,r0 // TK_NONE 
-9:  ands r0,r0 // to set zero flag 
-    pop {r6,r7}
+    mov r1,#2 //binary number  
+3:  add r3,#1
+4:  add r0,r3,T1 
+    _CALL atoi 
+    cbz r0,9f
+    add r3,r0
+    mov r0,#TK_INTGR
+9:  ands r0,r0   
     _RET 
 
 /*********************************************
@@ -885,6 +856,45 @@ escaped: .asciz "abtnvfr"
     _CALL is_num 
 9:  _RET 
 
+/******************************************
+    atoi 
+    convert ascii to integer 
+    input:
+      r0   *buffer 
+      r1   base 
+    output:
+      r0   0 no integer found 
+      r1   integer
+    use:
+      r2   base  
+      T1   *buffer 
+      T2   digit count  
+******************************************/
+    _GBL_FUNC atoi 
+    push {r2,T1,T2}
+    mov T1,r0  // *buffer 
+    mov r2,r1  // base  
+    eor r1,r1  // converted integer 
+    eor T2,T2  // digit count 
+1:  ldrb r0,[T1],#1
+    _CALL upper 
+    cmp r0,#'0'
+    bmi 8f
+    cmp r0,#'9'+1 
+    bmi 2f 
+    cmp r0,#'A'
+    bmi 8f 
+    sub r0,#7 
+2:  sub r0,#'0' 
+    cmp r0,r2
+    bpl 8f  
+    mul r1,r2 
+    add r1,r0
+    add T2,#1
+    b 1b 
+8:  mov r0,T2  
+    pop {r2,T1,T2}
+    _RET 
 
 /*****************************************
     parse_keyword 
@@ -965,26 +975,36 @@ escaped: .asciz "abtnvfr"
     pop {T1,T2}
     _RET
 
-/****************************
-  detokenize and print line 
+/*****************************
+  decompile_line 
+  detokenize BASIC line 
   input:
-    BPTR   line address 
+    r0  *token list 
+    r1  *output buffer 
   output:
-    none:
+    r0  *buffer .asciz 
   use:
-    r0,r1 
-****************************/
-    _FUNC print_basic_line 
-    push {r0,r1}
+    T1  *output buffer 
+******************************/
+    _GBL_FUNC decompile_line
+    push {r1,T1} 
+    mov BPTR,r0 
     mov IN,#0
+    mov T1,r1 
     ldrh r0,[BPTR,IN]
-    add IN,#2
+    add IN,#2 
     mov r1,#10 
-    _CALL print_int
-    ldrb r0, [BPTR,IN]
+    _CALL itoa
+    ldr r0,pad
+    mov r1,T1
+    _CALL strcpy
+    mov r0,T1 
+    _CALL strlen
+    add T1,r0 
+    ldrb r0,[BPTR,IN]    
     add IN,#1 
     str r0,[UPP,#COUNT]
-token_loop:  
+decomp_loop:
     _CALL next_token
     cmp r0,#TK_NONE 
     beq 9f  
@@ -992,56 +1012,76 @@ token_loop:
     bne 2f 
     mov r0,r1 
     ldr r1,[UPP,#BASE]
-    _CALL print_int 
-    b token_loop 
+    _CALL itoa
+    ldr r0,pad 
+    mov r1,T1 
+    _CALL strcpy
+    mov r0,pad 
+    _CALL strlen
+    add T1,r0 
+    b decomp_loop 
 2:  cmp r0,#TK_CHAR 
     bne 3f 
-    add r0,r1,#'A' 
-    _CALL uart_putc
+    mov r0,#'\\'
+    strb r0,[T1],#1
+    strb r1,[T1],#1
     mov r0,#SPACE 
-    _CALL uart_putc
-    b token_loop 
+    strb r0,[T1],#1
+    b decomp_loop 
 3:  cmp r0,#TK_QSTR 
     bne 4f 
     mov r0,#'"'
-    _CALL uart_putc 
-    mov r0,r1 
-    _CALL uart_puts
+    strb r0,[T1],#1 
+    mov r0,r1
+    push {r1}
+    mov r1,T1  
+    _CALL strcpy
+    pop {r0}
+    _CALL strlen 
+    add T1,r0 
     mov r0,#'"'
-    _CALL uart_putc 
-    b token_loop
+    strb r0,[T1],#1 
+    b decomp_loop
 4:  cmp r0,#TK_CMD
     bmi 5f 
     cmp r0,#TK_INTGR 
     bpl 5f
     mov r0,#SPACE 
-    _CALL uart_putc  
+    strb r0,[T1],#1  
     mov r0,r1
     cmp r0,#PRT_IDX 
     bne 1f  
     mov r0,#'?'
-    _CALL uart_putc 
+    strb r0,[T1],#1 
     b 3f 
 1:  cmp r0,#REM_IDX
     bne 1f
     mov r0,#'\''
-    _CALL uart_putc 
-    add r0,BPTR,IN  
-    _CALL uart_puts 
+    strb r0,[T1],#1 
+    add r0,BPTR,IN
+    mov r1,T1   
+    _CALL strcpy
+    eor r0,r0 
+    strb r0,[T1]  
     ldr IN,[UPP,#COUNT]
     b 9f 
 1:  _CALL cmd_name
-2:  _CALL uart_puts
+2:  push {r0}
+    mov r1,T1 
+    _CALL strcpy 
+    pop {r0}
+    _CALL strlen 
+    add T1,r0 
 3:  mov r0,#SPACE 
-    _CALL uart_putc 
-    b token_loop
+    strb r0,[T1],#1 
+    b decomp_loop
 5:  push {r0}
     ldr r1,=single_char 
     ldrb r0,[r1,r0]
     pop {r1}
     cbz r0,6f 
-    _CALL uart_putc
-    b token_loop
+    strb r0,[T1],#1 
+    b decomp_loop
 6:  cmp r1,#TK_GE 
     bne 7f 
     ldr r0,=ge_str
@@ -1054,7 +1094,28 @@ token_loop:
     bne 9f 
     ldr r0,=ne_str 
     b 2b 
-9:  mov r0,#CR 
+9:  mov r0,#1 
+    strb r0,[T1]
+    pop {r0,T1}
+    _RET 
+
+
+/****************************
+  detokenize and print line 
+  input:
+    BPTR   line address 
+  output:
+    none:
+  use:
+    r0,r1 
+****************************/
+    _FUNC print_basic_line 
+    push {r0,r1}
+    mov r0,BPTR 
+    mov r1,tib 
+    _CALL decompile_line 
+9:  _CALL uart_puts 
+    mov r0,#CR 
     _CALL uart_putc 
     pop {r0,r1}
     _RET 
@@ -2057,6 +2118,7 @@ kword_end:
   _dict_entry TK_CMD,TIMER,TIMER_IDX //set_timer
   _dict_entry TK_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
   _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
+  _dict_entry TK_CMD,THEN,THEN_IDX // then 
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPIWR,SPIWR_IDX //spi_write
@@ -2169,7 +2231,7 @@ fn_table:
 	.word restore,return, random,rshift,run,save,show,size // 72..79
 	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
 	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
-	.word wait,words,write,bit_xor,transmit,receive,dump // 96..102 
+	.word wait,words,write,bit_xor,transmit,receive,dump,then // 96..103 
 	.word 0 
 
 
@@ -2250,7 +2312,22 @@ fn_table:
     _FUNC awu
     _RET
 
+/********************************************
+  BASIC: BIT(expr)
+  expr must be between 0..31 and is used 
+  to create 1 bit mask at that position
+*******************************************/
     _FUNC bitmask
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error 
+    _POP r0
+    mov r1,#1
+1:  cbz r0,9f 
+    lsl r1,#1
+    sub r0,#1
+    b 1b 
+9:  mov r0,#TK_INTGR
     _RET 
 
   
@@ -2360,6 +2437,7 @@ fn_table:
     _CALL func_args
     cmp r0,#1
     bne syntax_error 
+    _POP r1 
     and r1,#127 
     mov r0,#TK_CHAR
     _RET 
@@ -2484,13 +2562,25 @@ no_data_line:
     _FUNC const_ddr
     _RET 
 
+/***********************************
+  BASIC: DEC 
+  switch base to decimal 
+***********************************/
     _FUNC dec_base
+    mov r0,#10
+    str r0,[UPP,#BASE]
     _RET 
 
     _FUNC directory
     _RET 
 
+/***************************************
+  BASIC: DO 
+  initialize a DO..UNTIL loop 
+***************************************/
     _FUNC do_loop
+    ldr r0,[UPP,#COUNT]
+    stmdb DP!,{r0,IN,BPTR}
     _RET 
 
     _FUNC digital_read
@@ -2680,14 +2770,20 @@ no_data_line:
     _FUNC gpio
     _RET  
 
+/***************************************
+  BASIC: HEX 
+  set numeric base to hexadecimal 
+***************************************/
     _FUNC hex_base
+    mov r0,#16 
+    str r0,[UPP,#BASE]
     _RET 
 
     _FUNC const_idr
     _RET 
 
 /**********************************************
-  BASIC: IF relation : statement
+  BASIC: IF relation THEN statement
   execute statement only if relation is true
 *********************************************/
     _FUNC if
@@ -2695,6 +2791,15 @@ no_data_line:
     cbnz r1,9f 
     ldr IN,[UPP,#COUNT]
 9:  _RET 
+
+/*******************************************************
+  BASIC: THEN statement
+  following statement are executed if relation is !=0
+  optional, retained for compatibility.
+******************************************************/
+    _FUNC then 
+// do nothing 
+    _RET
 
     _FUNC input_var
     _RET 
@@ -2879,8 +2984,7 @@ let_array:
     bgt 2f
     _UNGET_TOKEN 
     b print_exit
-2:  eor T1, T1 
-    cmp r0,#TK_QSTR 
+2:  cmp r0,#TK_QSTR 
     bne 4f
     mov r0,r1 
     _CALL uart_puts  
@@ -2895,8 +2999,10 @@ let_array:
     _CALL uart_putc 
     b 7f 
 6:  cmp r0,#TK_SHARP
-    bne syntax_error 
-    _CALL next_token 
+    beq 6f 
+    _UNGET_TOKEN
+    b print_exit  
+6:  _CALL next_token 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
@@ -2942,7 +3048,16 @@ print_exit:
     _FUNC const_porti
     _RET 
 
+/**************************************
+  BASIC: QKEY
+  check if key pressed 
+**************************************/ 
     _FUNC qkey
+    mov r1,#0
+    _CALL uart_qkey
+    beq 9f 
+    mov r1,#-1 
+9:  mov r0,#TK_INTGR
     _RET 
 
 /******************************************
@@ -3076,7 +3191,18 @@ print_exit:
     _FUNC uflash
     _RET 
 
+/************************************
+  BASIC: UNTIL relation 
+  close a DO..UNTIL loop 
+  loop until relation come true 
+************************************/
     _FUNC until
+    _CALL relation 
+    cbz r1,9f
+    add DP,#12
+    _RET  
+9:  ldmia DP,{r0,IN,BPTR}
+    str r0,[UPP,#COUNT]
     _RET 
 
     _FUNC usr

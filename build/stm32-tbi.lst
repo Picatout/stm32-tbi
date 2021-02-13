@@ -702,7 +702,8 @@ ARM GAS  stm32-tbi.s 			page 1
  124              	    .equ XOR_IDX, 99 // <<1 
  125              	    .equ XTRMT_IDX, 100 // <<1
  126              	    .equ XRCV_IDX, 101 // <<1
- 127              	    .equ DUMP_IDX, XRCV_IDX+1 
+ 127              	    .equ DUMP_IDX, 102 
+ 128              	    .equ THEN_IDX,103
   42              	
   43              	/* blue pill specific constants */ 
   44              	  .equ LED_GPIO, GPIOC_BASE_ADR
@@ -717,10 +718,10 @@ ARM GAS  stm32-tbi.s 			page 1
   53              	  .type  isr_vectors, %object
   54              	
   55              	isr_vectors:
-  56 0000 00000000 	  .word    _mstack          /* main return stack address */
 ARM GAS  stm32-tbi.s 			page 13
 
 
+  56 0000 00000000 	  .word    _mstack          /* main return stack address */
   57 0004 00000000 	  .word    reset_handler    /* startup address */
   58              	/* core interrupts || exceptions */
   59 0008 00000000 	  .word    default_handler  /*  -14 NMI */
@@ -777,10 +778,10 @@ ARM GAS  stm32-tbi.s 			page 1
  110 00cc 00000000 	  .word      default_handler /* IRQ35, SPI1 */                   
  111 00d0 00000000 	  .word      default_handler /* IRQ36, SPI2 */                   
  112 00d4 00000000 	  .word      uart_rx_handler /* IRQ37, USART1 */                   
- 113 00d8 00000000 	  .word      default_handler /* IRQ38, USART2 */                   
 ARM GAS  stm32-tbi.s 			page 14
 
 
+ 113 00d8 00000000 	  .word      default_handler /* IRQ38, USART2 */                   
  114 00dc 00000000 	  .word      default_handler /* IRQ39, USART3 */                   
  115 00e0 00000000 	  .word      default_handler /* IRQ40, External Line[15:10]s */                          
  116 00e4 00000000 	  .word      default_handler /* IRQ41, RTC Alarm */                 
@@ -837,10 +838,10 @@ ARM GAS  stm32-tbi.s 			page 1
  161              		system milliseconds counter
  162              	*********************************/	
  163 002b 00       	    _GBL_FUNC systick_handler
- 164 002c E069     	  ldr r0,[UPP,#TICKS]  
 ARM GAS  stm32-tbi.s 			page 15
 
 
+ 164 002c E069     	  ldr r0,[UPP,#TICKS]  
  165 002e 00F10100 	  add r0,#1
  166 0032 E061     	  str r0,[UPP,#TICKS]
  167 0034 206A     	  ldr r0,[UPP,#TIMER]
@@ -897,10 +898,10 @@ ARM GAS  stm32-tbi.s 			page 1
  212      210A00
  213 00a3 00       		  .p2align 2 
  214              	
- 215              	/**************************************
 ARM GAS  stm32-tbi.s 			page 16
 
 
+ 215              	/**************************************
  216              	  reset_handler execute at MCU reset
  217              	***************************************/
  218              	    _GBL_FUNC reset_handler
@@ -957,10 +958,10 @@ ARM GAS  stm32-tbi.s 			page 1
  254      C2F20001 
  255 013a 8160     		str r1,[r0,#SCB_VTOR]
  256 013c 7047     	  _RET 
- 257              	
 ARM GAS  stm32-tbi.s 			page 17
 
 
+ 257              	
  258              	// initialize hardware devices 
  259 013e 00BF     	  _FUNC init_devices
  260              	/* init clock to HSE 72 Mhz */
@@ -1017,10 +1018,10 @@ ARM GAS  stm32-tbi.s 			page 1
  308              	/* now sysclock is 72 Mhz */
  309              	
  310              	/* enable peripheral clock for GPIOA, GPIOC and USART1 */
- 311 01a0 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
 ARM GAS  stm32-tbi.s 			page 18
 
 
+ 311 01a0 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
  311      C4F20200 
  312 01a8 44F21401 	  mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
  313 01ac 8161     	  str	r1, [r0, #RCC_APB2ENR]
@@ -1077,10 +1078,10 @@ ARM GAS  stm32-tbi.s 			page 1
  359              	    flush rx queue
  360              	  input:
  361              	    none
- 362              	  output:
 ARM GAS  stm32-tbi.s 			page 19
 
 
+ 362              	  output:
  363              	    none 
  364              	  use:
  365              	    T1 temp
@@ -1137,10 +1138,10 @@ ARM GAS  stm32-tbi.s 			page 1
  415 0266 7047     	    _RET 
  416              	
  417              	/**********************************
- 418              	  UART_GETC 
 ARM GAS  stm32-tbi.s 			page 20
 
 
+ 418              	  UART_GETC 
  419              	  wait a character from uart 
  420              	  input:
  421              	    none
@@ -1197,10 +1198,10 @@ ARM GAS  stm32-tbi.s 			page 1
  468 02bc 4660     	    str	r6, [r0, #FLASH_KEYR]
  469 02be 48F6AB16 	    _MOV32 r6,FLASH_KEY2
  469      CCF6EF56 
- 470 02c6 4660     	    str	r6, [r0, #FLASH_KEYR]
 ARM GAS  stm32-tbi.s 			page 21
 
 
+ 470 02c6 4660     	    str	r6, [r0, #FLASH_KEYR]
  471 02c8 06E0     	    b 9f 
  472              	// lock flash memory
  473              	lock: 
@@ -1257,10 +1258,10 @@ ARM GAS  stm32-tbi.s 			page 1
  520      E8FF5DF8 
  520      04EB
  521 0310 F768     	    ldr r7,[r6,#FLASH_SR]
- 522 0312 17F01407 	    ands r7,r7,#(5<<2) 
 ARM GAS  stm32-tbi.s 			page 22
 
 
+ 522 0312 17F01407 	    ands r7,r7,#(5<<2) 
  523 0316 05D0     	    beq 9f
  524 0318 3748     	    ldr r0,=write_error
  525 031a 00B5FFF7 	    _CALL uart_puts   
@@ -1317,10 +1318,10 @@ ARM GAS  stm32-tbi.s 			page 1
  563              	    erase_page 
  564              	    erase 1024 bytes flash page 
  565              	    input:
- 566              	       r0    adr 
 ARM GAS  stm32-tbi.s 			page 23
 
 
+ 566              	       r0    adr 
  567              	    output:
  568              	       None 
  569              	    use:
@@ -1751,6 +1752,7 @@ DEFINED SYMBOLS
        cmd_index.inc:125    *ABS*:0000000000000064 XTRMT_IDX
        cmd_index.inc:126    *ABS*:0000000000000065 XRCV_IDX
        cmd_index.inc:127    *ABS*:0000000000000066 DUMP_IDX
+       cmd_index.inc:128    *ABS*:0000000000000067 THEN_IDX
          stm32-tbi.s:44     *ABS*:0000000040011000 LED_GPIO
          stm32-tbi.s:45     *ABS*:000000000000000d LED_PIN
          stm32-tbi.s:46     *ABS*:0000000040013800 UART
@@ -1785,10 +1787,10 @@ DEFINED SYMBOLS
          stm32-tbi.s:409    .text:000000000000025c uart_qkey
          stm32-tbi.s:428    .text:0000000000000268 uart_getc
          stm32-tbi.s:457    .text:0000000000000298 unlock
-         stm32-tbi.s:473    .text:00000000000002ca lock
 ARM GAS  stm32-tbi.s 			page 31
 
 
+         stm32-tbi.s:473    .text:00000000000002ca lock
          stm32-tbi.s:492    .text:00000000000002dc wait_busy
          stm32-tbi.s:514    .text:00000000000002f4 hword_write
          stm32-tbi.s:528    .text:0000000000000328 write_error

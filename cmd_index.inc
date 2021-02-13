@@ -124,4 +124,6 @@
     .equ XOR_IDX, 99 // <<1 
     .equ XTRMT_IDX, 100 // <<1
     .equ XRCV_IDX, 101 // <<1
-    .equ DUMP_IDX, XRCV_IDX+1 
+    .equ DUMP_IDX, 102 
+    .equ THEN_IDX,103
+    
