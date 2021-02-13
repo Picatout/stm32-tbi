@@ -180,8 +180,10 @@ exception_msg:
     ldrh r2,[r0,#USART_DR]
     tst r1,#(1<<5) // RXNE 
     beq 2f // no char received 
-    cmp r2,#3
+    cmp r2,#3 // CTRL_C // cold restart
     beq user_reboot // received CTRL-C then reboot MCU 
+    cmp r2,#2 // CTRL_B  break program
+    beq 3f   
     add r0,UPP,#RX_QUEUE
     ldr r1,[UPP,#RX_TAIL]
     strb r2,[r0,r1]
@@ -190,6 +192,14 @@ exception_msg:
     str r1,[UPP,#RX_TAIL]
 2:
   	_RET 
+3:  _CALL uart_flush_queue
+    ldr IN,[UPP,#COUNT]
+    ldr r0,[UPP,#FLAGS]
+    mvn r1,#FRUN 
+    and r0,r1
+    str r0,[UPP,#FLAGS]
+    _RET 
+     
 
     _GBL_FUNC user_reboot   
     ldr r0,=user_reboot_msg

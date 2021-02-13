@@ -194,7 +194,16 @@ convert_table: .byte 'C',ARROW_RIGHT,'D',ARROW_LEFT,'H',HOME,'F',END,'3',SUP,0,0
     beq 3f 
     mov r0,#'-'
     strb r0,[T2,#-1]!
-3:  mov r0,T2 
+3:  cmp T1,#16 
+    bne 4f 
+    mov r0,#'$' 
+    strb r0,[T2,#-1]!
+    b 9f 
+4:  cmp T1,#2 
+    bne 9f 
+    mov r0,#'&'
+    strb r0,[T1,#-1]!
+9:  mov r0,T2 
     pop {r7,T1,T2} 
     _RET  
 pad: .word _pad 
@@ -226,7 +235,7 @@ pad: .word _pad
 ******************************/
     _GBL_FUNC print_hex
 	push {r0} 
-	lsr r0,#4  
+  lsr r0,#4  
 	_CALL  digit_to_char 
 	_CALL  uart_putc 
     pop {r0} 
@@ -867,12 +876,20 @@ readln_exit:
     _GBL_FUNC tabulation 
     push {r0,r1,r2}
     _CALL get_curpos 
-    sub r0,r1,#1 
+    sub r0,r1,#1
+    push {r1} 
     ldr r1,[UPP,#TAB_WIDTH]
     _CALL modulo
     ldr r0,[UPP,#TAB_WIDTH]
-    sub r0,r1 
-    _CALL spaces 
+    sub r0,r1
+    pop {r1}
+    add r1,r0
+    cmp r1,#80
+    bge 2f  
+    _CALL spaces
+    b 9f 
+2:  mov r0,#CR 
+    _CALL uart_putc 
 9:  pop {r0,r1,r2}
     _RET 
 

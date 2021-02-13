@@ -1,6 +1,8 @@
 #### 2021-02-13
 
-* Déboguer **decompile** et **readln**. 
+* Ajout de **CTRL_B** dans le gestionnaire **uart_rx_handler** pour stopper un programme bloqué dans une boucle indéfinie.
+
+* Déboguer **decompile_line** et **readln**. 
 
 #### 2021-02-12
 

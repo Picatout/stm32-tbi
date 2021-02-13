@@ -189,7 +189,7 @@ move_from_end: // move from high address toward low
     push {r0,r1,r2,r3,T1}
     mov r2,r0
     ldr T1,[UPP,#TAB_WIDTH]
-    mov r0,#10
+    mov r0,#12
     str r0,[UPP,#TAB_WIDTH]
     mov r0,r2 
     mov r3,r1  
@@ -1010,7 +1010,7 @@ decomp_loop:
     cmp r0,#TK_NONE 
     beq 9f  
     cmp r0,#TK_INTGR 
-    bne 2f 
+    bne 1f 
     mov r0,r1 
     ldr r1,[UPP,#BASE]
     _CALL itoa
@@ -1020,6 +1020,11 @@ decomp_loop:
     pop {r0} 
     _CALL strlen
     add T1,r0 
+    b decomp_loop 
+1:  cmp r0,#TK_VAR 
+    bne 2f 
+    add r0,r1,'A'
+    strb r0,[T1],#1 
     b decomp_loop 
 2:  cmp r0,#TK_CHAR 
     bne 3f 
@@ -1175,22 +1180,34 @@ rt_error:
     lsl r0,#2 
     ldr r0,[r1,r0]
     _CALL uart_puts
+// print line number     
     ldr BPTR,[UPP,#BASICPTR]
+    ldr IN,[UPP,#IN_SAVED]
+    ldr r0,=lineno_msg 
+    _CALL uart_puts
     ldrh r0,[BPTR]
     mov r1,#10
     _CALL print_int 
-    mov r0,#',' 
-    _CALL uart_putc 
+// line address 
+    ldr r0,=line_adr_msg 
+    _CALL uart_puts 
+    mov r0,BPTR 
+    MOV r1,#16
+    _CALL print_int
+// print error offset on line      
+    ldr r0,=token_at_msg 
+    _CALL uart_puts 
     ldr IN,[UPP,#IN_SAVED]
-    _CALL next_token
-    push {r1}
-    mov r1,#10 
-    _CALL print_int 
-    mov r0,#',' 
-    _CALL uart_putc 
-    pop {r0}
-    mov r1,#10 
-    _CALL print_int 
+    mov r0,IN 
+    mov r1,#16 
+    _CALL print_int
+    mov r0,#CR 
+    _CALL uart_putc
+// dump tokenize line 
+    mov r0,BPTR
+    ldrb r2,[r0,#2]
+    push {r2}
+    _CALL dump01 
     b warm_start 
 compile_error:
     ldr r1,=err_msg 
@@ -1209,8 +1226,10 @@ compile_error:
     _CALL uart_putc   
     b  warm_start  
     
-rt_error_msg:
-  .asciz "\nRuntime error\n"
+rt_error_msg: .asciz "\nRuntime error\n"
+lineno_msg:   .asciz "line: "
+line_adr_msg:   .asciz ",address: "
+token_at_msg: .asciz ",offset: "
 
 err_msg:
 	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
@@ -2592,11 +2611,39 @@ no_data_line:
     bne syntax_error 
     _POP r2   // count 
     _POP  r0  // adr 
+dump01:
+    _CALL print_dump_header 
 1:  mov r1,#16
     _CALL prt_row 
     subs r2,#16 
     bpl 1b 
 2:  pop {r2}
+    _RET 
+
+/********************************
+   print_dump_header
+********************************/
+    _FUNC print_dump_header
+    push {r0,T1,T2}
+    mov r0,#12 
+    _CALL spaces
+    mov r0,#0
+    mov T2,#16
+1:  mov T1,r0 
+    _CALL print_hex 
+    add r0,T1,#1  
+    cmp r0,T2 
+    bmi 1b 
+    mov r0,#CR 
+    _CALL uart_putc 
+    mov r0,#'='
+    mov T1,#79
+2:  _CALL uart_putc
+    subs T1,#1 
+    bne 2b     
+    mov r0,#CR 
+    _CALL uart_putc 
+    pop {r0,T1,T2}
     _RET 
 
 
@@ -2982,15 +3029,14 @@ out_buff: .word _tib
   print list of arguments 
 ****************************/
     _FUNC print
-0:  mov T1,#-1
-    _CALL expression
+    eor T1,T1 
+0:  _CALL expression
     cmp r0,#TK_INTGR
     bne 1f 
     mov r0,r1
     ldr r1,[UPP,#BASE]
     _CALL print_int
-    _CALL tabulation 
-    b 7f 
+    b 8f 
 1:  _CALL next_token
     cmp r0,#TK_COLON 
     bgt 2f
@@ -3000,7 +3046,7 @@ out_buff: .word _tib
     bne 4f
     mov r0,r1 
     _CALL uart_puts  
-    b 7f 
+    b 8f 
 4:  cmp r0,#TK_CFUNC
     bne 5f
     mov r0,r1
@@ -3009,22 +3055,26 @@ out_buff: .word _tib
     bne 6f 
     mov r0,r1 
     _CALL uart_putc 
-    b 7f 
+    b 8f 
 6:  cmp r0,#TK_SHARP
     beq 6f 
     _UNGET_TOKEN
     b print_exit  
-6:  _CALL next_token 
-    cmp r0,#TK_INTGR 
+6:  _CALL next_token
+    cmp r0,#TK_SHARP 
+    bne 7f
+    _CALL tabulation 
+    b 8f 
+7:  cmp r0,#TK_INTGR 
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
-    b 8f 
-7:  
 8:  eor T1,T1 
     _CALL next_token 
     cmp r0,#TK_COMMA 
+    bne 8f 
+    mov T1,#-1
     beq 0b
-    _UNGET_TOKEN 
+8: _UNGET_TOKEN 
 print_exit:
     ands T1,T1 
     bne 9f
