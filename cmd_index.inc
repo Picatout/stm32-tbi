@@ -23,106 +23,88 @@
 // --------------------------------------
 
     .equ ABS_IDX, 0  //  absolute function
-    .equ ADCON_IDX, 1 // <<1   //   adc on 
-    .equ ADCREAD_IDX, 2 // <<1
-    .equ AND_IDX, 3 // <<1.equ  // 
-    .equ ASC_IDX, 4 // <<1.equ  // 
-    .equ AUTORUN_IDX, 5 // <<1
-    .equ AWU_IDX, 6 // <<1
-    .equ BIT_IDX, 7 // <<1
-    .equ BRES_IDX, 8 // <<1
-    .equ BSET_IDX, 9 // <<1
-    .equ BTEST_IDX, 10 // <<1
-    .equ BTOGL_IDX, 11 // <<1
-    .equ BYE_IDX, 12 // <<1
-    .equ CHAR_IDX, 13 // <<1
-    .equ CRH_IDX, 14 // <<1
-    .equ CRL_IDX, 15 // <<1
-    .equ DATA_IDX, 16 // <<1
-    .equ DATALN_IDX, 17 // <<1
-    .equ DDR_IDX, 18 // <<1
-    .equ DEC_IDX, 19 // <<1
-    .equ DIR_IDX, 20 // <<1
-    .equ DO_IDX, 21 // <<1
-    .equ DREAD_IDX, 22 // <<1
-    .equ DWRITE_IDX, 23 // <<1
-    .equ END_IDX, 24 // <<1
-    .equ EEPROM_IDX, 25 // <<1
-    .equ FCPU_IDX, 26 // <<1
-    .equ FOR_IDX, 27 // <<1
-    .equ FORGET_IDX, 28 // <<1
-    .equ GOSUB_IDX, 29 // <<1
-    .equ GOTO_IDX, 30 // <<1
-    .equ GPIO_IDX, 31 // <<1
-    .equ HEX_IDX, 32 // <<1
-    .equ IDR_IDX, 33 // <<1
-    .equ IF_IDX, 34 // <<1
-    .equ INPUT_IDX, 35 // <<1
-    .equ INVERT_IDX, 36 // <<1
-    .equ IWDGEN_IDX, 37 // <<1
-    .equ IWDGREF_IDX, 38 // <<1
-    .equ KEY_IDX, 39 // <<1
-    .equ LET_IDX, 40 // <<1
-    .equ LIST_IDX, 41 // <<1
-    .equ LOAD_IDX, 42 // <<1
-    .equ LOG2_IDX, 43 // <<1
-    .equ LSHIFT_IDX, 44 // <<1
-    .equ NEXT_IDX, 45 // <<1
-    .equ NEW_IDX, 46 // <<1
-    .equ NOT_IDX, 47 // <<1
-    .equ ODR_IDX, 48 // <<1
-    .equ OR_IDX, 49 // <<1
-    .equ PAD_IDX, 50 // <<1
-    .equ PAUSE_IDX, 51 // <<1
-    .equ PMODE_IDX, 52 // <<1
-    .equ PEEK_IDX, 53 // <<1
-    .equ PINP_IDX, 54 // <<1
-    .equ POKE_IDX, 55 // <<1
-    .equ POUT_IDX, 56 // <<1
-    .equ PRT_IDX, 57 // <<1 //  PRINT commande index 
-    .equ PRTA_IDX, 58 // <<1
-    .equ PRTB_IDX, 59 // <<1
-    .equ PRTC_IDX, 60 // <<1
-    .equ PRTD_IDX, 61 // <<1
-    .equ PRTE_IDX, 62 // <<1
-    .equ PRTF_IDX, 63 // <<1
-    .equ PRTG_IDX, 64 // <<1
-    .equ PRTH_IDX, 65 // <<1
-    .equ PRTI_IDX, 66 // <<1
-    .equ QKEY_IDX, 67 // <<1
-    .equ READ_IDX, 68 // <<1
-    .equ RBT_IDX, 69 // <<1  //  REBOOT
-    .equ REM_IDX, 70 // <<1 //  REMARK command index 
-    .equ REST_IDX, 71 // <<1 //  RESTORE
-    .equ RET_IDX, 72 // <<1  //  RETURN 
-    .equ RND_IDX, 73 // <<1 //  RANDOM 
-    .equ RSHIFT_IDX, 74 // <<1
-    .equ RUN_IDX, 75 // <<1
-    .equ SAVE_IDX, 76 // <<1
-    .equ SHOW_IDX, 77 // <<1
-    .equ SIZE_IDX, 78 // <<1
-    .equ SLEEP_IDX, 79 // <<1
-    .equ SPIRD_IDX, 80 // <<1
-    .equ SPIEN_IDX, 81 // <<1
-    .equ SPISEL_IDX, 82 // <<1
-    .equ SPIWR_IDX, 83 // <<1
-    .equ STEP_IDX, 84 // <<1
-    .equ STOP_IDX, 85 // <<1
-    .equ TICKS_IDX, 86 // <<1
-    .equ TIMER_IDX, 87 // <<1
-    .equ TMROUT_IDX, 88 // <<1  //  TIMEOUT
-    .equ TO_IDX, 89 // <<1
-    .equ TONE_IDX, 90 // <<1
-    .equ UBOUND_IDX, 91 // <<1
-    .equ UFLASH_IDX, 92 // <<1
-    .equ UNTIL_IDX, 93 // <<1
-    .equ USR_IDX, 94 // <<1
-    .equ WAIT_IDX, 95 // <<1
-    .equ WORDS_IDX, 96 // <<1
-    .equ WRITE_IDX, 97 // <<1
-    .equ XOR_IDX, 98 // <<1 
-    .equ XTRMT_IDX, 99 // <<1
-    .equ XRCV_IDX, 100 // <<1
-    .equ DUMP_IDX, 101 
-    .equ THEN_IDX,102
+    .equ ADCON_IDX, ABS_IDX+1  //   adc on 
+    .equ ADCREAD_IDX,ADCON_IDX+1  // read adc 
+    .equ AND_IDX,ADCREAD_IDX+1 // 
+    .equ ASC_IDX,AND_IDX+1  // 
+    .equ AUTORUN_IDX,ASC_IDX+1  // 
+    .equ AWU_IDX,AUTORUN_IDX+1 //
+    .equ BIT_IDX,AWU_IDX+1 //
+    .equ BRES_IDX,BIT_IDX+1 // 
+    .equ BSET_IDX,BRES_IDX+1 // 
+    .equ BTEST_IDX,BSET_IDX+1 // 
+    .equ BTOGL_IDX,BTEST_IDX+1 // 
+    .equ BYE_IDX,BTOGL_IDX+1 // 
+    .equ CHAR_IDX,BYE_IDX+1 // 
+    .equ DATA_IDX,CHAR_IDX+1 // 
+    .equ DATALN_IDX,DATA_IDX+1 // 
+    .equ DEC_IDX,DATALN_IDX+1 // 
+    .equ DIR_IDX,DEC_IDX+1 // 
+    .equ DO_IDX,DIR_IDX+1 // 
+    .equ DREAD_IDX,DO_IDX+1 // 
+    .equ DUMP_IDX, DREAD_IDX+1 
+    .equ DWRITE_IDX,DUMP_IDX+1 // 
+    .equ END_IDX,DWRITE_IDX+1 // 
+    .equ FOR_IDX, END_IDX+1 // 
+    .equ FORGET_IDX, FOR_IDX+1 // 
+    .equ GOSUB_IDX, FORGET_IDX+1 // 
+    .equ GOTO_IDX, GOSUB_IDX+1
+    .equ HEX_IDX, GOTO_IDX+1 // 
+    .equ IF_IDX, HEX_IDX+1 // 
+    .equ INPUT_IDX, IF_IDX+1 // 
+    .equ INVERT_IDX, INPUT_IDX+1 // 
+    .equ KEY_IDX, INVERT_IDX+1 // 
+    .equ LET_IDX, KEY_IDX+1 // 
+    .equ LIST_IDX, LET_IDX+1 // 
+    .equ LOAD_IDX, LIST_IDX+1 // 
+    .equ LOG2_IDX, LOAD_IDX+1 // 
+    .equ LSHIFT_IDX, LOG2_IDX+1 // 
+    .equ NEW_IDX, LSHIFT_IDX+1 // 
+    .equ NEXT_IDX, NEW_IDX+1 // 
+    .equ NOT_IDX, NEXT_IDX+1 // 
+    .equ OR_IDX, NOT_IDX+1 // 
+    .equ PAD_IDX, OR_IDX+1 // 
+    .equ PAUSE_IDX, PAD_IDX+1 // 
+    .equ PMODE_IDX, PAUSE_IDX+1 // 
+    .equ PEEK8_IDX, PMODE_IDX+1 //
+    .equ PEEK16_IDX,  PEEK8_IDX+1
+    .equ PEEK32_IDX, PEEK16_IDX+1
+    .equ POKE8_IDX, PEEK32_IDX+1 // 
+    .equ POKE16_IDX,POKE8_IDX+1 
+    .equ POKE32_IDX,POKE16_IDX+1
+    .equ PRT_IDX, POKE32_IDX+1 //  //  PRINT commande index 
+    .equ QKEY_IDX, PRT_IDX+1 // 
+    .equ READ_IDX, QKEY_IDX+1 // 
+    .equ REM_IDX, READ_IDX+1  //  REMARK command index 
+    .equ REST_IDX, REM_IDX+1 //  RESTORE
+    .equ RET_IDX, REST_IDX+1   //  RETURN 
+    .equ RND_IDX, RET_IDX+1  //  RANDOM 
+    .equ RSHIFT_IDX, RND_IDX+1 // 
+    .equ RUN_IDX, RSHIFT_IDX+1 // 
+    .equ SAVE_IDX, RUN_IDX+1 // 
+    .equ SHOW_IDX, SAVE_IDX+1 // 
+    .equ SIZE_IDX, SHOW_IDX+1 // 
+    .equ SLEEP_IDX, SIZE_IDX+1 // 
+    .equ SPIRD_IDX, SLEEP_IDX+1 // 
+    .equ SPIEN_IDX, SPIRD_IDX+1 // 
+    .equ SPISEL_IDX, SPIEN_IDX+1 // 
+    .equ SPIWR_IDX, SPISEL_IDX+1 // 
+    .equ STEP_IDX, SPIWR_IDX+1 // 
+    .equ STOP_IDX, STEP_IDX+1 // 
+    .equ THEN_IDX,STOP_IDX+1
+    .equ TICKS_IDX, THEN_IDX+1 // 
+    .equ TIMER_IDX, TICKS_IDX+1 // 
+    .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
+    .equ TO_IDX, TMROUT_IDX+1 // 
+    .equ TONE_IDX, TO_IDX+1 // 
+    .equ UBOUND_IDX, TONE_IDX+1 // 
+    .equ UFLASH_IDX, UBOUND_IDX+1 // 
+    .equ UNTIL_IDX, UFLASH_IDX+1 // 
+    .equ USR_IDX, UNTIL_IDX+1 // 
+    .equ WAIT_IDX, USR_IDX+1 // 
+    .equ WORDS_IDX, WAIT_IDX+1 // 
+    .equ WRITE_IDX, WORDS_IDX+1 // 
+    .equ XOR_IDX, WRITE_IDX+1 //  
+    .equ XTRMT_IDX, XOR_IDX+1 // 
+    .equ XRCV_IDX, XTRMT_IDX+1 // 
     

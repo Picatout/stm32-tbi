@@ -2134,28 +2134,19 @@ kword_end:
   _dict_entry TK_CMD,RETURN,RET_IDX //return 
   _dict_entry TK_CMD,RESTORE,REST_IDX //restore 
   _dict_entry TK_CMD,REMARK,REM_IDX //remark 
-  _dict_entry TK_CMD,REBOOT,RBT_IDX //cold_start
   _dict_entry TK_IFUNC,READ,READ_IDX //read  
   _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey  
-  _dict_entry TK_IFUNC,PRTI,PRTI_IDX //const_porti 
-  _dict_entry TK_IFUNC,PRTH,PRTH_IDX //const_porth 
-  _dict_entry TK_IFUNC,PRTG,PRTG_IDX //const_portg 
-  _dict_entry TK_IFUNC,PRTF,PRTF_IDX //const_portf
-  _dict_entry TK_IFUNC,PRTE,PRTE_IDX //const_porte
-  _dict_entry TK_IFUNC,PRTD,PRTD_IDX //const_portd
-  _dict_entry TK_IFUNC,PRTC,PRTC_IDX //const_portc
-  _dict_entry TK_IFUNC,PRTB,PRTB_IDX //const_portb
-  _dict_entry TK_IFUNC,PRTA,PRTA_IDX //const_porta 
   _dict_entry TK_CMD,PRINT,PRT_IDX //print 
-  _dict_entry TK_IFUNC,POUT,POUT_IDX //const_output
-  _dict_entry TK_CMD,POKE,POKE_IDX //poke 
-  _dict_entry TK_CMD,PMODE,PMODE_IDX //pin_mode 
-  _dict_entry TK_IFUNC,PINP,PINP_IDX //const_input
-  _dict_entry TK_IFUNC,PEEK,PEEK_IDX //peek 
+  _dict_entry TK_CMD,POKE8,POKE8_IDX // poke8 
+  _dict_entry TK_CMD,POKE32,POKE32_IDX //poke32
+  _dict_entry TK_CMD,POKE16,POKE16_IDX // poke16
+  _dict_entry TK_CMD,PMODE,PMODE_IDX // pin_mode 
+  _dict_entry TK_IFUNC,PEEK8,PEEK8_IDX //peek8
+  _dict_entry TK_IFUNC,PEEK32,PEEK32_IDX //peek32
+  _dict_entry TK_IFUNC,PEEK16,PEEK16_IDX //peek16
   _dict_entry TK_CMD,PAUSE,PAUSE_IDX //pause 
   _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref 
   _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
-  _dict_entry TK_IFUNC,ODR,ODR_IDX //const_odr 
   _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
@@ -2165,32 +2156,23 @@ kword_end:
   _dict_entry TK_CMD,LIST,LIST_IDX //list
   _dict_entry TK_CMD,LET,LET_IDX //let 
   _dict_entry TK_IFUNC,KEY,KEY_IDX //key 
-  _dict_entry TK_CMD,IWDGREF,IWDGREF_IDX //refresh_iwdg
-  _dict_entry TK_CMD,IWDGEN,IWDGEN_IDX //enable_iwdg
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
   _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var  
   _dict_entry TK_CMD,IF,IF_IDX //if 
-  _dict_entry TK_IFUNC,IDR,IDR_IDX //const_idr 
   _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
-  _dict_entry TK_IFUNC,GPIO,GPIO_IDX //gpio 
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
-  _dict_entry TK_CMD,FCPU,FCPU_IDX //fcpu 
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
-  _dict_entry TK_IFUNC,EEPROM,EEPROM_IDX //const_eeprom_base   
   _dict_entry TK_CMD,DWRITE,DWRITE_IDX //digital_write
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
   _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
-  _dict_entry TK_IFUNC,DDR,DDR_IDX //const_ddr 
   _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
   _dict_entry TK_CMD,DATA,DATA_IDX //data  
-  _dict_entry TK_IFUNC,CRL,CRL_IDX //const_cr1 
-  _dict_entry TK_IFUNC,CRH,CRH_IDX //const_cr2 
   _dict_entry TK_CFUNC,CHAR,CHAR_IDX //char
   _dict_entry TK_CMD,BYE,BYE_IDX //bye 
   _dict_entry TK_CMD,BTOGL,BTOGL_IDX //bit_toggle
@@ -2217,19 +2199,19 @@ kword_dict: // first name field
 
 //comands and fonctions address table 	
 fn_table:
-	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask // 0..7
-	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char,const_cr2  // 8..15
-	.word const_cr1,skip_line,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
-	.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
-	.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
-	.word let,list,load,log2,lshift,next,new // 40..46
-	.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 47..54
-	.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 55..62
-	.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,skip_line // 63..70 
-	.word restore,return, random,rshift,run,save,show,size // 71..78
-	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 79..86
-	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 87..94
-	.word wait,words,write,bit_xor,transmit,receive,dump,then // 95..102 
+	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask 
+	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char  
+	.word skip_line,data_line,dec_base,directory,do_loop,digital_read,dump,digital_write
+	.word cmd_end,for,forget,gosub,goto 
+	.word hex_base,if,input_var,invert,key
+	.word let,list,load,log2,lshift,new,next
+	.word func_not,bit_or,pad_ref,pause,pin_mode,peek8,peek16,peek32,poke8,poke16
+	.word poke32,print
+	.word qkey,read,skip_line
+	.word restore,return, random,rshift,run,save,show,size 
+	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks
+	.word then,set_timer,timeout,to,tone,ubound,uflash,until,usr
+	.word wait,words,write,bit_xor,transmit,receive
 	.word 0 
 
 
@@ -3110,48 +3092,82 @@ pad_adr: .word _pad
     _RET 
 
 /*****************************************
-  BASIC: PEEK expr[,1|2|4]  
-  return value at address 
-  second optional argument specify
-  1=byte,2=hword,4=word
-  default is word 
+  BASIC: PEEK8 (expr)  
+  return byte value at address 
 *****************************************/
-    _FUNC peek
-    _CALL arg_list 
+    _FUNC peek8
+    _CALL func_args  
     cmp r0,#1
     bmi syntax_error
     _POP r1 
-    cmp r0,#1
-    beq peek32 
-    cmp r0,#3 
-    bpl syntax_error 
-    mov r0,r1 
-    _pop r1
-    cmp r0,#1
-    beq peek8 
-    cmp r0,#2 
-    bgt peek32  
-    ldrh r1,[r1]
-    b 9f
-peek8:
     ldrb r1,[r1]
-    b 9f
-peek16: 
+    mov r0,#TK_INTGR     
+    _RET 
+
+/*****************************************
+  BASIC: PEEK16 (expr)  
+  return byte value at address 
+*****************************************/
+    _FUNC peek16
+    _CALL func_args  
+    cmp r0,#1
+    bmi syntax_error
+    _POP r1 
     ldrh r1,[r1]
-    b 9f     
-peek32:     
+    mov r0,#TK_INTGR     
+    _RET 
+
+/*****************************************
+  BASIC: PEEK32 (expr)  
+  return byte value at address 
+*****************************************/
+    _FUNC peek32
+    _CALL func_args  
+    cmp r0,#1
+    bmi syntax_error
+    _POP r1 
     ldr r1,[r1]
-9:  mov r0,#TK_INTGR     
+    mov r0,#TK_INTGR     
     _RET 
 
-    _FUNC const_input
-    _RET  
 
-    _FUNC poke
+/**********************************
+  BASIC: POKE8 addr,byte
+  store byte at addr   
+**********************************/
+    _FUNC poke8
+    _CALL arg_list
+    cmp r0,#2 
+    bne syntax_error
+    ldmia DP!,{r0,r1} 
+    strb r0,[r1]
     _RET 
 
-    _FUNC const_output
+/**********************************
+  BASIC: POKE16 addr,hword
+  store hword at addr   
+**********************************/
+    _FUNC poke16
+    _CALL arg_list
+    cmp r0,#2 
+    bne syntax_error
+    ldmia DP!,{r0,r1} 
+    strh r0,[r1]
     _RET 
+
+/**********************************
+  BASIC: POKE32 addr,word
+  store word at addr   
+**********************************/
+    _FUNC poke32
+    _CALL arg_list 
+    cmp r0,#2 
+    bne syntax_error
+    ldmia DP!,{r0,r1} 
+    str r0,[r1]
+    _RET 
+
+
 
 /****************************
   BASIC: PRINT|? arg_list 
