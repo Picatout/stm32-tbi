@@ -391,11 +391,12 @@ pad: .word _pad
 //   none
 *********************************/
     _FUNC move_left
-	_CALL  send_escape
-	_CALL  send_parameter 
-	mov r0,#'D' 
-	_CALL  uart_putc 
-	_RET	
+    cbz r0,9f   
+	  _CALL  send_escape
+	  _CALL  send_parameter 
+	  mov r0,#'D' 
+	  _CALL  uart_putc 
+9:	_RET	
 
 
 /***********************************
@@ -407,11 +408,12 @@ pad: .word _pad
 //   none
 ***********************************/
     _FUNC move_right
+    cbz r0,9f 
     _CALL  send_escape
     _CALL  send_parameter 
     mov r0,#'C' 
     _CALL  uart_putc 
-    _RET 
+9:  _RET 
 
 /*********************************
 // print n spaces on terminal
@@ -573,6 +575,19 @@ pad: .word _pad
     _RET 
 
 /************************************
+    delete_right 
+    send ANSI code to delete from 
+    cursor to end of line 
+************************************/
+    _FUNC delete_right 
+    _CALL send_escape 
+    mov r0,#'0'
+    _CALL uart_putc 
+    mov r0,#'K'
+    _CALL uart_putc 
+    _RET 
+
+/************************************
    update_line 
    update edited line on display 
    input:
@@ -583,7 +598,11 @@ pad: .word _pad
       none 
 *************************************/
     _FUNC update_line 
-    _CALL delete_line
+    push {r0}
+    mov r0,r7 
+    _CALL move_left
+    _CALL delete_right
+    pop {r0} 
     _CALL uart_puts
     _RET 
 
@@ -607,7 +626,8 @@ pad: .word _pad
     r0  *buffer (asciz)  
     r1  line length  
   use:
-    r2  cmove count 
+    r2  cmove count
+    r3  line start colon  
     r5 line length 
     r6 *buffer   
     r7  cursor position 
@@ -615,7 +635,7 @@ pad: .word _pad
     T2  buffer size -1 
 *************************************/
   _GBL_FUNC readln
-  push {r2,r5,r6,r7,T1,T2}
+  push {r2,r3,r5,r6,r7,T1,T2}
   eor r7,r7  // cursor position 
   eor T1,T1 // overwrite mode 
   mov r6,r0 // *buffer 
@@ -623,6 +643,8 @@ pad: .word _pad
   eor r5,r5  // line length 
   eor r0,r0 // blinking block shape
   _CALL cursor_shape
+  _CALL get_curpos
+  mov r3,r1 
 readln_loop:
   eor r0,r0
   strb r0,[r6,r5]  
@@ -649,7 +671,7 @@ readln_loop:
   strb r0,[r6,r5] 
   mov r0,r6
   _CALL update_line 
-  add r0,r7,#1 
+  add r0,r7,r3 
   _CALL cursor_x 
   b readln_loop       
 1: // at end of line 
@@ -705,15 +727,16 @@ readln_loop:
    bne character  
    _CALL get_escape
    cmp r0,#HOME 
-   bne try_end 
-   _CALL cursor_home
+   bne try_end
+   mov r0,r7 
+   _call move_left 
    eor r7,r7  
    b readln_loop 
 try_end:
    cmp r0,#END 
    bne try_left 
-   add r0,r5,#1
-   _CALL cursor_x 
+   sub r0,r5,r7  
+   _CALL move_right  
    mov r7,r5 
    b readln_loop 
 try_left: 
@@ -749,7 +772,7 @@ try_suprim:
    strb r0,[r6,r5]
    mov r0,r6 
    _CALL update_line
-   add  r0,r7,#1 
+   add  r0,r7,r3 
    _CALL cursor_x 
    b readln_loop      
 character:
@@ -769,21 +792,21 @@ character:
   _CALL cmove   
   pop {r0,r2}
   strb r0,[r6,r7] 
-  add r7,#1
   add r5,#1 
   eor r0,r0 
   strb r0,[r6,r5]
   mov r0,r6   
   _CALL update_line
-  add r0,r7,#1 
+  add r7,#1
+  add r0,r7,r3 
   _CALL cursor_x  
   b readln_loop   
 2: // overwrite mode 
   strb r0,[r6,r7]
-  add r7,#1
   mov r0,r6 
   _CALL update_line 
-  add r0,r7,#1 
+  add r7,#1
+  add r0,r7,r3
   _CALL cursor_x 
   b readln_loop 
 5: // cursor at eol, mode doesn't matter 
@@ -804,7 +827,7 @@ readln_exit:
   strb r0,[r6,r5]
   mov r1,r5  // line length
   mov r0,r6  // *buffer  
-  pop {r2,r5,r6,r7,T1,T2}
+  pop {r2,r3,r5,r6,r7,T1,T2}
   _RET 
 
 

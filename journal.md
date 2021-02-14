@@ -1,3 +1,11 @@
+#### 2021-02-14
+
+* Ajouter **KEY**, **RSHIFT**, **LSHIFT**,**PEEK**  
+
+* Modifié **INPUT** pour afficher soit la chaîne, soit le nom de la variable mais pas les 2.
+
+* Modifier readln, home ne doit pas retourner à gauche de l'écran mais au début de la ligne de texte qui ne débute pas forcément à la colonne 1.
+
 #### 2021-02-13
 
 * Ajout de **INPUT** et **INVERT**

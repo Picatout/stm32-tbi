@@ -2159,9 +2159,8 @@ kword_end:
   _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
-  _dict_entry TK_IFUNC,MULDIV,MULDIV_IDX //muldiv 
   _dict_entry TK_IFUNC,LSHIFT,LSHIFT_IDX //lshift
-  _dict_entry TK_IFUNC,LOG,LOG_IDX //log2 
+  _dict_entry TK_IFUNC,LOG2,LOG2_IDX //log2 
   _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
   _dict_entry TK_CMD,LIST,LIST_IDX //list
   _dict_entry TK_CMD,LET,LET_IDX //let 
@@ -2223,14 +2222,14 @@ fn_table:
 	.word const_cr1,skip_line,data_line,const_ddr,dec_base,directory,do_loop,digital_read,digital_write //16..23 
 	.word cmd_end,const_eeprom_base,fcpu,for,forget,gosub,goto,gpio // 24..31 
 	.word hex_base,const_idr,if,input_var,invert,enable_iwdg,refresh_iwdg,key // 32..39 
-	.word let,list,load,log2,lshift,muldiv,next,new // 40..47
-	.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 48..55
-	.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 56..63
-	.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,skip_line // 64..71 
-	.word restore,return, random,rshift,run,save,show,size // 72..79
-	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 80..87
-	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 88..95
-	.word wait,words,write,bit_xor,transmit,receive,dump,then // 96..103 
+	.word let,list,load,log2,lshift,next,new // 40..46
+	.word func_not,const_odr,bit_or,pad_ref,pause,pin_mode,peek,const_input // 47..54
+	.word poke,const_output,print,const_porta,const_portb,const_portc,const_portd,const_porte // 55..62
+	.word const_portf,const_portg,const_porth,const_porti,qkey,read,cold_start,skip_line // 63..70 
+	.word restore,return, random,rshift,run,save,show,size // 71..78
+	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks  // 79..86
+	.word set_timer,timeout,to,tone,ubound,uflash,until,usr // 87..94
+	.word wait,words,write,bit_xor,transmit,receive,dump,then // 95..102 
 	.word 0 
 
 
@@ -2322,10 +2321,7 @@ fn_table:
     bne syntax_error 
     _POP r0
     mov r1,#1
-1:  cbz r0,9f 
-    lsl r1,#1
-    sub r0,#1
-    b 1b 
+    lsl r1,r0 
 9:  mov r0,#TK_INTGR
     _RET 
 
@@ -2835,23 +2831,32 @@ dump01:
      _FUNC input_var
     push {r2,T1}
 1:  _CALL next_token 
+    cmp r0,#2
+    bmi 8f 
     cmp r0,#TK_QSTR 
     bne 2f 
-    mov r0,r1 
-    _CALL uart_puts 
-    mov r0,#CR 
-    _CALL uart_putc
-    _CALL next_token
+    mov r0,r1
+    ldr r1,str_buffer
+    _CALL strcpy
+    mov r0,#TK_VAR   
+    _CALL expect 
+    mov T1,r1 
+    ldr r0,str_buffer 
+    b 3f 
 2:  cmp r0,#TK_VAR 
-    bne 8f
+    bne syntax_error     
     mov T1,r1 
     add r0,r1,#'A' 
-    _CALL uart_putc 
+    ldr r1,str_buffer
+    strh r0,[r1]
+    mov r0,r1 
+3:  _CALL uart_puts  
     mov r0,#'='
     _CALL uart_putc
     ldr r0,input_buffer
     mov r1,#34 
     _CALL readln
+    cbz r1,6f
     ldrb r1,[r0]
     cmp r1,#'$'
     bne 3f 
@@ -2877,6 +2882,7 @@ dump01:
 9:  pop {r2,T1}       
     _RET 
 input_buffer: .word _tib 
+str_buffer: .word _pad 
 
 
 /*****************************************
@@ -2898,7 +2904,14 @@ input_buffer: .word _tib
     _FUNC refresh_iwdg
     _RET 
 
+/*************************************
+  BASIC: KEY 
+  wait for a character from console
+*************************************/
     _FUNC key
+    _CALL uart_getc
+    mov r1,r0
+    mov r0,#TK_CHAR 
     _RET  
 
 /******************************
@@ -3000,13 +3013,32 @@ out_buff: .word _tib
     _FUNC load
     _RET 
 
+/********************************
+  BASIC: LOG2(expr)
+  return log base 2 of expr 
+********************************/
     _FUNC log2
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error
+    _POP r0 
+    clz r1,r0 
+    rsb r1,#31
+9:  mov r0,#TK_INTGR
     _RET 
 
+
+/****************************************
+  BASIC: LSHIFT(expr1,expr2)
+  shift right expr1 of expr2 bits 
+****************************************/
     _FUNC lshift
-    _RET 
-
-    _FUNC muldiv
+    _CALL func_args
+    cmp r0,#2
+    bne syntax_error 
+    ldmia DP!,{r0,r1}
+    lsl r1,r0 
+    mov r0,#TK_INTGR
     _RET 
 
 /***********************************
@@ -3048,8 +3080,15 @@ out_buff: .word _tib
     mov r0,#TK_INTGR
     _RET 
 
+/****************************************
+  BASIC: PAD 
+  return pad buffer address 
+****************************************/
     _FUNC pad_ref
+    ldr r1,pad_adr  
+    mov r0,#TK_INTGR 
     _RET 
+pad_adr: .word _pad 
 
 /***********************
   BASIC: PAUSE expr 
@@ -3070,7 +3109,39 @@ out_buff: .word _tib
     _FUNC pin_mode
     _RET 
 
+/*****************************************
+  BASIC: PEEK expr[,1|2|4]  
+  return value at address 
+  second optional argument specify
+  1=byte,2=hword,4=word
+  default is word 
+*****************************************/
     _FUNC peek
+    _CALL arg_list 
+    cmp r0,#1
+    bmi syntax_error
+    _POP r1 
+    cmp r0,#1
+    beq peek32 
+    cmp r0,#3 
+    bpl syntax_error 
+    mov r0,r1 
+    _pop r1
+    cmp r0,#1
+    beq peek8 
+    cmp r0,#2 
+    bgt peek32  
+    ldrh r1,[r1]
+    b 9f
+peek8:
+    ldrb r1,[r1]
+    b 9f
+peek16: 
+    ldrh r1,[r1]
+    b 9f     
+peek32:     
+    ldr r1,[r1]
+9:  mov r0,#TK_INTGR     
     _RET 
 
     _FUNC const_input
@@ -3202,7 +3273,17 @@ print_exit:
     mov r0,#TK_INTGR
     _RET 
 
+/****************************************
+  BASIC: RSHIFT(expr1,expr2)
+  shift left expr1 de expr2 bits 
+****************************************/
     _FUNC rshift
+    _CALL func_args
+    cmp r0,#2 
+    bne syntax_error
+    ldmia DP!,{r0,r1}
+    lsr r1,r0  
+    mov r0,#TK_INTGR
     _RET 
 
 /****************************

@@ -65,65 +65,64 @@
     .equ LET_IDX, 40 // <<1
     .equ LIST_IDX, 41 // <<1
     .equ LOAD_IDX, 42 // <<1
-    .equ LOG_IDX, 43 // <<1
+    .equ LOG2_IDX, 43 // <<1
     .equ LSHIFT_IDX, 44 // <<1
-    .equ MULDIV_IDX, 45 // <<1
-    .equ NEXT_IDX, 46 // <<1
-    .equ NEW_IDX, 47 // <<1
-    .equ NOT_IDX, 48 // <<1
-    .equ ODR_IDX, 49 // <<1
-    .equ OR_IDX, 50 // <<1
-    .equ PAD_IDX, 51 // <<1
-    .equ PAUSE_IDX, 52 // <<1
-    .equ PMODE_IDX, 53 // <<1
-    .equ PEEK_IDX, 54 // <<1
-    .equ PINP_IDX, 55 // <<1
-    .equ POKE_IDX, 56 // <<1
-    .equ POUT_IDX, 57 // <<1
-    .equ PRT_IDX, 58 // <<1 //  PRINT commande index 
-    .equ PRTA_IDX, 59 // <<1
-    .equ PRTB_IDX, 60 // <<1
-    .equ PRTC_IDX, 61 // <<1
-    .equ PRTD_IDX, 62 // <<1
-    .equ PRTE_IDX, 63 // <<1
-    .equ PRTF_IDX, 64 // <<1
-    .equ PRTG_IDX, 65 // <<1
-    .equ PRTH_IDX, 66 // <<1
-    .equ PRTI_IDX, 67 // <<1
-    .equ QKEY_IDX, 68 // <<1
-    .equ READ_IDX, 69 // <<1
-    .equ RBT_IDX, 70 // <<1  //  REBOOT
-    .equ REM_IDX, 71 // <<1 //  REMARK command index 
-    .equ REST_IDX, 72 // <<1 //  RESTORE
-    .equ RET_IDX, 73 // <<1  //  RETURN 
-    .equ RND_IDX, 74 // <<1 //  RANDOM 
-    .equ RSHIFT_IDX, 75 // <<1
-    .equ RUN_IDX, 76 // <<1
-    .equ SAVE_IDX, 77 // <<1
-    .equ SHOW_IDX, 78 // <<1
-    .equ SIZE_IDX, 79 // <<1
-    .equ SLEEP_IDX, 80 // <<1
-    .equ SPIRD_IDX, 81 // <<1
-    .equ SPIEN_IDX, 82 // <<1
-    .equ SPISEL_IDX, 83 // <<1
-    .equ SPIWR_IDX, 84 // <<1
-    .equ STEP_IDX, 85 // <<1
-    .equ STOP_IDX, 86 // <<1
-    .equ TICKS_IDX, 87 // <<1
-    .equ TIMER_IDX, 88 // <<1
-    .equ TMROUT_IDX, 89 // <<1  //  TIMEOUT
-    .equ TO_IDX, 90 // <<1
-    .equ TONE_IDX, 91 // <<1
-    .equ UBOUND_IDX, 92 // <<1
-    .equ UFLASH_IDX, 93 // <<1
-    .equ UNTIL_IDX, 94 // <<1
-    .equ USR_IDX, 95 // <<1
-    .equ WAIT_IDX, 96 // <<1
-    .equ WORDS_IDX, 97 // <<1
-    .equ WRITE_IDX, 98 // <<1
-    .equ XOR_IDX, 99 // <<1 
-    .equ XTRMT_IDX, 100 // <<1
-    .equ XRCV_IDX, 101 // <<1
-    .equ DUMP_IDX, 102 
-    .equ THEN_IDX,103
+    .equ NEXT_IDX, 45 // <<1
+    .equ NEW_IDX, 46 // <<1
+    .equ NOT_IDX, 47 // <<1
+    .equ ODR_IDX, 48 // <<1
+    .equ OR_IDX, 49 // <<1
+    .equ PAD_IDX, 50 // <<1
+    .equ PAUSE_IDX, 51 // <<1
+    .equ PMODE_IDX, 52 // <<1
+    .equ PEEK_IDX, 53 // <<1
+    .equ PINP_IDX, 54 // <<1
+    .equ POKE_IDX, 55 // <<1
+    .equ POUT_IDX, 56 // <<1
+    .equ PRT_IDX, 57 // <<1 //  PRINT commande index 
+    .equ PRTA_IDX, 58 // <<1
+    .equ PRTB_IDX, 59 // <<1
+    .equ PRTC_IDX, 60 // <<1
+    .equ PRTD_IDX, 61 // <<1
+    .equ PRTE_IDX, 62 // <<1
+    .equ PRTF_IDX, 63 // <<1
+    .equ PRTG_IDX, 64 // <<1
+    .equ PRTH_IDX, 65 // <<1
+    .equ PRTI_IDX, 66 // <<1
+    .equ QKEY_IDX, 67 // <<1
+    .equ READ_IDX, 68 // <<1
+    .equ RBT_IDX, 69 // <<1  //  REBOOT
+    .equ REM_IDX, 70 // <<1 //  REMARK command index 
+    .equ REST_IDX, 71 // <<1 //  RESTORE
+    .equ RET_IDX, 72 // <<1  //  RETURN 
+    .equ RND_IDX, 73 // <<1 //  RANDOM 
+    .equ RSHIFT_IDX, 74 // <<1
+    .equ RUN_IDX, 75 // <<1
+    .equ SAVE_IDX, 76 // <<1
+    .equ SHOW_IDX, 77 // <<1
+    .equ SIZE_IDX, 78 // <<1
+    .equ SLEEP_IDX, 79 // <<1
+    .equ SPIRD_IDX, 80 // <<1
+    .equ SPIEN_IDX, 81 // <<1
+    .equ SPISEL_IDX, 82 // <<1
+    .equ SPIWR_IDX, 83 // <<1
+    .equ STEP_IDX, 84 // <<1
+    .equ STOP_IDX, 85 // <<1
+    .equ TICKS_IDX, 86 // <<1
+    .equ TIMER_IDX, 87 // <<1
+    .equ TMROUT_IDX, 88 // <<1  //  TIMEOUT
+    .equ TO_IDX, 89 // <<1
+    .equ TONE_IDX, 90 // <<1
+    .equ UBOUND_IDX, 91 // <<1
+    .equ UFLASH_IDX, 92 // <<1
+    .equ UNTIL_IDX, 93 // <<1
+    .equ USR_IDX, 94 // <<1
+    .equ WAIT_IDX, 95 // <<1
+    .equ WORDS_IDX, 96 // <<1
+    .equ WRITE_IDX, 97 // <<1
+    .equ XOR_IDX, 98 // <<1 
+    .equ XTRMT_IDX, 99 // <<1
+    .equ XRCV_IDX, 100 // <<1
+    .equ DUMP_IDX, 101 
+    .equ THEN_IDX,102
     
