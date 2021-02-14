@@ -2055,7 +2055,7 @@ relop_jmp:
 *********************************/
     _FUNC set_var 
     push {r2}
-    ldr r2,[UPP,#VARS]
+    add r2,UPP,#VARS
     lsl r0,#2
     str r1,[r2,r0]
     pop {r2}
@@ -2828,10 +2828,68 @@ dump01:
 // do nothing 
     _RET
 
-    _FUNC input_var
+/****************************************
+  BASIC: INPUT [string]var [,[string]var]+
+  prompt user for variable value
+***************************************/
+     _FUNC input_var
+    push {r2,T1}
+1:  _CALL next_token 
+    cmp r0,#TK_QSTR 
+    bne 2f 
+    mov r0,r1 
+    _CALL uart_puts 
+    mov r0,#CR 
+    _CALL uart_putc
+    _CALL next_token
+2:  cmp r0,#TK_VAR 
+    bne 8f
+    mov T1,r1 
+    add r0,r1,#'A' 
+    _CALL uart_putc 
+    mov r0,#'='
+    _CALL uart_putc
+    ldr r0,input_buffer
+    mov r1,#34 
+    _CALL readln
+    ldrb r1,[r0]
+    cmp r1,#'$'
+    bne 3f 
+    mov r1,#16
+    add r0,#1  
+    b 5f 
+3:  cmp r1,#'&' 
+    bne 4f 
+    mov r1,#2
+    add r0,#1 
+    b 5f 
+4:  mov r1,#10 
+5:  _CALL atoi 
+    cbnz r0,6f
+    mov r0,#ERR_BAD_VALUE
+    b tb_error
+6:  mov r0,T1 
+    _CALL set_var
+    _CALL next_token
+    cmp r0,#TK_COMMA 
+    beq 1b 
+8:  _UNGET_TOKEN          
+9:  pop {r2,T1}       
     _RET 
+input_buffer: .word _tib 
 
+
+/*****************************************
+  BASIC: INVERT(expr)
+  return 1's complement of expr
+****************************************/
     _FUNC invert
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error
+    _POP r1  
+    mvn r1,r1
+    mov r0,#TK_INTGR
     _RET 
 
     _FUNC enable_iwdg

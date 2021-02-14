@@ -1,5 +1,9 @@
 #### 2021-02-13
 
+* Ajout de **INPUT** et **INVERT**
+
+* Améliorer **DUMP** ainsi que l'affichage des erreurs run time.
+
 * Ajout de **CTRL_B** dans le gestionnaire **uart_rx_handler** pour stopper un programme bloqué dans une boucle indéfinie.
 
 * Déboguer **decompile_line** et **readln**. 
