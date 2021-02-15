@@ -103,6 +103,8 @@
   .equ ERR_NO_PROG,13
   .equ ERR_NO_FSPACE,14
   .equ ERR_BUF_FULL,15
+  .equ ERR_CANT_PROG,16
+  
 
 //--------------------------------------
 //   assembler flags 
@@ -162,7 +164,7 @@
 	.equ FRUN,(1<<0) // programm running
 	.equ FTRAP,(1<<1) // inside trap handler 
 	.equ FLOOP,(1<<2) // FOR loop in preparation 
-	.equ FSLEEP,(1<<3) // in halt mode SLEEP 
+	.equ FSTOP,(1<<3) // program stopped  
 	.equ FBREAK,(1<<4) // break point flag 
 	.equ FCOMP,(1<<5)  // compiling flags 
 	.equ FAUTORUN,(1<<6) // auto start program running 

@@ -140,3 +140,27 @@
    .equ NVIC_IABR1, 0x204
    .equ NVIC_IABR2, 0x208
    .equ NVIC_IPR_BASE, 0x300 
+
+/* system control register */
+.equ SCR_BASE_ADR,0xE000ED10
+.equ SCR_SLEEPONEXIT,(1<<1)
+.equ SCR_SLEEPDEEP,(1<<2)
+.equ SCR_SEVONPEND,(1<<4)
+
+/* power control register */
+.equ PWR_CR_ADR,0x40007000
+.equ PWR_CR_LPDS,(1<<0)
+.equ PWR_CR_PDDS,(1<<1)
+.equ PWR_CR_CWUF,(1<<2)
+.equ PWR_CR_CSBF,(1<<3)
+.equ PWR_CR_PVDE,(1<<4)
+.equ PWR_CR_PLS,(1<<5)
+.equ PWR_CR_DBP,(1<<8)
+
+/* power control and statut register */
+.equ PWR_CSR_ADR,0x40007004 
+.equ PWR_CSR_WUF,(1<<0)
+.equ PWR_CSR_SBF,(1<<1)
+.equ PWR_CSR_PVDO,(1<<2)
+.equ PWR_CSR_EWUP,(1<<8)
+

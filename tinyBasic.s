@@ -414,7 +414,12 @@ move_from_end: // move from high address toward low
     ldrh r0,[r3] // line number 
     cbz r0,8f  
 // insert line in text buffer 
-    mov r0,r3 
+    ldr r0,[UPP,#FLAGS]
+    tst r0,#FSTOP
+    beq 7f 
+    mov r0,#ERR_CANT_PROG 
+    b tb_error 
+7:  mov r0,r3 
     _CALL insert_line 
     eors r0,r0 
     b 9f 
@@ -1235,6 +1240,7 @@ err_msg:
 	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
 	.word err_run_only,err_cmd_only,err_duplicate,err_not_file,err_bad_value
 	.word err_no_access,err_no_data,err_no_prog,err_no_fspace,err_buf_full    
+   .word err_cant_prog 
 
     .section .rodata.tb_error 
 
@@ -1253,6 +1259,7 @@ err_no_data: .asciz "No data found.\n"
 err_no_prog: .asciz "No program in RAM!\n"
 err_no_fspace: .asciz "File system full.\n" 
 err_buf_full: .asciz "Buffer full\n"
+err_cant_prog: .asciz "Can't modify program in STOP mode. Use END command before.\n" 
 
 rt_msg: .asciz "\nrun time error, "
 comp_msg: .asciz "\ncompile error, "
@@ -1525,7 +1532,7 @@ ready: .asciz "\nREADY"
   output:
     none 
 **********************************/
-    _FUNC warm_start 
+    _GBL_FUNC warm_start 
 // initialise parameters stack
     bl warm_init
 // reset main stack 
@@ -2174,7 +2181,6 @@ kword_end:
   _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
   _dict_entry TK_CMD,DATA,DATA_IDX //data  
   _dict_entry TK_CFUNC,CHAR,CHAR_IDX //char
-  _dict_entry TK_CMD,BYE,BYE_IDX //bye 
   _dict_entry TK_CMD,BTOGL,BTOGL_IDX //bit_toggle
   _dict_entry TK_IFUNC,BTEST,BTEST_IDX //bit_test 
   _dict_entry TK_CMD,BSET,BSET_IDX //bit_set 
@@ -2200,7 +2206,7 @@ kword_dict: // first name field
 //comands and fonctions address table 	
 fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask 
-	.word bit_reset,bit_set,bit_test,bit_toggle,bye,char  
+	.word bit_reset,bit_set,bit_test,bit_toggle,char  
 	.word skip_line,data_line,dec_base,directory,do_loop,digital_read,dump,digital_write
 	.word cmd_end,for,forget,gosub,goto 
 	.word hex_base,if,input_var,invert,key
@@ -2401,9 +2407,6 @@ fn_table:
     cbz r1,9f 
     mov r1,#1
 9:  mov r0,#TK_INTGR    
-    _RET 
-
-    _FUNC bye
     _RET 
 
 /*********************************
@@ -2897,8 +2900,8 @@ str_buffer: .word _pad
     _RET  
 
 /******************************
-  BASIC: [let] var=expr 
-         [let] @(expr)=expr
+  BASIC: [LET] var=expr 
+         [LET] @(expr)=expr
   input:
     none 
   output:
@@ -3044,9 +3047,6 @@ out_buff: .word _tib
       b 9f 
   8:  mov r1,#-1
   9:  _RET 
-
-    _FUNC const_odr
-    _RET 
 
 /******************************************
   BASIC: OR(expr1,expr2)
@@ -3227,33 +3227,6 @@ print_exit:
     _CALL uart_putc 
 9:  _RET 
 
-    _FUNC const_porta
-    _RET 
-
-    _FUNC const_portb
-    _RET 
-
-    _FUNC const_portc
-    _RET 
-
-    _FUNC const_portd
-    _RET 
-
-    _FUNC const_porte
-    _RET  
-
-    _FUNC const_portf
-    _RET 
-
-    _FUNC const_portg
-    _RET 
-
-    _FUNC const_porth
-    _RET 
-
-    _FUNC const_porti
-    _RET 
-
 /**************************************
   BASIC: QKEY
   check if key pressed 
@@ -3311,8 +3284,18 @@ print_exit:
     ldr r0,[UPP,#TXTBGN]
     ldr r1,[UPP,#TXTEND]
     cmp r0,r1
-    beq 9f 
-    ldrb r1,[r0,#2]
+    beq 9f
+    ldr r1,[UPP,#FLAGS]
+    tst r1,#FSTOP
+    beq 1f
+    ldmia DP!,{r0,IN,BPTR}
+    str r0,[UPP,#COUNT]
+    ldr r0,[UPP,#FLAGS]
+    mov r1,#FRUN+FSTOP
+    eor r0,r1
+    str r0,[UPP,#FLAGS] 
+    b 9f  
+1:  ldrb r1,[r0,#2]
     str r1,[UPP,#COUNT]
     mov BPTR,r0 
     mov IN,#3
@@ -3332,10 +3315,31 @@ print_exit:
     _FUNC show
     _RET 
 
+/*******************************
+  BASIC: SIZE 
+  return RAM free bytes 
+*******************************/
     _FUNC size
+    ldr r0,[UPP,#TXTEND]
+    ldr r1,[UPP,#ARRAY_ADR]
+    sub r1,R0
+    mov r0,#TK_INTGR
     _RET  
 
+/*********************************
+  BASIC: SLEEP 
+  place MCU lowest power mode 
+  wait for external interrpt or
+  reset.
+*********************************/
     _FUNC sleep
+    _MOV32 r0,SCR_BASE_ADR
+    mov r1,#SCR_SLEEPDEEP
+    str r1,[r0]
+    _MOV32 r0,PWR_CR_ADR
+    mov r1,#PWR_CR_PDDS+PWR_CR_CWUF
+    str r1,[r0]
+    wfe 
     _RET 
 
     _FUNC spi_read
@@ -3350,8 +3354,29 @@ print_exit:
     _FUNC spi_write
     _RET 
 
+/******************************
+  BASIC: STOP 
+  stop program executre but 
+  keep execution state for 
+  resume 
+******************************/
     _FUNC stop
-    _RET 
+    _RTO 
+    ldr r0,[UPP,#COUNT]
+    stmdb DP!,{r0,IN,BPTR}
+    ldr r0,[UPP,#FLAGS]
+    mov r1,#FRUN+FSTOP
+    eor r0,r1
+    str r0,[UPP,#FLAGS]
+    eor IN,IN 
+    eor BPTR,BPTR 
+    str IN,[UPP,#COUNT]
+    str IN,[UPP,#IN_SAVED]
+    str IN,[UPP,#BASICPTR]
+    _MOV32 r0,RAM_END
+    mov sp,r0
+    b cmd_line 
+
 
 /**************************
   BASIC: TICKS 

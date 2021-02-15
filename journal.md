@@ -1,6 +1,8 @@
 #### 2021-02-14
 
-* Ajouter **KEY**, **RSHIFT**, **LSHIFT**,**PEEK**  
+* Ajout de **SLEEP** et **STOP**, supprimer **BYE**
+ 
+* Ajouter **KEY**, **RSHIFT**, **LSHIFT**,**PEEK8**,**PEEK16**,**PEEK32**,**POKE8**,**POKE16**,**POKE32**  
 
 * Modifié **INPUT** pour afficher soit la chaîne, soit le nom de la variable mais pas les 2.
 
