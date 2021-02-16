@@ -641,32 +641,32 @@ ARM GAS  stm32-tbi.s 			page 1
   40              	    .equ DEC_IDX,DATALN_IDX+1 // 
   41              	    .equ DIR_IDX,DEC_IDX+1 // 
   42              	    .equ DO_IDX,DIR_IDX+1 // 
-  43              	    .equ DREAD_IDX,DO_IDX+1 // 
-  44              	    .equ DUMP_IDX, DREAD_IDX+1 
-  45              	    .equ DWRITE_IDX,DUMP_IDX+1 // 
-  46              	    .equ END_IDX,DWRITE_IDX+1 // 
-  47              	    .equ FOR_IDX, END_IDX+1 // 
-  48              	    .equ FORGET_IDX, FOR_IDX+1 // 
-  49              	    .equ GOSUB_IDX, FORGET_IDX+1 // 
-  50              	    .equ GOTO_IDX, GOSUB_IDX+1
-  51              	    .equ HEX_IDX, GOTO_IDX+1 // 
-  52              	    .equ IF_IDX, HEX_IDX+1 // 
-  53              	    .equ INPUT_IDX, IF_IDX+1 // 
-  54              	    .equ INVERT_IDX, INPUT_IDX+1 // 
-  55              	    .equ KEY_IDX, INVERT_IDX+1 // 
-  56              	    .equ LET_IDX, KEY_IDX+1 // 
-  57              	    .equ LIST_IDX, LET_IDX+1 // 
-  58              	    .equ LOAD_IDX, LIST_IDX+1 // 
-  59              	    .equ LOG2_IDX, LOAD_IDX+1 // 
+  43              	    .equ DUMP_IDX, DO_IDX+1 
+  44              	    .equ END_IDX,DUMP_IDX+1 // 
+  45              	    .equ FOR_IDX, END_IDX+1 // 
+  46              	    .equ FORGET_IDX, FOR_IDX+1 // 
+  47              	    .equ GOSUB_IDX, FORGET_IDX+1 // 
+  48              	    .equ GOTO_IDX, GOSUB_IDX+1
+  49              	    .equ HEX_IDX, GOTO_IDX+1 // 
+  50              	    .equ IF_IDX, HEX_IDX+1 // 
+  51              	    .equ INP_IDX,IF_IDX+1
+  52              	    .equ INPUT_IDX, INP_IDX+1 // 
+  53              	    .equ INVERT_IDX, INPUT_IDX+1 // 
+  54              	    .equ KEY_IDX, INVERT_IDX+1 // 
+  55              	    .equ LET_IDX, KEY_IDX+1 // 
+  56              	    .equ LIST_IDX, LET_IDX+1 // 
+  57              	    .equ LOAD_IDX, LIST_IDX+1 // 
+  58              	    .equ LOG2_IDX, LOAD_IDX+1 // 
+  59              	    .equ LSHIFT_IDX, LOG2_IDX+1 // 
 ARM GAS  stm32-tbi.s 			page 12
 
 
-  60              	    .equ LSHIFT_IDX, LOG2_IDX+1 // 
-  61              	    .equ NEW_IDX, LSHIFT_IDX+1 // 
-  62              	    .equ NEXT_IDX, NEW_IDX+1 // 
-  63              	    .equ NOT_IDX, NEXT_IDX+1 // 
-  64              	    .equ OR_IDX, NOT_IDX+1 // 
-  65              	    .equ PAD_IDX, OR_IDX+1 // 
+  60              	    .equ NEW_IDX, LSHIFT_IDX+1 // 
+  61              	    .equ NEXT_IDX, NEW_IDX+1 // 
+  62              	    .equ NOT_IDX, NEXT_IDX+1 // 
+  63              	    .equ OR_IDX, NOT_IDX+1 // 
+  64              	    .equ OUT_IDX,OR_IDX+1
+  65              	    .equ PAD_IDX, OUT_IDX+1 // 
   66              	    .equ PAUSE_IDX, PAD_IDX+1 // 
   67              	    .equ PMODE_IDX, PAUSE_IDX+1 // 
   68              	    .equ PEEK8_IDX, PMODE_IDX+1 //
@@ -1703,28 +1703,28 @@ DEFINED SYMBOLS
        cmd_index.inc:40     *ABS*:000000000000000f DEC_IDX
        cmd_index.inc:41     *ABS*:0000000000000010 DIR_IDX
        cmd_index.inc:42     *ABS*:0000000000000011 DO_IDX
-       cmd_index.inc:43     *ABS*:0000000000000012 DREAD_IDX
-       cmd_index.inc:44     *ABS*:0000000000000013 DUMP_IDX
-       cmd_index.inc:45     *ABS*:0000000000000014 DWRITE_IDX
-       cmd_index.inc:46     *ABS*:0000000000000015 END_IDX
-       cmd_index.inc:47     *ABS*:0000000000000016 FOR_IDX
-       cmd_index.inc:48     *ABS*:0000000000000017 FORGET_IDX
-       cmd_index.inc:49     *ABS*:0000000000000018 GOSUB_IDX
-       cmd_index.inc:50     *ABS*:0000000000000019 GOTO_IDX
-       cmd_index.inc:51     *ABS*:000000000000001a HEX_IDX
-       cmd_index.inc:52     *ABS*:000000000000001b IF_IDX
-       cmd_index.inc:53     *ABS*:000000000000001c INPUT_IDX
-       cmd_index.inc:54     *ABS*:000000000000001d INVERT_IDX
-       cmd_index.inc:55     *ABS*:000000000000001e KEY_IDX
-       cmd_index.inc:56     *ABS*:000000000000001f LET_IDX
-       cmd_index.inc:57     *ABS*:0000000000000020 LIST_IDX
-       cmd_index.inc:58     *ABS*:0000000000000021 LOAD_IDX
-       cmd_index.inc:59     *ABS*:0000000000000022 LOG2_IDX
-       cmd_index.inc:60     *ABS*:0000000000000023 LSHIFT_IDX
-       cmd_index.inc:61     *ABS*:0000000000000024 NEW_IDX
-       cmd_index.inc:62     *ABS*:0000000000000025 NEXT_IDX
-       cmd_index.inc:63     *ABS*:0000000000000026 NOT_IDX
-       cmd_index.inc:64     *ABS*:0000000000000027 OR_IDX
+       cmd_index.inc:43     *ABS*:0000000000000012 DUMP_IDX
+       cmd_index.inc:44     *ABS*:0000000000000013 END_IDX
+       cmd_index.inc:45     *ABS*:0000000000000014 FOR_IDX
+       cmd_index.inc:46     *ABS*:0000000000000015 FORGET_IDX
+       cmd_index.inc:47     *ABS*:0000000000000016 GOSUB_IDX
+       cmd_index.inc:48     *ABS*:0000000000000017 GOTO_IDX
+       cmd_index.inc:49     *ABS*:0000000000000018 HEX_IDX
+       cmd_index.inc:50     *ABS*:0000000000000019 IF_IDX
+       cmd_index.inc:51     *ABS*:000000000000001a INP_IDX
+       cmd_index.inc:52     *ABS*:000000000000001b INPUT_IDX
+       cmd_index.inc:53     *ABS*:000000000000001c INVERT_IDX
+       cmd_index.inc:54     *ABS*:000000000000001d KEY_IDX
+       cmd_index.inc:55     *ABS*:000000000000001e LET_IDX
+       cmd_index.inc:56     *ABS*:000000000000001f LIST_IDX
+       cmd_index.inc:57     *ABS*:0000000000000020 LOAD_IDX
+       cmd_index.inc:58     *ABS*:0000000000000021 LOG2_IDX
+       cmd_index.inc:59     *ABS*:0000000000000022 LSHIFT_IDX
+       cmd_index.inc:60     *ABS*:0000000000000023 NEW_IDX
+       cmd_index.inc:61     *ABS*:0000000000000024 NEXT_IDX
+       cmd_index.inc:62     *ABS*:0000000000000025 NOT_IDX
+       cmd_index.inc:63     *ABS*:0000000000000026 OR_IDX
+       cmd_index.inc:64     *ABS*:0000000000000027 OUT_IDX
        cmd_index.inc:65     *ABS*:0000000000000028 PAD_IDX
        cmd_index.inc:66     *ABS*:0000000000000029 PAUSE_IDX
        cmd_index.inc:67     *ABS*:000000000000002a PMODE_IDX

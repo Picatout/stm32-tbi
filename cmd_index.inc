@@ -40,17 +40,16 @@
     .equ DEC_IDX,DATALN_IDX+1 // 
     .equ DIR_IDX,DEC_IDX+1 // 
     .equ DO_IDX,DIR_IDX+1 // 
-    .equ DREAD_IDX,DO_IDX+1 // 
-    .equ DUMP_IDX, DREAD_IDX+1 
-    .equ DWRITE_IDX,DUMP_IDX+1 // 
-    .equ END_IDX,DWRITE_IDX+1 // 
+    .equ DUMP_IDX, DO_IDX+1 
+    .equ END_IDX,DUMP_IDX+1 // 
     .equ FOR_IDX, END_IDX+1 // 
     .equ FORGET_IDX, FOR_IDX+1 // 
     .equ GOSUB_IDX, FORGET_IDX+1 // 
     .equ GOTO_IDX, GOSUB_IDX+1
     .equ HEX_IDX, GOTO_IDX+1 // 
     .equ IF_IDX, HEX_IDX+1 // 
-    .equ INPUT_IDX, IF_IDX+1 // 
+    .equ INP_IDX,IF_IDX+1
+    .equ INPUT_IDX, INP_IDX+1 // 
     .equ INVERT_IDX, INPUT_IDX+1 // 
     .equ KEY_IDX, INVERT_IDX+1 // 
     .equ LET_IDX, KEY_IDX+1 // 
@@ -62,7 +61,8 @@
     .equ NEXT_IDX, NEW_IDX+1 // 
     .equ NOT_IDX, NEXT_IDX+1 // 
     .equ OR_IDX, NOT_IDX+1 // 
-    .equ PAD_IDX, OR_IDX+1 // 
+    .equ OUT_IDX,OR_IDX+1
+    .equ PAD_IDX, OUT_IDX+1 // 
     .equ PAUSE_IDX, PAD_IDX+1 // 
     .equ PMODE_IDX, PAUSE_IDX+1 // 
     .equ PEEK8_IDX, PMODE_IDX+1 //

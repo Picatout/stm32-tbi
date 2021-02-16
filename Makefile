@@ -12,7 +12,7 @@ OBJCOPY=$(PREFIX)objcopy
 BUILD_DIR=build/
 #Link file
 LD_FILE=stm32f103c8t6.ld 
-LD_FLAGS=-mmcu=stm32f103
+LD_FLAGS=-mmcu=stm32f103c8t6
 #sources
 SRC=$(NAME).s terminal.s tinyBasic.s 
 OBJ=$(BUILD_DIR)$(NAME).o $(BUILD_DIR)terminal.o $(BUILD_DIR)tinyBasic.o 

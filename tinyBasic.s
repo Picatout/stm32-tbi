@@ -2153,6 +2153,7 @@ kword_end:
   _dict_entry TK_IFUNC,PEEK16,PEEK16_IDX //peek16
   _dict_entry TK_CMD,PAUSE,PAUSE_IDX //pause 
   _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref 
+  _dict_entry TK_CMD,OUT,OUT_IDX //out 
   _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
   _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
@@ -2164,7 +2165,8 @@ kword_end:
   _dict_entry TK_CMD,LET,LET_IDX //let 
   _dict_entry TK_IFUNC,KEY,KEY_IDX //key 
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
-  _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var  
+  _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var
+  _dict_entry TK_IFUNC,INP,INP_IDX // inp   
   _dict_entry TK_CMD,IF,IF_IDX //if 
   _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
@@ -2172,9 +2174,7 @@ kword_end:
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
-  _dict_entry TK_CMD,DWRITE,DWRITE_IDX //digital_write
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
-  _dict_entry TK_IFUNC,DREAD,DREAD_IDX //digital_read
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
@@ -2207,11 +2207,11 @@ kword_dict: // first name field
 fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char  
-	.word skip_line,data_line,dec_base,directory,do_loop,digital_read,dump,digital_write
+	.word skip_line,data_line,dec_base,directory,do_loop,dump
 	.word cmd_end,for,forget,gosub,goto 
-	.word hex_base,if,input_var,invert,key
+	.word hex_base,if,inp,input_var,invert,key
 	.word let,list,load,log2,lshift,new,next
-	.word func_not,bit_or,pad_ref,pause,pin_mode,peek8,peek16,peek32,poke8,poke16
+	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32,poke8,poke16
 	.word poke32,print
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,show,size 
@@ -2422,13 +2422,6 @@ fn_table:
     mov r0,#TK_CHAR
     _RET 
 
-    _FUNC const_cr2
-    _RET  
-
-    _FUNC const_cr1
-    _RET 
-
-
 /**************************
   BASIC: DATALN expr 
   set data pointer to line#
@@ -2539,9 +2532,6 @@ no_data_line:
     str r0,[UPP,#DATALEN]
 9:  _RET 
 
-    _FUNC const_ddr
-    _RET 
-
 /***********************************
   BASIC: DEC 
   switch base to decimal 
@@ -2562,12 +2552,6 @@ no_data_line:
     ldr r0,[UPP,#COUNT]
     stmdb DP!,{r0,IN,BPTR}
     _RET 
-
-    _FUNC digital_read
-    _RET 
-
-    _FUNC digital_write
-    _RET  
 
 
 /****************************************
@@ -2634,12 +2618,6 @@ dump01:
 ******************************/ 
     _FUNC cmd_end
     b warm_start 
-    _RET 
-
-    _FUNC const_eeprom_base
-    _RET 
-
-    _FUNC fcpu
     _RET 
 
     _FUNC forget
@@ -2775,9 +2753,6 @@ dump01:
 9:  mov IN,#3 
     _RET 
 
-    _FUNC gpio
-    _RET  
-
 /***************************************
   BASIC: HEX 
   set numeric base to hexadecimal 
@@ -2802,7 +2777,7 @@ dump01:
 
 /*******************************************************
   BASIC: THEN statement
-  following statement are executed if relation is !=0
+  statements following THEN are executed if relation is !=0
   optional, retained for compatibility.
 ******************************************************/
     _FUNC then 
@@ -3060,6 +3035,55 @@ out_buff: .word _tib
     _POP r1
     orr r1,r0 
     mov r0,#TK_INTGR
+    _RET 
+
+/****************************************
+  BASIC: INP(\c) 
+  read gpio_idr (16 bits value) 
+***************************************/
+    _FUNC inp 
+    mov r0,#TK_LPAREN 
+    _CALL expect 
+    mov r0,#TK_CHAR 
+    _CALL expect
+    mov r0,r1 
+    _CALL upper 
+    mov r2,r0 
+    mov r0,#TK_RPAREN
+    _CALL expect 
+    sub r2,#'A' 
+    mov r1,0x400 
+    mul r1,r2
+    _MOV32 r2,(GPIOA_BASE_ADR+GPIO_IDR)
+    add r2,r1 
+    ldrh r1,[r2]
+    mov r0,#TK_INTGR
+    _RET 
+
+
+/****************************************
+  BASIC: OUT \c,expr1[,\c,expr2] 
+  output to gpio_odr expr lower 16 bits
+***************************************/
+    _FUNC out
+1:  mov r0,#TK_CHAR 
+    _CALL expect 
+    mov r0,r1
+    _CALL upper
+    mov r2,r0 
+    mov r0,#TK_COMMA 
+    _CALL expect 
+    _CALL expression 
+    sub r2,#'A'
+    mov r3,#0x400 
+    mul r2,r3 
+    _MOV32 r3,(GPIOA_BASE_ADR+GPIO_ODR) // GPIO_ODR 
+    add r2,r3
+    strh r1,[r2]
+    _CALL next_token
+    cmp r0,#TK_COMMA
+    beq 1b 
+    _UNGET_TOKEN
     _RET 
 
 /****************************************
@@ -3429,8 +3453,15 @@ print_exit:
     mov r0,#TK_INTGR 
     _RET 
 
+/****************************
+  BASIC: UFLASH 
+  return user flash address
+*****************************/
     _FUNC uflash
+    ldr r1,=user
+    mov r0,#TK_INTGR 
     _RET 
+
 
 /************************************
   BASIC: UNTIL relation 
@@ -3449,8 +3480,29 @@ print_exit:
     _FUNC usr
     _RET  
 
+/*************************************
+  BASIC: WAIT addr,expr1[,expr2] 
+  wait until *addr&expr1 is not null 
+  or until (*addr&expr1)^expr2 is null 
+***************************************/
     _FUNC wait
-    _RET 
+    _CALL arg_list 
+    cmp r0,#2
+    beq 2f 
+    cmp r0,#3
+    beq 4f
+    b syntax_error 
+2:  ldmia DP!,{r0,r1}
+3:  ldrh r2,[r1]
+    ands r2,r0 
+    beq 3b 
+    b 9f 
+4:  ldmia DP!,{r0,r1,r2}
+5:  ldrh r3,[r2]
+    eor r3,r0
+    ands r3,r1 
+    beq 5b 
+9:  _RET 
 
 /*********************************************
   BASIC: WORDS 
@@ -3504,11 +3556,16 @@ print_exit:
     _FUNC receive
     _RET  
 
+  .section .rodata.user
+  .p2align 10 
+user:
+  .ascii "USER"
 
 /*************************************************
    extra FLASH memory not used by Tiny BASIC
    is used to save BASIC programs.
 ************************************************/
   .p2align 10  // align to 1KB, smallest erasable segment 
-  .section .fs
+  .section .rodata.fs
 FILE_SYSTEM: // file system start here
+  .ascii "FS" 

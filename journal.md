@@ -1,3 +1,7 @@
+#### 2021-02-15
+
+* Ajout de **WAIT** ,**DREAD**,**DWRITE**,**OUT**,**INP** 
+
 #### 2021-02-14
 
 * Ajout de **SLEEP** et **STOP**, supprimer **BYE**
