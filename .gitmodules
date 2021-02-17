@@ -1,0 +1,3 @@
+[submodule "senfile"]
+	path = sendFile
+	url = https://github.com/Picatout/sendFile

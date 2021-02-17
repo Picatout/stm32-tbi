@@ -364,13 +364,13 @@ ARM GAS  terminal.s 			page 1
   51              	  .equ TK_LPAREN,6     // left parenthesis '('
   52              	  .equ TK_RPAREN,7     // right parenthesis ')'
   53              	  .equ TK_COMMA,8     // item separator ',' 
-  54              	  .equ TK_SHARP,9     // print colon width '#' 
-  55              	  .equ TK_CMD,0xa      // BASIC command   
-  56              	  .equ TK_IFUNC,0xb    // BASIC integer function
-  57              	  .equ TK_CFUNC,0xc    // BASIC character function
-  58              	  .equ TK_CONST,0xd    // BASIC constant 
-  59              	  .equ TK_INTGR,0xe    // 32 bits integer 
-  60              	  .equ TK_BAD,0xf      // bad value 
+  54              	  .equ TK_SEMIC,9     // semi-colon  
+  55              	  .equ TK_SHARP,0xa     // print colon width '#' 
+  56              	  .equ TK_CMD,0xb      // BASIC command   
+  57              	  .equ TK_IFUNC,0xc    // BASIC integer function
+  58              	  .equ TK_CFUNC,0xd    // BASIC character function
+  59              	  .equ TK_CONST,0xe    // BASIC constant 
+  60              	  .equ TK_INTGR,0xf    // 32 bits integer 
   61              	  .equ TK_PLUS,0x10    // addition operator '+'
   62              	  .equ TK_MINUS,0x11   // subtraction operator '-'
   63              	  .equ TK_MULT,0x20    // multiplication operator '*'
@@ -1927,13 +1927,13 @@ DEFINED SYMBOLS
       tbi_macros.inc:51     *ABS*:0000000000000006 TK_LPAREN
       tbi_macros.inc:52     *ABS*:0000000000000007 TK_RPAREN
       tbi_macros.inc:53     *ABS*:0000000000000008 TK_COMMA
-      tbi_macros.inc:54     *ABS*:0000000000000009 TK_SHARP
-      tbi_macros.inc:55     *ABS*:000000000000000a TK_CMD
-      tbi_macros.inc:56     *ABS*:000000000000000b TK_IFUNC
-      tbi_macros.inc:57     *ABS*:000000000000000c TK_CFUNC
-      tbi_macros.inc:58     *ABS*:000000000000000d TK_CONST
-      tbi_macros.inc:59     *ABS*:000000000000000e TK_INTGR
-      tbi_macros.inc:60     *ABS*:000000000000000f TK_BAD
+      tbi_macros.inc:54     *ABS*:0000000000000009 TK_SEMIC
+      tbi_macros.inc:55     *ABS*:000000000000000a TK_SHARP
+      tbi_macros.inc:56     *ABS*:000000000000000b TK_CMD
+      tbi_macros.inc:57     *ABS*:000000000000000c TK_IFUNC
+      tbi_macros.inc:58     *ABS*:000000000000000d TK_CFUNC
+      tbi_macros.inc:59     *ABS*:000000000000000e TK_CONST
+      tbi_macros.inc:60     *ABS*:000000000000000f TK_INTGR
       tbi_macros.inc:61     *ABS*:0000000000000010 TK_PLUS
       tbi_macros.inc:62     *ABS*:0000000000000011 TK_MINUS
       tbi_macros.inc:63     *ABS*:0000000000000020 TK_MULT

@@ -1,3 +1,11 @@
+#### 2021-02-16
+
+* Débuté travail sur **PMODE** 
+
+* Modifié **PRINT** pour accepté le **;** comme séprateur de liste. Ce caractère sera utilisé pour engendré une tabulation. 
+
+* Modifié **INPUT** pour accepter une lettre comme réponse. La lettre est convertie en majuscule et la valeur ASCII affectée à la variable.
+
 #### 2021-02-15
 
 * Ajout de **WAIT** ,**DREAD**,**DWRITE**,**OUT**,**INP** 

@@ -572,19 +572,20 @@ token_exit:
     _RET 
 
 char_list:
-  .asciz " ,@():#-+*/%=<>\\?'\""
+  .asciz " ,;@():#-+*/%=<>\\?'\""
 
 tok_single:
-  .byte TK_NONE,TK_COMMA,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON,TK_SHARP
-  .byte TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
+  .byte TK_NONE,TK_COMMA,TK_SEMIC,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON
+  .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
   
   .p2align 2
 token_ofs:
   .hword  0 // not found
-  // TK_COMMA...TK_EQUAL , 12 
+  // TK_COMMA...TK_EQUAL , 13 
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
-  .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2     
+  .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
+  .hword  (single-tok_idx0)/2     
   // '<','>'
   .hword  (lt-tok_idx0)/2,(gt-tok_idx0)/2
   // '\'
@@ -806,7 +807,7 @@ escaped: .asciz "abtnvfr"
 
 /***************************************
     is_alpha 
-    check if character is {A..Z} 
+    check if character is {a..z,A..Z} 
   input:
     r0   character 
   output: 
@@ -815,11 +816,15 @@ escaped: .asciz "abtnvfr"
 ****************************************/
     _FUNC is_alpha
     push {r1} 
-    mov r1,#-1 
+    mov r1,#-1
     cmp r0,#'A' 
-    blt 8f 
+    bmi 8f 
     cmp r0,#'Z'+1 
-    bmi 9f 
+    bmi 9f
+    cmp r0,#'a' 
+    bmi 8f 
+    cmp r0,#'z'+1
+    bmi 9f  
 8:  eor r1,r1  
 9:  ands r1,r1 
     pop {r1}
@@ -1107,7 +1112,8 @@ decomp_loop:
     b 2b 
 9:  eor r0,r0 
     strb r0,[T1]
-    pop {r0,T1}
+    pop {r1,T1}
+    mov r0,r1 
     _RET 
 
 ge_str: .asciz ">="
@@ -1115,13 +1121,13 @@ le_str: .asciz "<="
 ne_str: .asciz "<>"
 
 single_char:
-  .byte 0,':',0,0,0,'@','(',')',',','#' // 0..9
-  .space 6
-  .byte '+','-'
+  .byte 0, ':', 0, 0, 0, '@', '(', ')', ',' , ';', '#' // 0..a
+  .space 5
+  .byte '+', '-'
   .space 14
-  .byte '*','/','%'
+  .byte '*', '/', '%'
   .space 14
-  .byte '>','=',0,'<',0,0
+  .byte '>', '=', 0, '<', 0, 0
 
 
 /**********************************
@@ -1566,7 +1572,7 @@ ready: .asciz "\nREADY"
 interpreter:
   _CALL next_token 
   cmp r0,#TK_NONE 
-  beq interpreter   
+  beq interpreter    
   cmp r0,#TK_CMD 
   bne 2f
   mov r0,r1 
@@ -1672,9 +1678,9 @@ end_of_line:
 tok_jmp: // token id  tbb offset 
   .byte (9b-1b)/2,(9b-1b)/2   // 0x0..0x1  TK_NONE, TK_COLON
   .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(9b-1b)/2 // 0x2..0x5 TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x6..0x9 TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SHARP 
-  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // 0xa..0xd TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
-  .byte (4b-1b)/2,(8b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0xe..0x11 TK_INTGR,TK_BAD,TK_PLUS,TK_MINUS  
+  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x6..0xa TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SEMIC,TK_SHARP 
+  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // 0xb..0xe TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
+  .byte (4b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0xf..0x11 TK_INTGR,TK_PLUS,TK_MINUS  
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x12..0x16
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 //0x17..0x1c
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x1d..0x1f
@@ -2818,7 +2824,14 @@ dump01:
     _CALL readln
     cbz r1,6f
     ldrb r1,[r0]
-    cmp r1,#'$'
+    push {r0}
+    mov r0,r1
+    _CALL is_alpha 
+    pop {r0}
+    beq 3f 
+    and r1,#0x5f // uppercase  
+    b 6f 
+3:  cmp r1,#'$'
     bne 3f 
     mov r1,#16
     add r0,#1  
@@ -2939,7 +2952,10 @@ let_array:
     bne 1f 
     mov r2,r1 // first line
     _CALL next_token
-    cbz r0,4f
+    cmp r0,#TK_NONE 
+    bne 1f 
+    mov r3,r2 
+    b 4f 
 1:  cmp r0,#TK_MINUS 
     bne syntax_error 
     _CALL next_token 
@@ -2953,7 +2969,9 @@ let_array:
     bpl 6f 
     ldrb r0,[T1,#2]
     add T1,r0
-    b 4b 
+    cmp T1,T2 
+    bmi 4b
+    b 9f 
 6:  cmp T1,T2  
     bpl 9f
     mov r0,T1   
@@ -2964,7 +2982,7 @@ let_array:
     _CALL uart_putc 
     ldrb r0,[T1,#2]
     add T1,r0
-    ldrb r0,[T1]
+    ldrh r0,[T1]
     cmp r0,r3 
     ble 6b 
 9:  b warm_start 
@@ -3056,7 +3074,7 @@ out_buff: .word _tib
     mul r1,r2
     _MOV32 r2,(GPIOA_BASE_ADR+GPIO_IDR)
     add r2,r1 
-    ldrh r1,[r2]
+    ldr r1,[r2]
     mov r0,#TK_INTGR
     _RET 
 
@@ -3112,8 +3130,83 @@ pad_adr: .word _pad
     bne 1b     
     _RET 
 
-    _FUNC pin_mode
+/***************************************************
+  BASIC: PMODE \c,pin,mode[,opt] 
+  configure a digital pin for input|output
+  paramters:
+    \c    port letter
+    pin   pin {0..15} 
+    mode  0->input,1->output 10Mhz,2->output 2Mhz,3->output 50Mhz 
+    for input mode:
+      opt 0->analog, 1->floating,2->pulldown,3->pullup  
+    for output mode:
+      opt 0-> GPIO pushpull, 1->GPIO opendrain, 2->AF pushpull, 3->AF opendrain 
+  use:
+    r2  opt
+    r3  mode 
+    T1  pin  
+    T2  port      
+***************************************************/
+      _FUNC pin_mode
+      mov r0,#TK_CHAR 
+      _CALL expect
+      mov r0,r1 
+      _CALL upper 
+      sub T2,r0,#'A'
+      mov r0,#TK_COMMA
+      _CALL expect 
+      _CALL arg_list
+      cmp r0,#2 
+      bmi syntax_error
+      cmp r0,#4
+      bmi 1f 
+      b syntax_error
+  1:  mov r2,#0 // default opt, input floating or output opendrain 
+      cmp r0,#2
+      beq 2f 
+// 3 parameters, pin,mode,opt  
+    ldmia DP!,{r2,r3,T1}
+    b 4f  
+2: // 2 parameters, pin,mode 
+    ldmia DP!,{r3,T1}
+4:  mov r0,#0x400 
+    mul T2,r0 
+    _MOV32 r0,GPIOA_BASE_ADR
+    add T2,r0 // port base address 
+// if input mode set pull in ODR 
+    cbnz r3,2f 
+    cmp r2,#2
+    bmi 2f 
+    mov r0,#1 
+    mov r1,T1 
+    cmp r2,#3 
+    beq 1f
+    add r1,#16 //reset bit 
+1:  lsl r0,r1
+    str r0,[T2,#GPIO_BSRR]
+    cmp r2,#3 
+    bmi 2f 
+    sub r2,#1
+2: // set CNF|MODE bits GPIO_CRx 
+    cmp T1,#8 
+    bmi 3f 
+    sub T1,#8 
+    add T2,#4 //CRH 
+3:  mov r0,#15   
+    lsl r1,T1,#2 
+    lsl r0,r1
+    mvn r0,r0 // bitmask 
+    ldr r1,[T2]
+    and r1,r0  // clear CNF|MODE bits  
+// combine opt|mode     
+    lsl r0,r2,#2 
+    orr r0,r3 // OPT|MODE 
+    lsl r3,T1,#2 
+    lsl r0,r3
+    orr r1,r0   
+    str r1,[T2] // mode and option set
     _RET 
+
 
 /*****************************************
   BASIC: PEEK8 (expr)  
@@ -3242,7 +3335,12 @@ pad_adr: .word _pad
     cmp r0,#TK_COMMA 
     bne 8f 
     mov T1,#-1
-    beq 0b
+    b 0b
+8:  cmp r0,#TK_SEMIC 
+    bne 8f 
+    _CALL tabulation 
+    mov T1,#-1
+    b 0b     
 8: _UNGET_TOKEN 
 print_exit:
     ands T1,T1 

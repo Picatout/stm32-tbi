@@ -51,13 +51,13 @@
   .equ TK_LPAREN,6     // left parenthesis '('
   .equ TK_RPAREN,7     // right parenthesis ')'
   .equ TK_COMMA,8     // item separator ',' 
-  .equ TK_SHARP,9     // print colon width '#' 
-  .equ TK_CMD,0xa      // BASIC command   
-  .equ TK_IFUNC,0xb    // BASIC integer function
-  .equ TK_CFUNC,0xc    // BASIC character function
-  .equ TK_CONST,0xd    // BASIC constant 
-  .equ TK_INTGR,0xe    // 32 bits integer 
-  .equ TK_BAD,0xf      // bad value 
+  .equ TK_SEMIC,9     // semi-colon  
+  .equ TK_SHARP,0xa     // print colon width '#' 
+  .equ TK_CMD,0xb      // BASIC command   
+  .equ TK_IFUNC,0xc    // BASIC integer function
+  .equ TK_CFUNC,0xd    // BASIC character function
+  .equ TK_CONST,0xe    // BASIC constant 
+  .equ TK_INTGR,0xf    // 32 bits integer 
   .equ TK_PLUS,0x10    // addition operator '+'
   .equ TK_MINUS,0x11   // subtraction operator '-'
   .equ TK_MULT,0x20    // multiplication operator '*'
