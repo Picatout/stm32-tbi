@@ -81,22 +81,24 @@
     .equ RSHIFT_IDX, RND_IDX+1 // 
     .equ RUN_IDX, RSHIFT_IDX+1 // 
     .equ SAVE_IDX, RUN_IDX+1 // 
-    .equ SHOW_IDX, SAVE_IDX+1 // 
-    .equ SIZE_IDX, SHOW_IDX+1 // 
+    .equ SIZE_IDX, SAVE_IDX+1 // 
     .equ SLEEP_IDX, SIZE_IDX+1 // 
-    .equ SPIRD_IDX, SLEEP_IDX+1 // 
+    .equ SPC_IDX,SLEEP_IDX+1 //
+    .equ SPIRD_IDX, SPC_IDX+1 // 
     .equ SPIEN_IDX, SPIRD_IDX+1 // 
     .equ SPISEL_IDX, SPIEN_IDX+1 // 
     .equ SPIWR_IDX, SPISEL_IDX+1 // 
     .equ STEP_IDX, SPIWR_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
-    .equ THEN_IDX,STOP_IDX+1
+    .equ TAB_IDX, STOP_IDX+1 //
+    .equ THEN_IDX,TAB_IDX+1
     .equ TICKS_IDX, THEN_IDX+1 // 
     .equ TIMER_IDX, TICKS_IDX+1 // 
     .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
     .equ TO_IDX, TMROUT_IDX+1 // 
     .equ TONE_IDX, TO_IDX+1 // 
-    .equ UBOUND_IDX, TONE_IDX+1 // 
+    .equ TRACE_IDX,TONE_IDX+1
+    .equ UBOUND_IDX, TRACE_IDX+1 // 
     .equ UFLASH_IDX, UBOUND_IDX+1 // 
     .equ UNTIL_IDX, UFLASH_IDX+1 // 
     .equ USR_IDX, UNTIL_IDX+1 // 

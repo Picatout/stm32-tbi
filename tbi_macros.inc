@@ -22,7 +22,10 @@
   .equ  STACK_FULL, (RAM_END - STACK_SIZE)
   .equ  TIB_SIZE,80 
   .equ  PAD_SIZE,128 
-  .equ RX_QUEUE_SIZE,16
+  .equ  RX_QUEUE_SIZE,16
+  .equ  DSTACK_TOP,0x20004f00 
+  .equ  RSTACK_TOP,0x20005000
+  
 
 .equ DEFAULT_TAB_WIDTH,4 // default tabulation width 
 .equ EOF,0xff // end of file marker 
@@ -158,7 +161,8 @@
   .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
   .equ VARS_SIZE, 4*26 // space used by 26 BASIC variables (A-Z)
   .equ ARRAY_ADR,VARS+VARS_SIZE // array address at bottom of pad  
-  .equ BASIC_START,ARRAY_ADR+4 // BASIC area start after variables 
+  .equ TRACE_LEVEL,ARRAY_ADR+4
+  .equ BASIC_START,TRACE_LEVEL+4 // BASIC area start after variables 
 
 /* flags used by BASIC interpreter */ 
 	.equ FRUN,(1<<0) // programm running

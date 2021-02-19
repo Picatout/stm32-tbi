@@ -82,7 +82,18 @@
     .equ GPIO_BRR, 20
     .equ GPIO_LOCKR, 24 
     
-
+   /* AFIO base address */
+   .equ AFIO_BASE_ADR, 0x40010000
+   
+   /* AFIO registers offset */
+   .equ AFIO_EVCR,0
+   .equ AFIO_MAPR,4
+   .equ AFIO_EXTICR1,8
+   .equ AFIO_EXTICR2,12 
+   .equ AFIO_EXTICR3,16
+   .equ AFIO_EXTICR4,20
+   .equ AFIO_MAPR2,28
+   
     /* USART1 registers */
     .equ USART1_BASE_ADR, 0x40013800
     /* USARTx registers offset */

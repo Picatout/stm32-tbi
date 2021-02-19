@@ -167,8 +167,7 @@ move_from_end: // move from high address toward low
     pop {r0}
     mov r1,#16 
     _CALL print_int
-    mov r0,#CR 
-    _CALL uart_putc  
+    _CALL cr   
     _RET 
     _TEXT tok_msg,"token: " 
 
@@ -183,20 +182,15 @@ move_from_end: // move from high address toward low
     use:
       r2    address 
       r3    count
-      T1    tab_width  
 ****************************************/
     _FUNC prt_row 
-    push {r0,r1,r2,r3,T1}
-    mov r2,r0
-    ldr T1,[UPP,#TAB_WIDTH]
-    mov r0,#12
-    str r0,[UPP,#TAB_WIDTH]
-    mov r0,r2 
+    push {r0,r1,r2,r3}
+    mov r2,r0 
     mov r3,r1  
     mov r1,#16 
     _CALL print_int 
-    _CALL tabulation
-    str T1,[UPP,#TAB_WIDTH]
+    mov r0,#12 
+    _CALL cursor_x 
 // print bytes values in hexadecimal 
 1:  ldrb r0,[r2],#1 
     _CALL print_hex
@@ -207,11 +201,84 @@ move_from_end: // move from high address toward low
 // print characters      
     pop {r0,r1}
     _CALL prt_chars 
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr  
     mov r0,r2
-    pop {r2,r3,T1}      
+    pop {r2,r3}      
     _RET 
+
+
+/************************************
+  show current line number 
+***********************************/
+    _FUNC show_line_nbr 
+    push {r0,r1}
+    ldrh r0,[BPTR]
+    mov r1,#10
+    _CALL print_int
+    _CALL cr 
+    pop  {r0,r1}
+    _RET 
+
+/************************************
+  show data stack 
+************************************/
+    _FUNC show_data_stack 
+    push {r0,r1,T1,T2}
+    ldr r0,data_stack 
+    _CALL uart_puts 
+    mov T1,DP 
+    _MOV32 T2,DSTACK_TOP
+1:  cmp T1,T2 
+    bpl 9f 
+    ldr r0,[T1],#4 
+    mov r1,#16 
+    _CALL print_int 
+    b 1b 
+9:  _CALL cr 
+    pop {r0,r1,T1,T2}
+    _RET 
+data_stack:
+  .word .+4 
+  .asciz "dstack: "
+
+/************************************
+  show main stack 
+***********************************/
+    _FUNC show_main_stack
+    stmdb DP!,{r0,r1,T1,T2}
+    ldr r0,=main_stack 
+    _CALL uart_puts 
+    _MOV32 T2,RSTACK_TOP
+    add T1,sp,#4
+1:  cmp T1,T2
+    bpl 9f 
+    ldr r0,[T1],#4 
+    mov r1,#16 
+    _CALL print_int
+    b 1b
+9:  _CALL cr 
+    ldmia DP!,{r0,r1,T1,T2}     
+    _RET  
+main_stack: .asciz "rstack: " 
+
+/************************************
+    show execution trace 
+************************************/
+    _FUNC show_trace
+    push {r2}
+    ldr r2,[UPP,#TRACE_LEVEL]
+    cbz r2,9f  
+    _CALL cr 
+    _CALL show_line_nbr
+    cmp r2,#2 
+    bmi 9f 
+    _CALL show_data_stack 
+    cmp r2,#3 
+    bmi 9f 
+    _CALL show_main_stack 
+9:  pop {r2}
+    _RET 
+
 
 /************************************
     prt_chars 
@@ -1183,6 +1250,7 @@ single_char:
     tst r1,#FCOMP
     bne compile_error
 rt_error:
+    mov r2,IN 
     push {r0}
     ldr r0,=rt_error_msg 
     _CALL uart_puts 
@@ -1191,33 +1259,23 @@ rt_error:
     lsl r0,#2 
     ldr r0,[r1,r0]
     _CALL uart_puts
-// print line number     
-    ldr BPTR,[UPP,#BASICPTR]
-    ldr IN,[UPP,#IN_SAVED]
-    ldr r0,=lineno_msg 
-    _CALL uart_puts
-    ldrh r0,[BPTR]
-    mov r1,#10
-    _CALL print_int 
-// line address 
-    ldr r0,=line_adr_msg 
+// decompile and print faulty line      
+    mov r0,BPTR
+    mov r2,IN  
+    ldr r1,pad 
+    _CALL decompile_line
     _CALL uart_puts 
-    mov r0,BPTR 
-    MOV r1,#16
-    _CALL print_int
+    _CALL cr 
 // print error offset on line      
     ldr r0,=token_at_msg 
     _CALL uart_puts 
-    ldr IN,[UPP,#IN_SAVED]
-    mov r0,IN 
+    mov r0,r2 
     mov r1,#16 
     _CALL print_int
-    mov r0,#CR 
-    _CALL uart_putc
+    _CALL cr
 // dump tokenize line 
     mov r0,BPTR
     ldrb r2,[r0,#2]
-    push {r2}
     _CALL dump01 
     b warm_start 
 compile_error:
@@ -1227,20 +1285,17 @@ compile_error:
     _CALL uart_puts
     ldr r0,[UPP,#BASICPTR]
     _CALL uart_puts
-    mov r0,#CR 
-    _CALL uart_putc  
+    _CALL cr
     ldr r0,[UPP,#IN_SAVED]
     _CALL spaces 
     mov r0,#'^' 
     _CALL uart_putc
-    mov r0,#CR 
-    _CALL uart_putc   
+    _CALL cr
     b  warm_start  
     
-rt_error_msg: .asciz "\nRuntime error\n"
-lineno_msg:   .asciz "line: "
-line_adr_msg:   .asciz ",address: "
-token_at_msg: .asciz ",offset: "
+rt_error_msg: .asciz "\nRuntime error: "
+token_at_msg: .asciz "token offset: "
+
 
 err_msg:
 	.word 0,err_mem_full, err_syntax, err_math_ovf, err_div0,err_no_line    
@@ -1437,8 +1492,7 @@ sysvar_size: .word ulast-uzero
     add r0,#7
   1: 
     _CALL uart_putc 
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr
     _RET  
 version_msg:
     .asciz "\nblue pill tiny BASIC, version "
@@ -1559,8 +1613,9 @@ ready: .asciz "\nREADY"
 
 ***********************************/
     _FUNC cmd_line 
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr
+    eor r0,r0 
+    str r0,[UPP,#TRACE_LEVEL] 
 1:  ldr r0,tib
     mov r1,#TIB_SIZE 
     _CALL readln 
@@ -1624,20 +1679,20 @@ interpreter:
     ldr r0,[UPP,#COUNT]
     cmp IN,r0 
     bmi 0f
-new_line:
+end_of_line:
     ldrh r1,[BPTR] // line #
-    cbnz r1, end_of_line  // command line
+    cbnz r1, next_line  // command line
     b warm_start
-end_of_line:        
+next_line:
     add BPTR,r0 // next line 
     ldr r0,[UPP,#TXTEND]
     cmp BPTR,r0 
     bpl warm_start // end of program
-    ldrb r0,[BPTR,#2]
+    ldrb r0,[BPTR,#2] // line length 
     str r0,[UPP,#COUNT] 
     mov IN,#3
-    mov r0,#TK_COLON 
-    b 9f    
+    _CALL show_trace
+    b 9f  
 0: 
     str IN,[UPP,#IN_SAVED]
     str BPTR,[UPP,#BASICPTR]
@@ -2104,6 +2159,7 @@ uzero:
   .word 0 // RX_TAIL
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
   .space VARS_SIZE,0 // VARS
+  .word 0 
   .word _pad  // ARRAY_ADR 
 ulast:
 
@@ -2111,7 +2167,7 @@ ulast:
 
 // keep alphabetic order for BASIC names from Z-A
 // this sort order is for for WORDS cmd output. 	
-
+  .type kword_end, %object
 	.equ link, 0
 kword_end:
   _dict_entry TK_NONE,"",0 
@@ -2125,21 +2181,23 @@ kword_end:
   _dict_entry TK_CMD,UNTIL,UNTIL_IDX //until 
   _dict_entry TK_IFUNC,UFLASH,UFLASH_IDX //uflash 
   _dict_entry TK_IFUNC,UBOUND,UBOUND_IDX //ubound
+  _dict_entry TK_CMD,TRACE,TRACE_IDX // trace 
   _dict_entry TK_CMD,TONE,TONE_IDX //tone  
   _dict_entry TK_CMD,TO,TO_IDX //to
   _dict_entry TK_CMD,TIMER,TIMER_IDX //set_timer
   _dict_entry TK_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
   _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
   _dict_entry TK_CMD,THEN,THEN_IDX // then 
+  _dict_entry TK_CMD,TAB,TAB_IDX //tab 
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPIWR,SPIWR_IDX //spi_write
   _dict_entry TK_CMD,SPISEL,SPISEL_IDX //spi_select
   _dict_entry TK_IFUNC,SPIRD,SPIRD_IDX // spi_read 
   _dict_entry TK_CMD,SPIEN,SPIEN_IDX //spi_enable 
+  _dict_entry TK_CMD,SPC,SPC_IDX // spc 
   _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
   _dict_entry TK_IFUNC,SIZE,SIZE_IDX //size
-  _dict_entry TK_CMD,SHOW,SHOW_IDX //show 
   _dict_entry TK_CMD,SAVE,SAVE_IDX //save
   _dict_entry TK_CMD,RUN,RUN_IDX //run
   _dict_entry TK_IFUNC,RSHIFT,RSHIFT_IDX //rshift
@@ -2209,7 +2267,8 @@ kword_dict: // first name field
 
     .section .rodata.fn_tabld 
 
-//comands and fonctions address table 	
+//comands and fonctions address table
+  .type fn_table, %object
 fn_table:
 	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char  
@@ -2220,9 +2279,9 @@ fn_table:
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32,poke8,poke16
 	.word poke32,print
 	.word qkey,read,skip_line
-	.word restore,return, random,rshift,run,save,show,size 
-	.word sleep,spi_read,spi_enable,spi_select,spi_write,step,stop,get_ticks
-	.word then,set_timer,timeout,to,tone,ubound,uflash,until,usr
+	.word restore,return, random,rshift,run,save,size 
+	.word sleep,spc,spi_read,spi_enable,spi_select,spi_write,step,stop,tab
+	.word then,get_ticks,set_timer,timeout,to,tone,trace,ubound,uflash,until,usr
 	.word wait,words,write,bit_xor,transmit,receive
 	.word 0 
 
@@ -2555,8 +2614,7 @@ no_data_line:
   initialize a DO..UNTIL loop 
 ***************************************/
     _FUNC do_loop
-    ldr r0,[UPP,#COUNT]
-    stmdb DP!,{r0,IN,BPTR}
+    stmdb DP!,{IN,BPTR}
     _RET 
 
 
@@ -2597,7 +2655,7 @@ dump01:
     _FUNC print_dump_header
     push {r0,T1,T2}
     mov r0,#12 
-    _CALL spaces
+    _CALL cursor_x 
     mov r0,#0
     mov T2,#16
 1:  mov T1,r0 
@@ -2605,15 +2663,13 @@ dump01:
     add r0,T1,#1  
     cmp r0,T2 
     bmi 1b 
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr
     mov r0,#'='
     mov T1,#79
 2:  _CALL uart_putc
     subs T1,#1 
     bne 2b     
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr
     pop {r0,T1,T2}
     _RET 
 
@@ -2657,8 +2713,7 @@ dump01:
     bne syntax_error 
     mov LIMIT,r1
     // save loop back parameters 
-    ldr r0,[UPP,#COUNT]
-    stmdb r12!,{r0,IN,BPTR}
+    stmdb DP!,{IN,BPTR}
     _RET 
 
 /********************************************
@@ -2671,8 +2726,7 @@ dump01:
     bne syntax_error 
     mov INCR,r1
     // replace parameters left by TO
-    ldr r0,[UPP,#COUNT]
-    stmia r12, {r0,IN,BPTR}
+    stmia DP, {IN,BPTR}
     _RET 
 
 /********************************************
@@ -2701,12 +2755,14 @@ dump01:
     bge 9f  
 8: // exit for...next
   //  drop branch parameters
-    _DROP 3
+    _DROP 2
   // restore outer loop parameters
-    ldmia r12!,{VADR,LIMIT,INCR}
+    ldmia DP!,{VADR,LIMIT,INCR}
     _RET 
-9:  ldmia r12,{r0,IN,BPTR}
+9:  ldmia DP,{IN,BPTR}
+    ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
+    _CALL show_trace 
     _RET 
 
 /*********************************
@@ -2722,12 +2778,12 @@ dump01:
     cbz r1,1f 
     mov r0,#ERR_BAD_VALUE 
     b tb_error 
-1:  ldr r1,[UPP,#COUNT]
-    stmdb r12!,{r1,IN,BPTR}
+1:  stmdb DP!,{IN,BPTR}
     mov BPTR,r0 
     mov IN,#3 
     ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
+    _CALL show_trace 
     _RET 
 
 /**********************************
@@ -2735,8 +2791,10 @@ dump01:
   leave a subroutine 
 *********************************/
     _FUNC return 
-    ldmia r12!,{r0,IN,BPTR}
+    ldmia DP!,{IN,BPTR}
+    ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
+    _CALL show_trace 
     _RET 
 
 /**********************************
@@ -2755,8 +2813,11 @@ dump01:
     cbz r1,2f 
     mov r0,#ERR_NO_LINE 
     b tb_error 
-2:  mov BPTR,r0 
-9:  mov IN,#3 
+2:  mov BPTR,r0
+    ldrb r0,[BPTR,#2]
+    str r0,[UPP,#COUNT]
+9:  mov IN,#3
+    _CALL show_trace 
     _RET 
 
 /***************************************
@@ -2978,8 +3039,7 @@ let_array:
     ldr r1,out_buff 
     _CALL decompile_line 
     _CALL uart_puts 
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr 
     ldrb r0,[T1,#2]
     add T1,r0
     ldrh r0,[T1]
@@ -3298,55 +3358,59 @@ pad_adr: .word _pad
     mov r0,r1
     ldr r1,[UPP,#BASE]
     _CALL print_int
-    b 8f 
+    b 8f  
 1:  _CALL next_token
     cmp r0,#TK_COLON 
     bgt 2f
-    _UNGET_TOKEN 
-    b print_exit
+    b unget_exit 
 2:  cmp r0,#TK_QSTR 
-    bne 4f
+    bne 3f
     mov r0,r1 
     _CALL uart_puts  
     b 8f 
-4:  cmp r0,#TK_CFUNC
-    bne 5f
+3:  cmp r0,#TK_CFUNC
+    bne 4f
     mov r0,r1
     _CALL execute 
-5:  cmp r0,#TK_CHAR 
-    bne 6f 
+4:  cmp r0,#TK_CHAR 
+    bne 5f 
     mov r0,r1 
     _CALL uart_putc 
     b 8f 
-6:  cmp r0,#TK_SHARP
-    beq 6f 
-    _UNGET_TOKEN
-    b print_exit  
-6:  _CALL next_token
-    cmp r0,#TK_SHARP 
-    bne 7f
-    _CALL tabulation 
-    b 8f 
-7:  cmp r0,#TK_INTGR 
+5:  cmp r0,#TK_SHARP
+    bne 6f 
+   _CALL next_token
+    cmp r0,#TK_INTGR  
     bne syntax_error 
     str r1,[UPP,#TAB_WIDTH]
-8:  eor T1,T1 
-    _CALL next_token 
+    b 8f 
+6:  cmp r0,#TK_CMD 
+    bne unget_exit  
+    cmp r1,#TAB_IDX 
+    bne 6f
+    _CALL tab 
+    b 8f 
+6:  cmp r1,#SPC_IDX  
+    bne unget_exit
+    _CALL spc   
+8:  eor T1,T1  
+    _CALL next_token
+    cbz r0, print_exit  
     cmp r0,#TK_COMMA 
     bne 8f 
     mov T1,#-1
     b 0b
 8:  cmp r0,#TK_SEMIC 
-    bne 8f 
+    bne unget_exit 
     _CALL tabulation 
     mov T1,#-1
-    b 0b     
-8: _UNGET_TOKEN 
+    b 0b
+unget_exit:         
+   _UNGET_TOKEN 
 print_exit:
     ands T1,T1 
     bne 9f
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr 
 9:  _RET 
 
 /**************************************
@@ -3429,12 +3493,10 @@ print_exit:
     ldr r0,[UPP,#FLAGS]
     orr r0,#FRUN 
     str r0,[UPP,#FLAGS]
+    _CALL show_trace 
 9:  _RET 
 
     _FUNC save
-    _RET 
-
-    _FUNC show
     _RET 
 
 /*******************************
@@ -3462,6 +3524,18 @@ print_exit:
     mov r1,#PWR_CR_PDDS+PWR_CR_CWUF
     str r1,[r0]
     wfe 
+    _RET 
+
+/************************************
+  BASIC: SPC(expr)
+  mov cursor right expr spaces 
+***********************************/
+    _FUNC spc 
+    _CALL func_args
+    cmp r0,#1
+    bne syntax_error 
+    _POP r0 
+    _CALL spaces 
     _RET 
 
     _FUNC spi_read
@@ -3501,6 +3575,18 @@ print_exit:
 
 
 /**************************
+  BASIC: TAB(expr)
+  move cursor column expr 
+**************************/
+    _FUNC tab 
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error 
+    _POP r0 
+    _CALL cursor_x 
+    _RET 
+
+/**************************
   BASIC: TICKS 
   return msec counter
 **************************/  
@@ -3536,6 +3622,23 @@ print_exit:
     _FUNC tone
     _RET 
 
+/****************************************
+  BASIC: TRACE n 
+  enable execution trace 
+  0   ddisable
+  1   show current line#
+  2  show line#+data_stack
+  3  show line#+data_stack+main_stack 
+***************************************/
+    _FUNC trace 
+    _CALL next_token 
+    cmp r0,#TK_INTGR  
+    bne syntax_error 
+    and r1,#3 
+    str r1,[UPP,#TRACE_LEVEL]
+    _RET 
+
+
 /***************************
   BASIC: UBOUND 
   return last indice of @
@@ -3569,9 +3672,10 @@ print_exit:
     _FUNC until
     _CALL relation 
     cbz r1,9f
-    add DP,#12
+    add DP,#8
     _RET  
-9:  ldmia DP,{r0,IN,BPTR}
+9:  ldmia DP,{IN,BPTR}
+    ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
     _RET 
 
@@ -3620,8 +3724,7 @@ print_exit:
     cmp T2,#80 
     bmi 2f
     eor T2,T2  
-    mov r0,#CR 
-    _CALL uart_putc 
+    _CALL cr 
 2:  mov r0,T1 
     _CALL uart_puts 
     mov r0,#SPACE

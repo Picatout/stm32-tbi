@@ -319,7 +319,7 @@ wait_sws:
 
 /* enable peripheral clock for GPIOA, GPIOC and USART1 */
   _MOV32 r0,RCC_BASE_ADR
-  mov	r1, #(1<<2)|(1<<4)|(1<<14)		/* GPIOAEN|GPIOCEN|USART1EN */
+  mov	r1, #0x41fd		/* all GPIO and USART1 */
   str	r1, [r0, #RCC_APB2ENR]
 
 /* configure GPIOC:13 as output for user LED */

@@ -644,7 +644,7 @@ pad: .word _pad
   eor r0,r0 // blinking block shape
   _CALL cursor_shape
   _CALL get_curpos
-  mov r3,r1 
+  sub r3,r1,#1 
 readln_loop:
   eor r0,r0
   strb r0,[r6,r5]  
@@ -699,11 +699,11 @@ readln_loop:
   bne readln_loop 
   mov r1,r6 
   _CALL decompile_line
-  _CALL update_line 
-  mov r0,r6 
   _CALL strlen 
   mov r7,r0 
-  mov r5,r0 
+  mov r5,r0
+  mov r0,r6
+  _CALL update_line 
   b readln_loop   
 3: cmp r0,#CTRL_R    
   bne 4f 
@@ -894,7 +894,7 @@ readln_exit:
 /***********************************
     tabulation 
     set cursor column to next 
-    tabulation stop 
+    tabulation stop    
 **********************************/
     _GBL_FUNC tabulation 
     push {r0,r1,r2}
@@ -911,8 +911,16 @@ readln_exit:
     bge 2f  
     _CALL spaces
     b 9f 
-2:  mov r0,#CR 
-    _CALL uart_putc 
+2: _CALL cr 
 9:  pop {r0,r1,r2}
     _RET 
 
+/********************************
+    cr 
+    send a carriage return 
+    to terminal 
+********************************/ 
+    _GBL_FUNC cr 
+    mov r0,#CR 
+    _CALL uart_putc 
+    _RET

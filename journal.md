@@ -1,3 +1,17 @@
+#### 2021-02-18
+
+* Débogué **GOTO**, la variable **COUNT** n'était pas initialisée. 
+
+* Remplacé **SHOW** par **TRACE** 
+
+* Ajout des commandes **TAB** et **SPC** 
+
+#### 2021-02-17
+
+* Ajout de **SHOW** 
+
+* Modifié **tb_error** maintenant rt_error affiche ligne décompilée. 
+
 #### 2021-02-16
 
 * Débuté travail sur **PMODE** 
