@@ -1454,7 +1454,9 @@ cold_start:
     ldr r2,sysvar_size
     _CALL cmove
     _CALL prt_version
-    _CALL clear_basic  
+    _CALL clear_basic 
+    _CALL search_free 
+    str r0,[UPP,#FSFREE] 
     b warm_start    
 src_addr:
   .word uzero
@@ -2148,7 +2150,7 @@ uzero:
   .word 0 // TIMER
   .word 0xaa5555aa // SEED
   .word FILE_SYSTEM // FSPTR
-  .word 0 // FFREE
+  .word 0 // FSFREE
   .word ulast-uzero // TXTBGN
   .word ulast-uzero // TXTEND
   .word 0 //LOOP_DEPTH
@@ -2159,8 +2161,8 @@ uzero:
   .word 0 // RX_TAIL
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
   .space VARS_SIZE,0 // VARS
-  .word 0 
   .word _pad  // ARRAY_ADR 
+  .word 0 // TRACE_LEVEL 
 ulast:
 
   .section .rodata.dictionary 
@@ -2360,7 +2362,44 @@ fn_table:
     _FUNC autorun
     _RET
 
+/*******************************************
+  BASIC: AWU time_sleep  
+  enable LSI and IWDG and place MCU in 
+  deep sleep. IDWG wakeup MCU 
+******************************************/
     _FUNC awu
+    _CALL arg_list
+    cmp r0,#1 
+    bne syntax_error 
+    _MOV32 r1,RCC_BASE_ADR
+    ldr r0,[r1,#RCC_CSR]
+// enable LSI 
+    eor r0,#1
+    str r0,[r1,#RCC_CSR]
+// wait for LSIRDY 
+1:  ldr r0,[r1,#RCC_CSR]
+    tst r0,#2 // LSIRDY bit 
+    beq 1b 
+// configure IWDG
+// compute values for IWDG_PR and IWDG_RLR 
+    _POP r2 // time_sleep in msec. 
+    mov r3,#10 // Flsi=40Khz but smallest divisor is 4 
+    mul r2,r3 
+    eor r3,r3
+2:  cmp r2,#8192 
+    bmi 3f 
+    lsr r2,#1 
+    add r3,#1
+    b 2b
+// initialize IWDG      
+3:  _MOV32 r1,IWDG_BASE_ADR
+    mov r0,0x5555 // enable register writing
+    str r0,[r1,#IWDG_KR]
+    str r3,[r1,#IWDG_PR]
+    str r2,[r1,#IWDG_RLR]
+    mov r0,#0xcccc // start IWDG 
+    str r0,[r1,#IWDG_KR]
+    b sleep // place MCU in deep sleep
     _RET
 
 /********************************************
@@ -2682,9 +2721,6 @@ dump01:
     b warm_start 
     _RET 
 
-    _FUNC forget
-    _RET 
-
 /**************************************************
   BASIC: FOR var=expr TO expr [STEP exp] ... NEXT 
   introdure FOR...NEXT loop 
@@ -2829,9 +2865,6 @@ dump01:
     str r0,[UPP,#BASE]
     _RET 
 
-    _FUNC const_idr
-    _RET 
-
 /**********************************************
   BASIC: IF relation THEN statement
   execute statement only if relation is true
@@ -2930,12 +2963,6 @@ str_buffer: .word _pad
     _POP r1  
     mvn r1,r1
     mov r0,#TK_INTGR
-    _RET 
-
-    _FUNC enable_iwdg
-    _RET 
-
-    _FUNC refresh_iwdg
     _RET 
 
 /*************************************
@@ -3496,8 +3523,181 @@ print_exit:
     _CALL show_trace 
 9:  _RET 
 
-    _FUNC save
+/*********************************
+  search_free 
+  search first free sector in fs
+  input:
+    none 
+  output:
+    r0    addr|0
+  use:
+*********************************/
+    _FUNC search_free 
+    push {r1,r2}
+    ldr r1,fs_addr 
+    _MOV32 r2,FLASH_HIDDEN_END
+1:  ldr r0,[r1]
+    cmp r0,#-1
+    beq 8f 
+    add r1,#PAGE_SIZE
+    cmp r1,r2 
+    bmi 1b 
+8:  mov r0,r1 
+    pop {r1,r2}   
     _RET 
+
+/*********************************
+  search_file 
+  search for a file name 
+  in file system.
+  input: 
+    r0   .asciz target name
+  output:
+    r0    0 || address found 
+  use:
+   r0     temp 
+   r1     *file_name 
+   r2     *fs  
+   r3     target   
+**********************************/
+    _FUNC search_file 
+    push {r1,r2,r3}
+    ldr r2,fs_addr
+    mov r3,r0  
+cmp_loop:
+    ldr r0,[r2]
+    cmp r0,#-1
+    eor r0,r0
+    beq 9f // reached end of fs 
+1:  mov r0,r3
+    add r1,r2,#2
+    _CALL strcmp
+    cbnz r0,2f
+    mov r0,r3 
+    b 9f   
+2:  ldrh r0,[r2] // name length
+    add r2,r0 
+    ldrh r0,[r2]
+    add r2,r0  
+    b cmp_loop 
+9:  pop {r1,r2,r3}
+    _RET 
+
+fs_addr: .word FILE_SYSTEM
+
+
+/*************************************
+  BASIC: FORGET ["name"]
+  delete file and all following 
+  if no name given delete all files 
+************************************/
+    _FUNC forget
+    push {r3,T2}
+    ldr T2,fs_addr 
+    ldr r3,[UPP,#FSFREE]
+    _CALL next_token
+    cbz r0,1f // no name 
+    mov r0,r1
+    _CALL search_file
+    cbz r0,9f 
+    mov T2,r0 
+1:  cmp T2,r3 
+    bpl 9f 
+    mov r0,T2 
+    _CALL erase_page
+    add T2,#PAGE_SIZE
+    b 1b 
+9:  _CALL search_free
+    pop {r3,T2} 
+    _RET 
+
+
+/*********************************
+  BASIC: save "name" 
+  save program in flash memory
+  file structure:
+    .hword name_length 
+    .asciz name
+    .palign 1  
+    .hword data_length 
+    .byte  file data (variable length)   
+********************************/
+    _FUNC save
+    _CLO 
+    ldr r0,[UPP,#TXTEND]
+    ldr r1,[UPP,#TXTBGN]
+    cmp r0,r1
+    bne 0f 
+    mov r0,#ERR_NO_PROG
+    b tb_error 
+0:  _CALL next_token 
+    cmp r0,#TK_QSTR
+    bne syntax_error 
+// check for existing 
+    mov r3,r1
+    mov r0,r3  
+    _CALL search_file
+    cbz r0,new_file 
+    mov r0,#ERR_DUPLICATE
+    b tb_error 
+new_file:
+    mov r0,#1 
+    _CALL unlock 
+    ldr r2,[UPP,#FSFREE]
+    mov r0,r3 
+    _CALL strlen 
+    add r0,#2 
+    and r0,#-2 //even size
+    mov T1,r0   
+1:  mov r1,r2
+    _CALL hword_write   
+    add r2,#2
+// write file name      
+2:  ldrh r0,[r3],#2 
+    mov r1,r2 
+    _CALL hword_write
+    add r2,#2
+    subs T1,#2
+    bne 2b
+// write data size 
+    ldr r0,[UPP,#TXTEND]
+    ldr r3,[UPP,#TXTBGN]
+    sub r0,r3
+    mov T1,r0
+    mov r1,r2 
+    _CALL hword_write
+    add r2,#2 
+// write data 
+    add T1,#1 
+    lsr T1,#1 // .hword to write 
+3:  ldrh r0,[r3],#2
+    mov r1,r2
+    _CALL hword_write 
+    add r2,#2 
+    subs T1,#1 
+    bne 3b
+    mov r0,#0 
+    _CALL unlock
+// update FSFREE     
+    ldr r0,[UPP,#TXTEND]
+    ldr r1,[UPP,#TXTBGN]
+    sub r0,r1 
+    mov T1,r0 
+    ldr r1,[UPP,#FSFREE]
+    add r0,r1 
+    _CALL page_align
+    str r0,[UPP,#FSFREE]
+    ldr r0,=fsize
+    _CALL uart_puts
+    mov r0,T1 
+    mov r1,#10 
+    _CALL print_int 
+    ldr r0,=data_bytes 
+    _CALL uart_puts  
+    _RET 
+fsize: .asciz "file size: "
+data_bytes: .asciz "bytes"
+
 
 /*******************************
   BASIC: SIZE 
@@ -3769,4 +3969,3 @@ user:
   .p2align 10  // align to 1KB, smallest erasable segment 
   .section .rodata.fs
 FILE_SYSTEM: // file system start here
-  .ascii "FS" 

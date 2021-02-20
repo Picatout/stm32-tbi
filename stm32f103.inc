@@ -175,3 +175,15 @@
 .equ PWR_CSR_PVDO,(1<<2)
 .equ PWR_CSR_EWUP,(1<<8)
 
+/* Window watchdog (WWDG) */
+.equ WWDG_BASE_ADR,0x40002C00
+.equ WWDG_CR,0
+.equ WWDG_CFR,4
+.equ WWDG_SR,8
+
+/* Independent watchdog (IWDG) */
+.equ IWDG_BASE_ADR,0x40003000
+.equ IWDG_KR,0 
+.equ IWDG_PR,4
+.equ IWDG_RLR,8
+.equ IWDG_SR,12

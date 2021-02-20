@@ -317,7 +317,7 @@ wait_sws:
   beq wait_sws
 /* now sysclock is 72 Mhz */
 
-/* enable peripheral clock for GPIOA, GPIOC and USART1 */
+/* enable peripheral clock for GPIOs and USART1 */
   _MOV32 r0,RCC_BASE_ADR
   mov	r1, #0x41fd		/* all GPIO and USART1 */
   str	r1, [r0, #RCC_APB2ENR]
@@ -330,6 +330,9 @@ wait_sws:
   mov r2,#(6<<20)
   orr r1,r1,r2
   str r1,[r0,#GPIO_CRH]
+/* turn off user LED */ 
+  mov r1,#(1<<13)
+  str r1,[r0,#GPIO_ODR]
 
 /* configure systicks for 1msec ticks */
   _MOV32 r0,STK_BASE_ADR 
@@ -521,7 +524,7 @@ lock:
      r6    flash control regs base address 
      r7    temp  
 ***************************************/
-    _FUNC hword_write 
+    _GBL_FUNC hword_write 
     push {r6,r7}
     _MOV32 r6,FLASH_BASE_ADR
     mov r7,#1 // set PG 
@@ -604,6 +607,22 @@ erase_error:
     .asciz " erase error!\r"
     .p2align 2
 
-
-
+/**********************************************
+   page_align 
+   align address to FLASH page boundary 
+   input:
+     r0    address 
+   output:
+     r0    aligned 
+   use: 
+     r1  
+**********************************************/
+    _GBL_FUNC page_align 
+    push {r1}
+    mov r1,#PAGE_SIZE-1
+    add r0,r1
+    mvn r1,r1 
+    and r0,r1 
+    pop {r1}
+    _RET 
 

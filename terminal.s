@@ -599,8 +599,8 @@ pad: .word _pad
 *************************************/
     _FUNC update_line 
     push {r0}
-    mov r0,r7 
-    _CALL move_left
+    mov r0,r3 
+    _CALL cursor_x
     _CALL delete_right
     pop {r0} 
     _CALL uart_puts
@@ -644,7 +644,7 @@ pad: .word _pad
   eor r0,r0 // blinking block shape
   _CALL cursor_shape
   _CALL get_curpos
-  sub r3,r1,#1 
+  mov r3,r1 
 readln_loop:
   eor r0,r0
   strb r0,[r6,r5]  
@@ -665,13 +665,13 @@ readln_loop:
   sub r1,r0,#1 
   sub r2,r5,r7 
   _CALL cmove
-  sub r5,#1 
-  sub r7,#1
+  sub r5,#1 //line length 
+  sub r7,#1 // cursor position
   eor r0,r0
   strb r0,[r6,r5] 
   mov r0,r6
   _CALL update_line 
-  add r0,r7,r3 
+  add r0,r7,r3
   _CALL cursor_x 
   b readln_loop       
 1: // at end of line 
@@ -703,7 +703,9 @@ readln_loop:
   mov r7,r0 
   mov r5,r0
   mov r0,r6
-  _CALL update_line 
+  _CALL update_line
+  add r0,r3,r7 
+  add r0,#1  
   b readln_loop   
 3: cmp r0,#CTRL_R    
   bne 4f 

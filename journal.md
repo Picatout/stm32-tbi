@@ -1,3 +1,11 @@
+#### 2021-02-19
+
+* Ajout de **SAVE** et **FORGET** 
+
+* Corrigé bogue dans **readln** 
+
+* Ajouté constantes pour **IWDG** et **WWDG** dans [stm32f103.inc](stm32f103.inc)
+
 #### 2021-02-18
 
 * Débogué **GOTO**, la variable **COUNT** n'était pas initialisée. 

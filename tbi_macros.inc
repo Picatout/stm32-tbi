@@ -148,8 +148,8 @@
   .equ TIMER,TICKS+4 //  milliseconds count down timer 
   .equ SEED,TIMER+4  // xorshift 16 seed x  used by RND() function 
   .equ FSPTR,SEED+4 //  pointer used by file system
-  .equ FFREE,FSPTR+4 // flash free address // file system free space pointer
-  .equ TXTBGN,FFREE+4 // tokenized BASIC text beginning address 
+  .equ FSFREE,FSPTR+4 // flash free address // file system free space pointer
+  .equ TXTBGN,FSFREE+4 // tokenized BASIC text beginning address 
   .equ TXTEND,TXTBGN+4 // tokenized BASIC text end address 
   .equ LOOP_DEPTH,TXTEND+4  // level of nested loop. Conformity check   
   .equ ARRAY_SIZE,LOOP_DEPTH+4 // array size, free RAM left after BASIC code.  
