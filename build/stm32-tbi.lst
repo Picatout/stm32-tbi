@@ -855,7 +855,7 @@ ARM GAS  stm32-tbi.s 			page 1
  146              	*****************************************************/
  147              	   .section  .text , "ax", %progbits 
  148              	    _GBL_FUNC default_handler 
- 149 0000 DFF82804 	    ldr r0,=exception_msg 
+ 149 0000 DFF83004 	    ldr r0,=exception_msg 
  150 0004 00B5FFF7 	    _CALL uart_puts 
  150      FEFF5DF8 
  150      04EB
@@ -923,7 +923,7 @@ ARM GAS  stm32-tbi.s 			page 1
  202              	     
  203              	
  204              	    _GBL_FUNC user_reboot   
- 205 008c E848     	    ldr r0,=user_reboot_msg
+ 205 008c EA48     	    ldr r0,=user_reboot_msg
  206 008e 00B5FFF7 	    _CALL uart_puts 
  206      FEFF5DF8 
  206      04EB
@@ -1313,7 +1313,7 @@ ARM GAS  stm32-tbi.s 			page 1
  534 0338 F768     	    ldr r7,[r6,#FLASH_SR]
  535 033a 17F01407 	    ands r7,r7,#(5<<2) 
  536 033e 05D0     	    beq 9f
- 537 0340 3C48     	    ldr r0,=write_error
+ 537 0340 3E48     	    ldr r0,=write_error
  538 0342 00B5FFF7 	    _CALL uart_puts   
  538      FEFF5DF8 
  538      04EB
@@ -1395,48 +1395,54 @@ ARM GAS  stm32-tbi.s 			page 1
  594 03d0 C0F81480 	    str T1,[r0,#FLASH_AR]
  595 03d4 49F04009 	    orr T2,#0x40 
  596 03d8 C0F81090 	    str T2,[r0,#FLASH_CR]
- 597 03dc D0F80C90 	    ldr T2,[r0,#FLASH_SR]
- 598 03e0 19F01409 	    ands T2,#(5<<2)
- 599 03e4 06D0     	    beq 9f
- 600 03e6 DFF82000 	    ldr r0,erase_error
- 601 03ea 00B5FFF7 	    _CALL uart_puts 
- 601      FEFF5DF8 
- 601      04EB
- 602 03f4 80EA0000 	9:  eor r0,r0 
- 603 03f8 00B5FFF7 	    _CALL unlock 
- 603      FEFF5DF8 
- 603      04EB
- 604 0402 BDE80003 	    pop {T1,T2}
- 605 0406 7047     	    _RET 
- 606              	erase_error:
- 607 0408 20657261 	    .asciz " erase error!\r"
- 607      73652065 
- 607      72726F72 
- 607      210D00
- 608 0417 00       	    .p2align 2
- 609              	
- 610              	/**********************************************
- 611              	   page_align 
- 612              	   align address to FLASH page boundary 
- 613              	   input:
- 614              	     r0    address 
- 615              	   output:
- 616              	     r0    aligned 
- 617              	   use: 
- 618              	     r1  
- 619              	**********************************************/
- 620              	    _GBL_FUNC page_align 
- 621 0418 02B4     	    push {r1}
- 622 041a 40F2FF31 	    mov r1,#PAGE_SIZE-1
- 623 041e 0844     	    add r0,r1
- 624 0420 6FEA0101 	    mvn r1,r1 
- 625 0424 00EA0100 	    and r0,r1 
- 626 0428 02BC     	    pop {r1}
- 627 042a 7047     	    _RET 
- 628 042c 18000000 	
- 628      B4000000 
- 628      50030000 
+ 597 03dc 00B5FFF7 	    _CALL wait_busy
+ 597      91FF5DF8 
+ 597      04EB
+ 598 03e6 D0F80C90 	    ldr T2,[r0,#FLASH_SR]
+ 599 03ea 19F01409 	    ands T2,#(5<<2)
+ 600 03ee 05D0     	    beq 9f
+ 601 03f0 0748     	    ldr r0,erase_error
+ 602 03f2 00B5FFF7 	    _CALL uart_puts 
+ 602      FEFF5DF8 
+ 602      04EB
+ 603 03fc 80EA0000 	9:  eor r0,r0 
+ 604 0400 00B5FFF7 	    _CALL unlock 
+ 604      FEFF5DF8 
+ 604      04EB
+ 605 040a BDE80003 	    pop {T1,T2}
+ 606 040e 7047     	    _RET 
+ 607              	erase_error:
+ 608 0410 20657261 	    .asciz " erase error!\r"
+ 608      73652065 
+ 608      72726F72 
+ 608      210D00
+ 609 041f 00       	    .p2align 2
+ 610              	
+ 611              	/**********************************************
+ 612              	   page_align 
+ 613              	   align address to FLASH page boundary 
+ 614              	   input:
+ 615              	     r0    address 
+ 616              	   output:
+ 617              	     r0    aligned 
+ 618              	   use: 
+ 619              	     r1  
+ 620              	**********************************************/
+ 621              	    _GBL_FUNC page_align 
+ 622 0420 02B4     	    push {r1}
+ 623 0422 40F2FF31 	    mov r1,#PAGE_SIZE-1
+ 624 0426 0844     	    add r0,r1
+ 625 0428 6FEA0101 	    mvn r1,r1 
+ 626 042c 00EA0100 	    and r0,r1 
+ 627 0430 02BC     	    pop {r1}
+ 628 0432 7047     	    _RET 
+ 629 0434 18000000 	
+ 629      B4000000 
 ARM GAS  stm32-tbi.s 			page 25
+
+
+ 629      50030000 
+ARM GAS  stm32-tbi.s 			page 26
 
 
 DEFINED SYMBOLS
@@ -1496,7 +1502,7 @@ DEFINED SYMBOLS
        stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LOCKR
        stm32f103.inc:86     *ABS*:0000000040010000 AFIO_BASE_ADR
        stm32f103.inc:89     *ABS*:0000000000000000 AFIO_EVCR
-ARM GAS  stm32-tbi.s 			page 26
+ARM GAS  stm32-tbi.s 			page 27
 
 
        stm32f103.inc:90     *ABS*:0000000000000004 AFIO_MAPR
@@ -1556,7 +1562,7 @@ DEFINED SYMBOLS
        stm32f103.inc:158    *ABS*:0000000000000004 SCR_SLEEPDEEP
        stm32f103.inc:159    *ABS*:0000000000000010 SCR_SEVONPEND
        stm32f103.inc:162    *ABS*:0000000040007000 PWR_CR_ADR
-ARM GAS  stm32-tbi.s 			page 27
+ARM GAS  stm32-tbi.s 			page 28
 
 
        stm32f103.inc:163    *ABS*:0000000000000001 PWR_CR_LPDS
@@ -1616,7 +1622,7 @@ DEFINED SYMBOLS
            ascii.inc:57     *ABS*:0000000000000011 DC1
            ascii.inc:58     *ABS*:0000000000000011 XON
            ascii.inc:59     *ABS*:0000000000000012 CTRL_R
-ARM GAS  stm32-tbi.s 			page 28
+ARM GAS  stm32-tbi.s 			page 29
 
 
            ascii.inc:60     *ABS*:0000000000000012 DC2
@@ -1676,7 +1682,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:63     *ABS*:000000000000000f TK_INTGR
       tbi_macros.inc:64     *ABS*:0000000000000010 TK_PLUS
       tbi_macros.inc:65     *ABS*:0000000000000011 TK_MINUS
-ARM GAS  stm32-tbi.s 			page 29
+ARM GAS  stm32-tbi.s 			page 30
 
 
       tbi_macros.inc:66     *ABS*:0000000000000020 TK_MULT
@@ -1736,7 +1742,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:159    *ABS*:000000000000004c RX_TAIL
       tbi_macros.inc:160    *ABS*:0000000000000050 RX_QUEUE
       tbi_macros.inc:161    *ABS*:0000000000000060 VARS
-ARM GAS  stm32-tbi.s 			page 30
+ARM GAS  stm32-tbi.s 			page 31
 
 
       tbi_macros.inc:162    *ABS*:0000000000000068 VARS_SIZE
@@ -1796,7 +1802,7 @@ DEFINED SYMBOLS
        cmd_index.inc:65     *ABS*:0000000000000028 PAD_IDX
        cmd_index.inc:66     *ABS*:0000000000000029 PAUSE_IDX
        cmd_index.inc:67     *ABS*:000000000000002a PMODE_IDX
-ARM GAS  stm32-tbi.s 			page 31
+ARM GAS  stm32-tbi.s 			page 32
 
 
        cmd_index.inc:68     *ABS*:000000000000002b PEEK8_IDX
@@ -1856,7 +1862,7 @@ DEFINED SYMBOLS
          stm32-tbi.s:148    .text:0000000000000000 $t
          stm32-tbi.s:157    .text:0000000000000018 exception_msg
          stm32-tbi.s:211    .text:00000000000000a0 reset_mcu
-ARM GAS  stm32-tbi.s 			page 32
+ARM GAS  stm32-tbi.s 			page 33
 
 
          stm32-tbi.s:158    .text:0000000000000018 $d
@@ -1887,16 +1893,16 @@ DEFINED SYMBOLS
          stm32-tbi.s:543    .text:000000000000035e $t
          stm32-tbi.s:558    .text:0000000000000360 flash_store
          stm32-tbi.s:586    .text:00000000000003ac erase_page
-         stm32-tbi.s:606    .text:0000000000000408 erase_error
-         stm32-tbi.s:607    .text:0000000000000408 $d
-         stm32-tbi.s:620    .text:0000000000000418 page_align
-         stm32-tbi.s:628    .text:000000000000042c $d
+         stm32-tbi.s:607    .text:0000000000000410 erase_error
+         stm32-tbi.s:608    .text:0000000000000410 $d
+         stm32-tbi.s:621    .text:0000000000000420 page_align
+         stm32-tbi.s:629    .text:0000000000000434 $d
          stm32-tbi.s:163    .text:000000000000002b $d
          stm32-tbi.s:163    .text:000000000000002c $t
          stm32-tbi.s:223    .text:00000000000000c3 $d
          stm32-tbi.s:223    .text:00000000000000c4 $t
-         stm32-tbi.s:608    .text:0000000000000417 $d
-         stm32-tbi.s:608    .text:0000000000000418 $t
+         stm32-tbi.s:609    .text:000000000000041f $d
+         stm32-tbi.s:609    .text:0000000000000420 $t
 
 UNDEFINED SYMBOLS
 _mstack

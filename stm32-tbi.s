@@ -594,6 +594,7 @@ write_error:
     str T1,[r0,#FLASH_AR]
     orr T2,#0x40 
     str T2,[r0,#FLASH_CR]
+    _CALL wait_busy
     ldr T2,[r0,#FLASH_SR]
     ands T2,#(5<<2)
     beq 9f

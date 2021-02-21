@@ -1,3 +1,7 @@
+#### 2021-02-20
+
+* Ajout des commandes **DIR** et **LOAD** 
+
 #### 2021-02-19
 
 * Ajout de **SAVE** et **FORGET** 

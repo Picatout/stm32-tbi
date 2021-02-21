@@ -2645,9 +2645,6 @@ no_data_line:
     str r0,[UPP,#BASE]
     _RET 
 
-    _FUNC directory
-    _RET 
-
 /***************************************
   BASIC: DO 
   initialize a DO..UNTIL loop 
@@ -3074,9 +3071,6 @@ let_array:
     ble 6b 
 9:  b warm_start 
 out_buff: .word _tib 
-
-    _FUNC load
-    _RET 
 
 /********************************
   BASIC: LOG2(expr)
@@ -3523,9 +3517,15 @@ print_exit:
     _CALL show_trace 
 9:  _RET 
 
+/**********************************
+        FILE SYSTEM 
+**********************************/
+
 /*********************************
   search_free 
-  search first free sector in fs
+  search first free PAGE in fs
+  a PAGE is free if first word is
+  -1
   input:
     none 
   output:
@@ -3573,18 +3573,64 @@ cmp_loop:
     add r1,r2,#2
     _CALL strcmp
     cbnz r0,2f
-    mov r0,r3 
+    mov r0,r2 
     b 9f   
 2:  ldrh r0,[r2] // name length
     add r2,r0 
     ldrh r0,[r2]
-    add r2,r0  
+    add r0,r2
+    _CALL page_align 
+    mov r2,r0   
     b cmp_loop 
 9:  pop {r1,r2,r3}
     _RET 
 
 fs_addr: .word FILE_SYSTEM
 
+/*************************************
+  BASIC: DIR 
+  list files stored in fs 
+  use:
+    r0  temp 
+    r1  temp
+    r2  file count
+    r3  data size
+    T1  *fs  
+*************************************/
+    _FUNC directory
+    _CLO 
+    eor r2,r2 
+    ldr T1,fs_addr 
+1:  ldr r0,[T1] // name length 
+    cmp r0,#-1
+    beq no_more_file
+    and r3,r0,#15
+    add r0,T1,#2
+    _CALL uart_puts 
+    mov r0,#16 
+    _CALL cursor_x 
+    add T1,r3 
+    ldrh r3,[T1]
+    mov r0,r3 
+    mov r1,#10 
+    _CALL print_int
+    _CALL cr  
+    add r0,T1,r3 
+    _CALL page_align
+    mov T1,r0 
+    add r2,#1 
+    b 1b  
+no_more_file:
+    _CALL cr
+    mov r0,#16
+    _CALL cursor_x  
+    mov r0,r2 
+    mov r1,#10 
+    _CALL print_int 
+    ldr r0,=fcount 
+    _CALL uart_puts 
+    _RET 
+fcount:  .asciz "files\n"
 
 /*************************************
   BASIC: FORGET ["name"]
@@ -3611,16 +3657,67 @@ fs_addr: .word FILE_SYSTEM
     pop {r3,T2} 
     _RET 
 
+/**********************************
+  BASIC LOAD "name" 
+  load file in RAM for execution
+  use:
+    r0   temp
+    r1   src
+    r2   dest 
+    r3   count 
+**********************************/
+    _FUNC load
+    _CLO 
+    _CALL next_token 
+    cmp r0,#TK_QSTR 
+    bne syntax_error 
+    mov r0,r1 
+    _CALL search_file 
+    cbnz r0, 1f 
+    mov r0,#ERR_NOT_FILE
+    b tb_error 
+1:  mov r1,r0 
+    ldrh r0,[r1]
+    add r1,r0 // data size field  
+    ldrh r3,[r1],#2 // data size 
+    ldr r2,[UPP,#TXTBGN]
+    add r0,r2,r3  
+    str r0,[UPP,#TXTEND]
+    add r3,#1
+    lsr r3,#1
+2:  // load file data 
+    ldrh r0,[r1],#2
+    strh r0,[r2],#2 
+    subs r3,#1 
+    bne 2b 
+// report file size 
+    ldr r0,=fsize 
+    _CALL uart_puts
+    ldr r0,[UPP,#TXTEND]
+    ldr r3,[UPP,#TXTBGN]
+    sub r0,r3 
+    mov r1,#10 
+    _CALL print_int 
+    ldr r0,=data_bytes 
+    _CALL uart_puts      
+    _RET 
+
 
 /*********************************
-  BASIC: save "name" 
+  BASIC: SAVE "name" 
   save program in flash memory
   file structure:
     .hword name_length 
     .asciz name
     .palign 1  
     .hword data_length 
-    .byte  file data (variable length)   
+    .byte  file data (variable length)  
+  use:
+    r0  temp 
+    r1  temp
+    r2  *flash 
+    r3  *ram  
+    T1  temp   
 ********************************/
     _FUNC save
     _CLO 
@@ -3634,7 +3731,7 @@ fs_addr: .word FILE_SYSTEM
     cmp r0,#TK_QSTR
     bne syntax_error 
 // check for existing 
-    mov r3,r1
+    mov r3,r1 // save name 
     mov r0,r3  
     _CALL search_file
     cbz r0,new_file 
@@ -3643,15 +3740,15 @@ fs_addr: .word FILE_SYSTEM
 new_file:
     mov r0,#1 
     _CALL unlock 
-    ldr r2,[UPP,#FSFREE]
-    mov r0,r3 
+    ldr r2,[UPP,#FSFREE] //*flash 
+    mov r0,r3 // *name 
     _CALL strlen 
-    add r0,#2 
+    add r0,#4  
     and r0,#-2 //even size
-    mov T1,r0   
-1:  mov r1,r2
+    sub T1,r0,#2  // name length counter   
+1:  mov r1,r2  
     _CALL hword_write   
-    add r2,#2
+    add r2,#2  
 // write file name      
 2:  ldrh r0,[r3],#2 
     mov r1,r2 
