@@ -193,13 +193,10 @@ exception_msg:
 2:
   	_RET 
 3:  _CALL uart_flush_queue
-    ldr IN,[UPP,#COUNT]
-    ldr r0,[UPP,#FLAGS]
-    mvn r1,#FRUN 
-    and r0,r1
-    str r0,[UPP,#FLAGS]
+    ldr r0,=warm_start 
+    orr r0,#1 
+    str r0,[sp,#0x18]
     _RET 
-     
 
     _GBL_FUNC user_reboot   
     ldr r0,=user_reboot_msg

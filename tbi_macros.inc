@@ -161,7 +161,8 @@
   .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
   .equ VARS_SIZE, 4*26 // space used by 26 BASIC variables (A-Z)
   .equ ARRAY_ADR,VARS+VARS_SIZE // array address at bottom of pad  
-  .equ TRACE_LEVEL,ARRAY_ADR+4
+  .equ TRACE_LEVEL,ARRAY_ADR+4  // debugging level 
+  .equ HERE,TRACE_LEVEL+4 // constants pointer position 
   .equ BASIC_START,TRACE_LEVEL+4 // BASIC area start after variables 
 
 /* flags used by BASIC interpreter */ 

@@ -1,3 +1,21 @@
+#### 2021-02-23
+
+* Ajout de la variable système **HERE** dans le but d'ajouter le mot BASIC **CONST**. Le système va permettre de créer des constantes symboliques dans l'espace libre après le code BASIC.
+
+* Ajout des mots BASIC **PUSH**,**POP**,**PICK**,**STORE** et **DROP**. 
+
+```
+a=ticks:for i=0 to 100000: next i:? ticks-a
+433 
+
+```
+
+* Ajout des mots **FLASH** et **ERASE** 
+
+#### 2021-02-22
+
+* Modifié **uart_rx_handler** pour pour que **CTRL_B** branche directement sur **warm_start** à la sortie de l'isr.
+
 #### 2021-02-20
 
 * Ajout des commandes **DIR** et **LOAD** 

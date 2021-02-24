@@ -503,127 +503,128 @@ ARM GAS  terminal.s 			page 1
  161              	  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
  162              	  .equ VARS_SIZE, 4*26 // space used by 26 BASIC variables (A-Z)
  163              	  .equ ARRAY_ADR,VARS+VARS_SIZE // array address at bottom of pad  
- 164              	  .equ TRACE_LEVEL,ARRAY_ADR+4
- 165              	  .equ BASIC_START,TRACE_LEVEL+4 // BASIC area start after variables 
- 166              	
- 167              	/* flags used by BASIC interpreter */ 
- 168              		.equ FRUN,(1<<0) // programm running
- 169              		.equ FTRAP,(1<<1) // inside trap handler 
- 170              		.equ FLOOP,(1<<2) // FOR loop in preparation 
- 171              		.equ FSTOP,(1<<3) // program stopped  
- 172              		.equ FBREAK,(1<<4) // break point flag 
- 173              		.equ FCOMP,(1<<5)  // compiling flags 
- 174              		.equ FAUTORUN,(1<<6) // auto start program running 
- 175              	
- 176              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
- 177              	  
- 178              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
- 179              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
- 180              	
- 181              	/***********************************************
- 182              	*       MACROS
- 183              	***********************************************/
- 184              		.macro _CALL fn /* low level routine call */ 
- 185              	 	PUSH {LR}
- 186              		BL \fn  
- 187              	  POP {LR}
- 188              		.endm
- 189              		
- 190              		.macro	_RET /* return from subroutine */
- 191              		BX	LR
- 192              		.endm
- 193              	
- 194              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
- 195              		MOV \REG, #\LITERAL&0xffff
- 196              		MOVT \REG, #\LITERAL>>16
- 197              		.endm
- 198              	
+ 164              	  .equ TRACE_LEVEL,ARRAY_ADR+4  // debugging level 
+ 165              	  .equ HERE,TRACE_LEVEL+4 // constants pointer position 
+ 166              	  .equ BASIC_START,TRACE_LEVEL+4 // BASIC area start after variables 
+ 167              	
+ 168              	/* flags used by BASIC interpreter */ 
+ 169              		.equ FRUN,(1<<0) // programm running
+ 170              		.equ FTRAP,(1<<1) // inside trap handler 
+ 171              		.equ FLOOP,(1<<2) // FOR loop in preparation 
+ 172              		.equ FSTOP,(1<<3) // program stopped  
+ 173              		.equ FBREAK,(1<<4) // break point flag 
+ 174              		.equ FCOMP,(1<<5)  // compiling flags 
+ 175              		.equ FAUTORUN,(1<<6) // auto start program running 
+ 176              	
+ 177              		.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
+ 178              	  
+ 179              	  .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
+ 180              		.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+ 181              	
+ 182              	/***********************************************
+ 183              	*       MACROS
+ 184              	***********************************************/
+ 185              		.macro _CALL fn /* low level routine call */ 
+ 186              	 	PUSH {LR}
+ 187              		BL \fn  
+ 188              	  POP {LR}
+ 189              		.endm
+ 190              		
+ 191              		.macro	_RET /* return from subroutine */
+ 192              		BX	LR
+ 193              		.endm
+ 194              	
+ 195              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 196              		MOV \REG, #\LITERAL&0xffff
+ 197              		MOVT \REG, #\LITERAL>>16
+ 198              		.endm
 ARM GAS  terminal.s 			page 10
 
 
- 199              	// local function header 
- 200              	  .macro _FUNC label 
- 201              	  .p2align 2 
- 202              	  .type \label, %function  
- 203              	\label:
- 204              	  .endm 
- 205              	
- 206              	// global function header 
- 207              	  .macro _GBL_FUNC label 
- 208              	  .global \label 
- 209              	  _FUNC \label 
- 210              	  .endm 
- 211              	
+ 199              	
+ 200              	// local function header 
+ 201              	  .macro _FUNC label 
+ 202              	  .p2align 2 
+ 203              	  .type \label, %function  
+ 204              	\label:
+ 205              	  .endm 
+ 206              	
+ 207              	// global function header 
+ 208              	  .macro _GBL_FUNC label 
+ 209              	  .global \label 
+ 210              	  _FUNC \label 
+ 211              	  .endm 
  212              	
- 213              	/********************************
- 214              	    dictionary structure
- 215              	------------------------------
- 216              	 format:
- 217              	   link:    
- 218              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
- 219              	   cmd_name: 31 characters max 
- 220              	   cmd_index: 2 bytes 
- 221              	**********************************/
- 222              		.macro _dict_entry tok_type,name,cmd_idx 
- 223              	  .word LINK 
- 224              	  .word \cmd_idx 
- 225              		.word \tok_type  	
- 226              		.equ LINK,.
- 227              		.asciz "\name"
- 228              		.p2align 2 
- 229              		.endm 
- 230              	
- 231              	  // pop parameter in register 
- 232              	  .macro _POP  reg 
- 233              	  ldmia  DP!,{\reg}
- 234              	  .endm 
- 235              	
- 236              	  // push register on parameter stack 
- 237              	  .macro _PUSH reg 
- 238              	  stmdb DP!,{\reg}
- 239              	  .endm 
- 240              	
- 241              	  // drop n parameters on dstack 
- 242              	  .macro _DROP n
- 243              	  mov r0,#4*\n
- 244              	  add DP,R0 
- 245              	  .endm 
- 246              	
- 247              	  // back to previous token in list 
- 248              	  .macro _UNGET_TOKEN 
- 249              	  ldr IN,[UPP,#IN_SAVED]
- 250              	  ldr BPTR,[UPP,#BASICPTR] 
- 251              	  .endm 
- 252              	
- 253              	 // create a text data 
- 254              	 .macro _TEXT label,text
- 255              	 \label: .asciz "\text"
+ 213              	
+ 214              	/********************************
+ 215              	    dictionary structure
+ 216              	------------------------------
+ 217              	 format:
+ 218              	   link:    
+ 219              	   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
+ 220              	   cmd_name: 31 characters max 
+ 221              	   cmd_index: 2 bytes 
+ 222              	**********************************/
+ 223              		.macro _dict_entry tok_type,name,cmd_idx 
+ 224              	  .word LINK 
+ 225              	  .word \cmd_idx 
+ 226              		.word \tok_type  	
+ 227              		.equ LINK,.
+ 228              		.asciz "\name"
+ 229              		.p2align 2 
+ 230              		.endm 
+ 231              	
+ 232              	  // pop parameter in register 
+ 233              	  .macro _POP  reg 
+ 234              	  ldmia  DP!,{\reg}
+ 235              	  .endm 
+ 236              	
+ 237              	  // push register on parameter stack 
+ 238              	  .macro _PUSH reg 
+ 239              	  stmdb DP!,{\reg}
+ 240              	  .endm 
+ 241              	
+ 242              	  // drop n parameters on dstack 
+ 243              	  .macro _DROP n
+ 244              	  mov r0,#4*\n
+ 245              	  add DP,R0 
+ 246              	  .endm 
+ 247              	
+ 248              	  // back to previous token in list 
+ 249              	  .macro _UNGET_TOKEN 
+ 250              	  ldr IN,[UPP,#IN_SAVED]
+ 251              	  ldr BPTR,[UPP,#BASICPTR] 
+ 252              	  .endm 
+ 253              	
+ 254              	 // create a text data 
+ 255              	 .macro _TEXT label,text
 ARM GAS  terminal.s 			page 11
 
 
- 256              	 .p2align 2 
- 257              	 .endm 
- 258              	
- 259              	// command line only 
- 260              	  .macro _CLO 
- 261              	  ldr r0,[UPP,#FLAGS]
- 262              	  tst r0,#FRUN 
- 263              	  beq 1f 
- 264              	  mov r0,#ERR_CMD_ONLY
- 265              	  b tb_error
- 266              	1: 
- 267              	  .endm 
- 268              	
- 269              	// run time only 
- 270              	  .macro _RTO 
- 271              	  ldr r0,[UPP,#FLAGS]
- 272              	  tst r0,#FRUN 
- 273              	  bne 1f 
- 274              	  mov r0,#ERR_CMD_ONLY
- 275              	  b tb_error
- 276              	1:
- 277              	  .endm 
- 278              	
+ 256              	 \label: .asciz "\text"
+ 257              	 .p2align 2 
+ 258              	 .endm 
+ 259              	
+ 260              	// command line only 
+ 261              	  .macro _CLO 
+ 262              	  ldr r0,[UPP,#FLAGS]
+ 263              	  tst r0,#FRUN 
+ 264              	  beq 1f 
+ 265              	  mov r0,#ERR_CMD_ONLY
+ 266              	  b tb_error
+ 267              	1: 
+ 268              	  .endm 
+ 269              	
+ 270              	// run time only 
+ 271              	  .macro _RTO 
+ 272              	  ldr r0,[UPP,#FLAGS]
+ 273              	  tst r0,#FRUN 
+ 274              	  bne 1f 
+ 275              	  mov r0,#ERR_CMD_ONLY
+ 276              	  b tb_error
+ 277              	1:
+ 278              	  .endm 
+ 279              	
   40              	
   41              	
   42              	    .section .text, "ax", %progbits 
@@ -657,10 +658,10 @@ ARM GAS  terminal.s 			page 1
   68 0018 00B5FFF7 	1: _CALL  uart_getc 
   68      FEFF5DF8 
   68      04EB
-  69 0022 DFF86027 	    ldr r2,=convert_table
 ARM GAS  terminal.s 			page 12
 
 
+  69 0022 DFF86027 	    ldr r2,=convert_table
   70              	2:
   71 0026 1178     	    ldrb r1,[r2]
   72 0028 0940     	    ands r1,r1 
@@ -717,10 +718,10 @@ ARM GAS  terminal.s 			page 1
  119 0066 18F8010B 	1:  ldrb r0,[T1],#1
  120 006a 28B1     	    cbz r0,9f 
  121 006c 00B5FFF7 	    _CALL uart_putc 
- 121      FEFF5DF8 
 ARM GAS  terminal.s 			page 13
 
 
+ 121      FEFF5DF8 
  121      04EB
  122 0076 F6E7     	    b 1b 
  123 0078 5DF8048B 	9:  pop {T1}
@@ -777,10 +778,10 @@ ARM GAS  terminal.s 			page 1
  174 00c0 09F8010D 	    strb r0,[T2,#-1]!
  175 00c4 00F12000 	    add r0,#SPACE 
  176 00c8 09F8010D 	    strb r0,[T2,#-1]!
- 177 00cc 80EA0000 	    eor r0,r0 
 ARM GAS  terminal.s 			page 14
 
 
+ 177 00cc 80EA0000 	    eor r0,r0 
  178 00d0 B8F10A0F 	    cmp T1,#10 
  179 00d4 04D1     	    bne 0f 
  180 00d6 17F00040 	    ands r0,r7,#(1<<31)
@@ -837,10 +838,10 @@ ARM GAS  terminal.s 			page 1
  225              	
  226              	/********************************
  227              	// print byte  in hexadecimal 
- 228              	// on console
 ARM GAS  terminal.s 			page 15
 
 
+ 228              	// on console
  229              	// input:
  230              	//   r0		byte to print
  231              	// output:
@@ -897,10 +898,10 @@ ARM GAS  terminal.s 			page 1
  272              	  output:
  273              	    none 
  274              	  use:
- 275              	    T1    shape
 ARM GAS  terminal.s 			page 16
 
 
+ 275              	    T1    shape
  276              	*******************************/
  277 019e 00BF     	    _GBL_FUNC cursor_shape
  278 01a0 4DF8048D 	    push {T1}
@@ -957,10 +958,10 @@ ARM GAS  terminal.s 			page 1
  315              	//--------------------------	
  316              	    _FUNC delete_nchar
  317 0208 48B1     		cbz r0,2f 
- 318 020a 04B4     	    push {r2}
 ARM GAS  terminal.s 			page 17
 
 
+ 318 020a 04B4     	    push {r2}
  319 020c 0246     	    mov r2,r0  
  320              	1:	
  321 020e 00B5FFF7 	    _CALL  bksp 
@@ -1017,10 +1018,10 @@ ARM GAS  terminal.s 			page 1
  366 0244 4DF8048D 	    push {T1}
  367 0248 4FF00008 	    mov T1,#0
  368 024c 4FF00A01 	1:  mov r1,#10  
- 369 0250 00B5FFF7 	    _CALL digit 
 ARM GAS  terminal.s 			page 18
 
 
+ 369 0250 00B5FFF7 	    _CALL digit 
  369      15FF5DF8 
  369      04EB
  370 025a 08F10108 	    add T1,#1 
@@ -1077,10 +1078,10 @@ ARM GAS  terminal.s 			page 1
  412      B8FF5DF8 
  412      04EB
  413 02b4 00B5FFF7 	    _CALL  send_parameter 
- 413      C5FF5DF8 
 ARM GAS  terminal.s 			page 19
 
 
+ 413      C5FF5DF8 
  413      04EB
  414 02be 4FF04300 	    mov r0,#'C' 
  415 02c2 00B5FFF7 	    _CALL  uart_putc 
@@ -1137,10 +1138,10 @@ ARM GAS  terminal.s 			page 1
  462              	    inc a 
  463              	    ld acc8,a 
  464              	    clr acc16
- 465              	    _CALL  move
 ARM GAS  terminal.s 			page 20
 
 
+ 465              	    _CALL  move
  466              	    ldw y,#tib 
  467              	    ld a,(IPOS,sp)
  468              	    ld acc8,a 
@@ -1197,10 +1198,10 @@ ARM GAS  terminal.s 			page 1
  519              	/********************************
  520              	// send ANSI sequence to delete
  521              	// whole line. Cursor position
- 522              	// is not updated.
 ARM GAS  terminal.s 			page 21
 
 
+ 522              	// is not updated.
  523              	// ANSI: ESC[2K
  524              	// input:
  525              	//   none
@@ -1257,10 +1258,10 @@ ARM GAS  terminal.s 			page 1
  562              	  input:
  563              	    none 
  564              	  output:
- 565              	    none 
 ARM GAS  terminal.s 			page 22
 
 
+ 565              	    none 
  566              	  use:
  567              	    r0
  568              	*************************************/
@@ -1317,10 +1318,10 @@ ARM GAS  terminal.s 			page 1
  605 03b8 01BC     	    pop {r0} 
  606 03ba 00B5FFF7 	    _CALL uart_puts
  606      FEFF5DF8 
- 606      04EB
 ARM GAS  terminal.s 			page 23
 
 
+ 606      04EB
  607 03c4 7047     	    _RET 
  608              	
  609              	/*************************************
@@ -1377,10 +1378,10 @@ ARM GAS  terminal.s 			page 1
  654 040c 30E1     	  b readln_exit 
  655              	0:
  656 040e 0828     	  cmp r0,#BS 
- 657 0410 2DD1     	  bne 2f 
 ARM GAS  terminal.s 			page 24
 
 
+ 657 0410 2DD1     	  bne 2f 
  658              	//delete char. left  
  659 0412 3F40     	  ands r7,r7 
  660 0414 F0D0     	  beq readln_loop 
@@ -1437,10 +1438,10 @@ ARM GAS  terminal.s 			page 1
  697      04EB
  698 04aa 0029     	  cmp r1,#0 // not found 
  699 04ac A4D1     	  bne readln_loop 
- 700 04ae 3146     	  mov r1,r6 
 ARM GAS  terminal.s 			page 25
 
 
+ 700 04ae 3146     	  mov r1,r6 
  701 04b0 00B5FFF7 	  _CALL decompile_line
  701      FEFF5DF8 
  701      04EB
@@ -1497,10 +1498,10 @@ ARM GAS  terminal.s 			page 1
  738 053e 8328     	   cmp r0,#END 
  739 0540 08D1     	   bne try_left 
  740 0542 A5EB0700 	   sub r0,r5,r7  
- 741 0546 00B5FFF7 	   _CALL move_right  
 ARM GAS  terminal.s 			page 26
 
 
+ 741 0546 00B5FFF7 	   _CALL move_right  
  741      AEFE5DF8 
  741      04EB
  742 0550 2F46     	   mov r7,r5 
@@ -1557,10 +1558,10 @@ ARM GAS  terminal.s 			page 1
  783              	// cursor in middle of line 
  784              	// action depend on edit mode 
  785 05dc 18EA0808 	  ands T1,T1  //check edit mode 
- 786 05e0 25D0     	  beq 2f 
 ARM GAS  terminal.s 			page 27
 
 
+ 786 05e0 25D0     	  beq 2f 
  787              	// insert mode
  788 05e2 A945     	  cmp T2,r5 
  789 05e4 3FF408AF 	  beq readln_loop // buffer full  
@@ -1617,10 +1618,10 @@ ARM GAS  terminal.s 			page 1
  827      FEFF5DF8 
  827      04EB
  828 067a 80EA0000 	  eor r0,r0 
- 829 067e 7055     	  strb r0,[r6,r5]
 ARM GAS  terminal.s 			page 28
 
 
+ 829 067e 7055     	  strb r0,[r6,r5]
  830 0680 2946     	  mov r1,r5  // line length
  831 0682 3046     	  mov r0,r6  // *buffer  
  832 0684 BDE8EC03 	  pop {r2,r3,r5,r6,r7,T1,T2}
@@ -1677,10 +1678,10 @@ ARM GAS  terminal.s 			page 1
  877 06cc 00B5FFF7 	    _CALL send_escape 
  877      A7FD5DF8 
  877      04EB
- 878 06d6 4FF03600 	    mov r0,#'6'
 ARM GAS  terminal.s 			page 29
 
 
+ 878 06d6 4FF03600 	    mov r0,#'6'
  879 06da 00B5FFF7 	    _CALL uart_putc
  879      FEFF5DF8 
  879      04EB
@@ -1737,10 +1738,10 @@ ARM GAS  terminal.s 			page 1
  914      04EB
  915 0762 04E0     	    b 9f 
  916 0764 00B5FFF7 	2: _CALL cr 
- 916      FEFF5DF8 
 ARM GAS  terminal.s 			page 30
 
 
+ 916      FEFF5DF8 
  916      04EB
  917 076e 07BC     	9:  pop {r0,r1,r2}
  918 0770 7047     	    _RET 
@@ -2063,17 +2064,18 @@ DEFINED SYMBOLS
       tbi_macros.inc:162    *ABS*:0000000000000068 VARS_SIZE
       tbi_macros.inc:163    *ABS*:00000000000000c8 ARRAY_ADR
       tbi_macros.inc:164    *ABS*:00000000000000cc TRACE_LEVEL
-      tbi_macros.inc:165    *ABS*:00000000000000d0 BASIC_START
-      tbi_macros.inc:168    *ABS*:0000000000000001 FRUN
-      tbi_macros.inc:169    *ABS*:0000000000000002 FTRAP
-      tbi_macros.inc:170    *ABS*:0000000000000004 FLOOP
-      tbi_macros.inc:171    *ABS*:0000000000000008 FSTOP
-      tbi_macros.inc:172    *ABS*:0000000000000010 FBREAK
-      tbi_macros.inc:173    *ABS*:0000000000000020 FCOMP
-      tbi_macros.inc:174    *ABS*:0000000000000040 FAUTORUN
-      tbi_macros.inc:176    *ABS*:0000000008001c00 AUTORUN_NAME
-      tbi_macros.inc:178    *ABS*:0000000000000006 FIRST_DATA_ITEM
-      tbi_macros.inc:179    *ABS*:0000000000007fff MAX_LINENO
+      tbi_macros.inc:165    *ABS*:00000000000000d0 HERE
+      tbi_macros.inc:166    *ABS*:00000000000000d0 BASIC_START
+      tbi_macros.inc:169    *ABS*:0000000000000001 FRUN
+      tbi_macros.inc:170    *ABS*:0000000000000002 FTRAP
+      tbi_macros.inc:171    *ABS*:0000000000000004 FLOOP
+      tbi_macros.inc:172    *ABS*:0000000000000008 FSTOP
+      tbi_macros.inc:173    *ABS*:0000000000000010 FBREAK
+      tbi_macros.inc:174    *ABS*:0000000000000020 FCOMP
+      tbi_macros.inc:175    *ABS*:0000000000000040 FAUTORUN
+      tbi_macros.inc:177    *ABS*:0000000008001c00 AUTORUN_NAME
+      tbi_macros.inc:179    *ABS*:0000000000000006 FIRST_DATA_ITEM
+      tbi_macros.inc:180    *ABS*:0000000000007fff MAX_LINENO
           terminal.s:60     .text:0000000000000000 $t
           terminal.s:60     .text:0000000000000000 get_escape
           terminal.s:102    .text:0000000000000054 convert_table
@@ -2116,10 +2118,10 @@ DEFINED SYMBOLS
           terminal.s:737    .text:000000000000053e try_end
           terminal.s:744    .text:0000000000000554 try_left
           terminal.s:753    .text:0000000000000572 try_right
-          terminal.s:762    .text:0000000000000590 try_suprim
 ARM GAS  terminal.s 			page 37
 
 
+          terminal.s:762    .text:0000000000000590 try_suprim
           terminal.s:847    .text:000000000000068c get_param
           terminal.s:901    .text:000000000000072c tabulation
           terminal.s:925    .text:0000000000000774 cr

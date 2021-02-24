@@ -228,10 +228,10 @@ move_from_end: // move from high address toward low
     _CALL uart_puts 
     mov T1,DP 
     _MOV32 T2,DSTACK_TOP
-1:  cmp T1,T2 
-    bpl 9f 
-    ldr r0,[T1],#4 
-    mov r1,#16 
+1:  cmp T2,T1 
+    beq 9f 
+    ldmdb T2!,{r0} 
+    ldr r1,[UPP,#BASE] 
     _CALL print_int 
     b 1b 
 9:  _CALL cr 
@@ -250,10 +250,10 @@ data_stack:
     _CALL uart_puts 
     _MOV32 T2,RSTACK_TOP
     add T1,sp,#4
-1:  cmp T1,T2
-    bpl 9f 
-    ldr r0,[T1],#4 
-    mov r1,#16 
+1:  cmp T2,T1
+    beq 9f 
+    ldmdb T2!,{r0} 
+    ldr r1,[UPP,#BASE]
     _CALL print_int
     b 1b
 9:  _CALL cr 
@@ -1544,6 +1544,7 @@ version:
     and r0,r1 
     str r0,[UPP,#TXTBGN]
     str r0,[UPP,#TXTEND]
+    str r0,[UPP,#HERE]
     _CALL clear_vars
     ldr r0,[UPP,#TXTBGN]
     ldr r1,tib 
@@ -2151,8 +2152,8 @@ uzero:
   .word 0xaa5555aa // SEED
   .word FILE_SYSTEM // FSPTR
   .word 0 // FSFREE
-  .word ulast-uzero // TXTBGN
-  .word ulast-uzero // TXTEND
+  .word 0 // TXTBGN
+  .word 0 // TXTEND
   .word 0 //LOOP_DEPTH
   .word 0 // ARRAY_SIZE
   .word 0 // FLAGS
@@ -2163,6 +2164,7 @@ uzero:
   .space VARS_SIZE,0 // VARS
   .word _pad  // ARRAY_ADR 
   .word 0 // TRACE_LEVEL 
+  .word 0 // HERE 
 ulast:
 
   .section .rodata.dictionary 
@@ -2173,30 +2175,22 @@ ulast:
 	.equ link, 0
 kword_end:
   _dict_entry TK_NONE,"",0 
-  _dict_entry TK_CMD,XTRMT,XTRMT_IDX // xmodem transmit
-  _dict_entry TK_CMD,XRCV,XRCV_IDX // xmodem receive
   _dict_entry TK_IFUNC,XOR,XOR_IDX //bit_xor
-  _dict_entry TK_CMD,WRITE,WRITE_IDX //write  
   _dict_entry TK_CMD,WORDS,WORDS_IDX //words 
   _dict_entry TK_CMD,WAIT,WAIT_IDX //wait 
-  _dict_entry TK_IFUNC,USR,USR_IDX //usr
   _dict_entry TK_CMD,UNTIL,UNTIL_IDX //until 
   _dict_entry TK_IFUNC,UFLASH,UFLASH_IDX //uflash 
   _dict_entry TK_IFUNC,UBOUND,UBOUND_IDX //ubound
   _dict_entry TK_CMD,TRACE,TRACE_IDX // trace 
-  _dict_entry TK_CMD,TONE,TONE_IDX //tone  
   _dict_entry TK_CMD,TO,TO_IDX //to
   _dict_entry TK_CMD,TIMER,TIMER_IDX //set_timer
   _dict_entry TK_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
   _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
   _dict_entry TK_CMD,THEN,THEN_IDX // then 
   _dict_entry TK_CMD,TAB,TAB_IDX //tab 
+  _dict_entry TK_CMD,STORE,STORE_IDX // store 
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
-  _dict_entry TK_CMD,SPIWR,SPIWR_IDX //spi_write
-  _dict_entry TK_CMD,SPISEL,SPISEL_IDX //spi_select
-  _dict_entry TK_IFUNC,SPIRD,SPIRD_IDX // spi_read 
-  _dict_entry TK_CMD,SPIEN,SPIEN_IDX //spi_enable 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
   _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
   _dict_entry TK_IFUNC,SIZE,SIZE_IDX //size
@@ -2208,12 +2202,15 @@ kword_end:
   _dict_entry TK_CMD,RESTORE,REST_IDX //restore 
   _dict_entry TK_CMD,REMARK,REM_IDX //remark 
   _dict_entry TK_IFUNC,READ,READ_IDX //read  
-  _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey  
+  _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey 
+  _dict_entry TK_CMD,PUSH,PUSH_IDX //cmd_push  
   _dict_entry TK_CMD,PRINT,PRT_IDX //print 
+  _dict_entry TK_IFUNC,POP,POP_IDX // fn_pop 
   _dict_entry TK_CMD,POKE8,POKE8_IDX // poke8 
   _dict_entry TK_CMD,POKE32,POKE32_IDX //poke32
   _dict_entry TK_CMD,POKE16,POKE16_IDX // poke16
   _dict_entry TK_CMD,PMODE,PMODE_IDX // pin_mode 
+  _dict_entry TK_IFUNC,PICK,PICK_IDX // pick 
   _dict_entry TK_IFUNC,PEEK8,PEEK8_IDX //peek8
   _dict_entry TK_IFUNC,PEEK32,PEEK32_IDX //peek32
   _dict_entry TK_IFUNC,PEEK16,PEEK16_IDX //peek16
@@ -2239,8 +2236,11 @@ kword_end:
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
+  _dict_entry TK_CMD,FLASH,FLASH_IDX // flash 
+  _dict_entry TK_CMD,ERASE,ERASE_IDX // erase 
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
+  _dict_entry TK_CMD,DROP,DROP_IDX // drop 
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
@@ -2253,11 +2253,8 @@ kword_end:
   _dict_entry TK_CMD,BRES,BRES_IDX //bit_reset
   _dict_entry TK_IFUNC,BIT,BIT_IDX //bitmask
   _dict_entry TK_CMD,AWU,AWU_IDX //awu 
-  _dict_entry TK_CMD,AUTORUN,AUTORUN_IDX //autorun
   _dict_entry TK_IFUNC,ASC,ASC_IDX //ascii
   _dict_entry TK_IFUNC,AND,AND_IDX //bit_and
-  _dict_entry TK_IFUNC,ADCREAD,ADCREAD_IDX //analog_read
-  _dict_entry TK_CMD,ADCON,ADCON_IDX //power_adc 
 first_link: 
   .word LINK 
   .word ABS_IDX 
@@ -2272,19 +2269,19 @@ kword_dict: // first name field
 //comands and fonctions address table
   .type fn_table, %object
 fn_table:
-	.word abs,power_adc,analog_read,bit_and,ascii,autorun,awu,bitmask 
+	.word abs,bit_and,ascii,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char  
-	.word skip_line,data_line,dec_base,directory,do_loop,dump
-	.word cmd_end,for,forget,gosub,goto 
+	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
+	.word cmd_end,erase,flash,for,forget,gosub,goto 
 	.word hex_base,if,inp,input_var,invert,key
 	.word let,list,load,log2,lshift,new,next
-	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32,poke8,poke16
-	.word poke32,print
+	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
+	.word pick,poke8,poke16,poke32,fn_pop,print,cmd_push 
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,size 
-	.word sleep,spc,spi_read,spi_enable,spi_select,spi_write,step,stop,tab
-	.word then,get_ticks,set_timer,timeout,to,tone,trace,ubound,uflash,until,usr
-	.word wait,words,write,bit_xor,transmit,receive
+	.word sleep,spc,step,stop,store,tab
+	.word then,get_ticks,set_timer,timeout,to,trace,ubound,uflash,until
+	.word wait,words,bit_xor
 	.word 0 
 
 
@@ -2717,6 +2714,37 @@ dump01:
     _FUNC cmd_end
     b warm_start 
     _RET 
+
+/*******************************************
+  BASIC: FLASH adr, value 
+  write value to user space in flash memory 
+*********************************************/
+    _FUNC flash 
+    _CALL arg_list 
+    cmp r0,#2 
+    bne syntax_error 
+    ldmia DP!,{r0,r1}
+    ldr r2,user_space
+    cmp r1,r2 
+    bpl 1f 
+0:  mov r0,#ERR_BAD_VALUE
+    b tb_error 
+1:  add r2,#1024 
+    cmp r1,r2 
+    bpl 0b 
+    _CALL flash_store 
+    _RET 
+
+/**************************************************
+  BASIC: ERASE 
+  erase user space page 
+*************************************************/
+    _FUNC erase 
+    ldr r0,user_space 
+    _CALL erase_page 
+    _RET 
+user_space: .word user 
+
 
 /**************************************************
   BASIC: FOR var=expr TO expr [STEP exp] ... NEXT 
@@ -3828,7 +3856,7 @@ data_bytes: .asciz "bytes"
   mov cursor right expr spaces 
 ***********************************/
     _FUNC spc 
-    _CALL func_args
+    _CALL func_args 
     cmp r0,#1
     bne syntax_error 
     _POP r0 
@@ -3876,7 +3904,7 @@ data_bytes: .asciz "bytes"
   move cursor column expr 
 **************************/
     _FUNC tab 
-    _CALL func_args
+    _CALL func_args  
     cmp r0,#1 
     bne syntax_error 
     _POP r0 
@@ -3916,7 +3944,17 @@ data_bytes: .asciz "bytes"
 9:  mov r0,#TK_INTGR    
     _RET 
 
+/****************************************
+  BASIC:  TONE freq, duration 
+  play a tone with frequency freq and duration
+  in milliseconds
+***********************************************/
     _FUNC tone
+    _CALL arg_list 
+    cmp r0,#2 
+    bne syntax_error
+    ldmia DP!,{T1,T2}
+    
     _RET 
 
 /****************************************
@@ -3945,7 +3983,7 @@ data_bytes: .asciz "bytes"
 **************************/
     _FUNC ubound
     ldr r1,[UPP,#ARRAY_ADR]
-    ldr r0,[UPP,#TXTEND]
+    ldr r0,[UPP,#HERE]
     sub r1,r0 
     lsr r1,#2
     mov r0,#TK_INTGR 
@@ -3975,9 +4013,6 @@ data_bytes: .asciz "bytes"
     ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
     _RET 
-
-    _FUNC usr
-    _RET  
 
 /*************************************
   BASIC: WAIT addr,expr1[,expr2] 
@@ -4031,8 +4066,6 @@ data_bytes: .asciz "bytes"
     b 1b 
 9:  _RET 
 
-    _FUNC write
-    _RET 
 
 /**************************************
   BASIC: XOR(expr1,expr2)
@@ -4048,16 +4081,75 @@ data_bytes: .asciz "bytes"
     mov r0,#TK_INTGR
     _RET 
 
-    _FUNC transmit
+/**********************************
+     argument stack manipulation
+**********************************/
+
+/**********************************
+  BASIC PUSH expr[,expr] 
+  push integers on stack 
+*********************************/
+    _FUNC cmd_push 
+    _CALL arg_list
     _RET 
 
-    _FUNC receive
-    _RET  
+/********************************
+  BASIC: POP 
+  pop an integer out of stack 
+********************************/    
+    _FUNC fn_pop 
+    _POP r1 
+    mov r0,#TK_INTGR 
+    _RET 
+
+/*******************************
+  BASIC: DROP n 
+  discard n integer from stack
+*******************************/
+    _FUNC drop 
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    bne syntax_error 
+    mov r0,#4 
+    mul r0,r1 
+    add DP,r0 
+    _RET 
+
+/********************************
+  BASIC: pick(n) 
+  retreive nth element from stack 
+********************************/
+    _FUNC pick 
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error 
+    _POP r0
+    mov r1,#4 
+    mul r0,r1 
+    ldr r1,[DP,r0]
+    mov r0,#TK_INTGR
+    _RET 
+
+/*************************************
+  BASIC: store value,n  
+  store value at nth position on stack
+**************************************/
+    _FUNC store 
+    _CALL arg_list 
+    cmp r0,#2 
+    bne syntax_error 
+    _POP r0 
+    mov r1,#4 
+    mul r0,r1 
+    _POP r1
+    str r1,[DP,r0]
+    _RET 
+
 
   .section .rodata.user
   .p2align 10 
 user:
-  .ascii "USER"
+  .space 1024,255
 
 /*************************************************
    extra FLASH memory not used by Tiny BASIC

@@ -23,12 +23,9 @@
 // --------------------------------------
 
     .equ ABS_IDX, 0  //  absolute function
-    .equ ADCON_IDX, ABS_IDX+1  //   adc on 
-    .equ ADCREAD_IDX,ADCON_IDX+1  // read adc 
-    .equ AND_IDX,ADCREAD_IDX+1 // 
+    .equ AND_IDX,ABS_IDX+1 // 
     .equ ASC_IDX,AND_IDX+1  // 
-    .equ AUTORUN_IDX,ASC_IDX+1  // 
-    .equ AWU_IDX,AUTORUN_IDX+1 //
+    .equ AWU_IDX,ASC_IDX+1 //
     .equ BIT_IDX,AWU_IDX+1 //
     .equ BRES_IDX,BIT_IDX+1 // 
     .equ BSET_IDX,BRES_IDX+1 // 
@@ -40,9 +37,12 @@
     .equ DEC_IDX,DATALN_IDX+1 // 
     .equ DIR_IDX,DEC_IDX+1 // 
     .equ DO_IDX,DIR_IDX+1 // 
-    .equ DUMP_IDX, DO_IDX+1 
+    .equ DROP_IDX,DO_IDX+1
+    .equ DUMP_IDX, DROP_IDX+1 
     .equ END_IDX,DUMP_IDX+1 // 
-    .equ FOR_IDX, END_IDX+1 // 
+    .equ ERASE_IDX,END_IDX+1 
+    .equ FLASH_IDX,ERASE_IDX+1
+    .equ FOR_IDX, FLASH_IDX+1 // 
     .equ FORGET_IDX, FOR_IDX+1 // 
     .equ GOSUB_IDX, FORGET_IDX+1 // 
     .equ GOTO_IDX, GOSUB_IDX+1
@@ -68,11 +68,14 @@
     .equ PEEK8_IDX, PMODE_IDX+1 //
     .equ PEEK16_IDX,  PEEK8_IDX+1
     .equ PEEK32_IDX, PEEK16_IDX+1
-    .equ POKE8_IDX, PEEK32_IDX+1 // 
+    .equ PICK_IDX,PEEK32_IDX+1
+    .equ POKE8_IDX, PICK_IDX+1 // 
     .equ POKE16_IDX,POKE8_IDX+1 
     .equ POKE32_IDX,POKE16_IDX+1
-    .equ PRT_IDX, POKE32_IDX+1 //  //  PRINT commande index 
-    .equ QKEY_IDX, PRT_IDX+1 // 
+    .equ POP_IDX,POKE32_IDX+1
+    .equ PRT_IDX, POP_IDX+1 //  //  PRINT commande index 
+    .equ PUSH_IDX,PRT_IDX+1
+    .equ QKEY_IDX, PUSH_IDX+1 // 
     .equ READ_IDX, QKEY_IDX+1 // 
     .equ REM_IDX, READ_IDX+1  //  REMARK command index 
     .equ REST_IDX, REM_IDX+1 //  RESTORE
@@ -84,28 +87,21 @@
     .equ SIZE_IDX, SAVE_IDX+1 // 
     .equ SLEEP_IDX, SIZE_IDX+1 // 
     .equ SPC_IDX,SLEEP_IDX+1 //
-    .equ SPIRD_IDX, SPC_IDX+1 // 
-    .equ SPIEN_IDX, SPIRD_IDX+1 // 
-    .equ SPISEL_IDX, SPIEN_IDX+1 // 
-    .equ SPIWR_IDX, SPISEL_IDX+1 // 
-    .equ STEP_IDX, SPIWR_IDX+1 // 
+    .equ STEP_IDX, SPC_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
-    .equ TAB_IDX, STOP_IDX+1 //
+    .equ STORE_IDX,STOP_IDX+1
+    .equ TAB_IDX, STORE_IDX+1 //
     .equ THEN_IDX,TAB_IDX+1
     .equ TICKS_IDX, THEN_IDX+1 // 
     .equ TIMER_IDX, TICKS_IDX+1 // 
     .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
     .equ TO_IDX, TMROUT_IDX+1 // 
-    .equ TONE_IDX, TO_IDX+1 // 
-    .equ TRACE_IDX,TONE_IDX+1
+    .equ TRACE_IDX,TO_IDX+1
     .equ UBOUND_IDX, TRACE_IDX+1 // 
     .equ UFLASH_IDX, UBOUND_IDX+1 // 
     .equ UNTIL_IDX, UFLASH_IDX+1 // 
-    .equ USR_IDX, UNTIL_IDX+1 // 
-    .equ WAIT_IDX, USR_IDX+1 // 
+    .equ WAIT_IDX, UNTIL_IDX+1 // 
     .equ WORDS_IDX, WAIT_IDX+1 // 
     .equ WRITE_IDX, WORDS_IDX+1 // 
     .equ XOR_IDX, WRITE_IDX+1 //  
-    .equ XTRMT_IDX, XOR_IDX+1 // 
-    .equ XRCV_IDX, XTRMT_IDX+1 // 
     
