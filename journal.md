@@ -1,11 +1,18 @@
-A faire vérifier pour éviter doublon label
+#### 2021-02-25
+
+* nettoyage du code 
+
+* correction bogue dans **decompile_line**. 
+
+* changer limite no de ligne pour 65535.
+
 #### 2021-02-24
 
 * exemple utiliation du mot **CONST** 
 ```
 list
-10  CONST !C=2 *3 ,!D=2 *!C
-20  ? !C,!D
+10  CONST CA=2 *3 ,CB=2 *CA
+20  ? CA,CB
 30  END 
 READY
 run
@@ -16,9 +23,9 @@ READY
 * exemple utilisant les mots de gestion de la pile des arguments ainsi que les étiquettes. 
 ```
 list
-10  FOR I=1  TO 10  PUSH I GOSUB !SQUARE ?  POP , NEXT I
+10  FOR I=1  TO 10  PUSH I GOSUB SQUARE ?  POP , NEXT I
 20  END 
-30 !SQUARE STORE  PICK (2 )* PICK (2 ),2 : RETURN 
+30 SQUARE STORE  PICK (2 )* PICK (2 ),2 : RETURN 
 READY
 run
 1 4 9 16 25 36 49 64 81 100 

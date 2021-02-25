@@ -315,17 +315,18 @@ main_stack:
     target is line number | label  
 *********************************/
     _FUNC search_target
+    _CALL next_token 
+    cmp r0,TK_LBL 
+    bne 2f 
+    _CALL search_label
+    cbz r0,8f  
+    b 9f 
+2:  _UNGET_TOKEN
     _CALL expression 
     cmp r0,#TK_INTGR 
-    beq 2f 
-    _CALL next_token 
-    cmp r0,#TK_LBL 
     bne syntax_error 
-    _CALL search_label
-    cbz r0,8f
-    b 9f 
-2:  mov r0,r1 
     cbz r0,9f 
+    mov r0,r1 
     _CALL search_lineno 
     cbz r1,9f 
 8:  mov r0,#ERR_BAD_VALUE 
@@ -623,8 +624,22 @@ main_stack:
     ands r0,r0 
     beq store_r0  // reached end of text 
     add r3,#1
-    _CALL upper 
-    _CALL is_special
+    _CALL is_letter 
+    bne 1f
+    sub r3,#1 
+    _CALL parse_label
+    cmp r0,#TK_CMD
+    bne 0f 
+    cmp r1,#REM_IDX 
+    beq tick  
+0:  strb r0,[T2],#1
+    cmp r0,#TK_LBL 
+    beq 0f 
+    strb r1,[T2],#1
+    b token_exit 
+0:  str r1,[T2],#4
+    b token_exit 
+1:  _CALL is_special
     ldr r6,=token_ofs
     tbh [r6,r1] 
 tok_idx0:     
@@ -635,13 +650,6 @@ single:
     ldr r6,=tok_single
     ldrb r0,[r6,r1] 
     b store_r0
-label: 
-    _CALL parse_label
-    cbnz r0,1f
-    b syntax_error 
-1:  strb r0,[T2],#1
-    str r1,[T2],#4
-    b token_exit 
 lt:
     mov r0,#TK_LT
     ldrb r1,[T1,r3]
@@ -699,20 +707,13 @@ store_r0:
 try_number:
     sub r3,#1
     _CALL parse_int  
-    beq 1f 
+    beq syntax_error  
     strb r0,[T2],#1 
     str r1,[T2],#4
-    b token_exit 
-1:  _CALL parse_keyword 
-    cmp r0,#TK_VAR 
-    beq 2f 
-    cmp r1,#REM_IDX 
-    beq tick
-2:  strb r0,[T2],#1 
-    strb r1,[T2],#1
 token_exit:
     pop {r6}
     _RET 
+
 
 /****************************
     is_special  
@@ -742,11 +743,11 @@ token_exit:
     _RET 
 
 char_list:
-  .asciz " ,;@():#-+*/%=!<>\\?'\""
+  .asciz " ,;@():#-+*/%=<>\\?'\""
 
 tok_single:
   .byte TK_NONE,TK_COMMA,TK_SEMIC,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON
-  .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL,TK_LBL  
+  .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
   
   .p2align 2
 token_ofs:
@@ -755,7 +756,7 @@ token_ofs:
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
-  .hword  (single-tok_idx0)/2,(label-tok_idx0)/2     
+  .hword  (single-tok_idx0)/2    
   // '<','>'
   .hword  (lt-tok_idx0)/2,(gt-tok_idx0)/2
   // '\'
@@ -771,43 +772,73 @@ token_ofs:
 
 /****************************
     parse_label 
-    label form: ![A..Z]+
-    maximum 6 letters
+    label form: [A..Z]+
+    can be a keyword, a target
+    or constant name. 
     input:
       *buffer 
     output:
-      r0  TK_LBL 
-      r1  compressed label
+      T2  *label 
+      R3  updated
     use:
-      r2   compressed value
-      r3   updated 
-      r5   letter count maxim 6   
 ****************************/
     _FUNC parse_label
     push {r2,r5}
+    push {T2}
     eor r2,r2
     mov r5,#6 
 1:  ldrb r0,[T1,r3]
     _CALL is_letter 
-    bne 8f // not letter 
+    bne 2f // not letter 
     _CALL upper 
-    sub r0,#'@' 
-    lsl r2,#5 
-    add r2,r0 
+    strb r0,[T2],#1
     add r3,#1
-    subs r5,#1 
-    bne 1b
-2: // skip letters   
-    ldrb r0,[T1,r3]
-    _CALL is_letter 
-    bne 8f 
-    add r3,#1 
-    b 2b       
-8:  eor r0,r0 
-    mov r1,r2 
-    cbz r1,9f
-    mov r0,#TK_LBL 
+    b 1b 
+2:  eor r0,r0 
+    strb r0,[T2]
+// is this a variable ?
+    pop {T2}
+    ldrb r0,[T2,#1]
+    cbnz r0,3f // length >1 not variable 
+    ldrb r1,[T2]
+    sub r1,#'A' 
+    mov r0,#TK_VAR
+    b 9f 
+3:  // try keyword 
+    mov r0,T2 
+    ldr r1,=kword_dict  
+    _CALL search_dict 
+    cbnz r0,9f 
+// must be a label 
+    mov r0,T2 
+    _CALL compress_label
+    mov r0,#TK_LBL      
 9:  pop {r2,r5}
+    _RET 
+
+/********************************
+    compress_label 
+    compress label in integer 
+    maximum 6 character, 
+    ignore extras characters 
+    input:
+      r0  *label 
+    output:
+      r1   compressed label 
+********************************/
+    _FUNC compress_label
+    push {r2,r3}
+    eor r2,r2 // compress value
+    mov r3,#6 // max characters 
+1:  ldrb r1,[r0],#1 
+    cbz r1,2f 
+    sub r1,#'@'
+    lsl r2,#5
+    add r2,r1
+    subs r3,#1 
+    bne 1b 
+2:  mov r1,r2     
+    pop {r2,r3}
     _RET 
 
 
@@ -1061,54 +1092,6 @@ escaped: .asciz "abtnvfr"
     pop {r2,T1,T2}
     _RET 
 
-/*****************************************
-    parse_keyword 
-    parse work and ckeck if in dictionary 
-    input:
-      r0    first character 
-      r3    tib index 
-      t1    tib 
-      t2    pad 
-    output:
-      r3    updated 
-      t1    updated 
-      t2    updated   
-    use:
-    
-*****************************************/
-    _FUNC parse_keyword 
-    push {T2}
-    ldrb r0,[T1,r3]
-    add r3,#1
-    cbz r0,2f 
-    _CALL upper 
-    _CALL is_letter 
-    bne syntax_error 
-    strb r0,[T2],#1
-1:  ldrb r0,[T1,r3]
-    add r3,#1 
-    cbz r0,2f 
-    _CALL upper 
-    _CALL is_letter 
-    bne 2f 
-    strb r0,[T2],#1
-    b 1b 
-2:  sub r3,#1
-    eor r0,r0
-    strb r0,[T2] 
-    ldr r0,[sp]
-    ldrb r1,[r0,#1] 
-    cbnz r1,3f
-    ldrb r1,[r0]
-    sub r1,#'A'
-    mov r0,#TK_VAR
-    b 9f 
-3:  ldr r1,=kword_dict  
-    _CALL search_dict 
-    cbnz r0,9f 
-    b syntax_error 
-9:  pop {T2}
-    _RET 
 
 
 /*******************
@@ -1188,8 +1171,6 @@ decomp_loop:
     b decomp_loop 
 1:  cmp r0,#TK_LBL
     bne 1f
-    mov r0,#'!'
-    strb r0,[T1],#1 
     mov r2,#25
     mov r3,#0xffff 
     movt r3,#0x3fff 
