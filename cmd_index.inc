@@ -56,8 +56,7 @@
     .equ LET_IDX, KEY_IDX+1 // 
     .equ LIST_IDX, LET_IDX+1 // 
     .equ LOAD_IDX, LIST_IDX+1 // 
-    .equ LOG2_IDX, LOAD_IDX+1 // 
-    .equ LSHIFT_IDX, LOG2_IDX+1 // 
+    .equ LSHIFT_IDX, LOAD_IDX+1 // 
     .equ NEW_IDX, LSHIFT_IDX+1 // 
     .equ NEXT_IDX, NEW_IDX+1 // 
     .equ NOT_IDX, NEXT_IDX+1 // 

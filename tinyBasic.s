@@ -552,9 +552,11 @@ main_stack:
 // this is a line number     
     cmp r1,#1 
     bpl 1f 
-    mov r0,#ERR_BAD_VALUE 
+0:  mov r0,#ERR_BAD_VALUE 
     b tb_error  
-1:  // write line # to pad 
+1:  cmp r1,#65536
+    bpl 0b 
+    // write line # to pad 
     strh r1,[T2,#-3]
     str r3,[UPP,#IN_SAVED]
 2:  // check for pad full 
@@ -620,7 +622,7 @@ main_stack:
     ldrb r0,[T1,r3]
     ands r0,r0 
     beq store_r0  // reached end of text 
-    add r3,#1 
+    add r3,#1
     _CALL upper 
     _CALL is_special
     ldr r6,=token_ofs
@@ -786,8 +788,8 @@ token_ofs:
     eor r2,r2
     mov r5,#6 
 1:  ldrb r0,[T1,r3]
-    _CALL is_alpha 
-    beq 8f // not letter 
+    _CALL is_letter 
+    bne 8f // not letter 
     _CALL upper 
     sub r0,#'@' 
     lsl r2,#5 
@@ -797,8 +799,8 @@ token_ofs:
     bne 1b
 2: // skip letters   
     ldrb r0,[T1,r3]
-    _CALL is_alpha 
-    beq 8f 
+    _CALL is_letter 
+    bne 8f 
     add r3,#1 
     b 2b       
 8:  eor r0,r0 
@@ -951,17 +953,17 @@ escaped: .asciz "abtnvfr"
    input:
       r0    char 
    output:
-      r0    if !Z then converted digit 
-      Z     BNE true | BEQ false  
+      r0        if Z then converted digit else not changed
+      Z flag    1 true | 0 false  
 ***************************************/
     _GBL_FUNC is_digit 
     push {r1} 
-    eor r1,r1 
+    mov r1,#-1   
     cmp r0,#'0' 
     blt 9f
     cmp r0,'9'+1
     bpl 9f 
-    mov r1,#-1
+    eor r1,r1 
     sub r0,#'0'  
 9:   
     ands r1,r1
@@ -975,12 +977,12 @@ escaped: .asciz "abtnvfr"
     input:
       r0    
     output:
-      r0     if !Z then converted digit 
-      Z      BNE true | BEQ false         
+      r0         if Z then converted digit 
+      Z  flag    1 true | 0 false         
 ***************************************/
     _FUNC is_hex 
     push {r1}
-    mov r1,#-1 
+    eor r0,r0 
     cmp r0,#'A' 
     bmi 1f 
     sub r0,#7 
@@ -988,45 +990,23 @@ escaped: .asciz "abtnvfr"
     bmi 2f 
     cmp r0,#16
     bmi 9f 
-2:  eor r1,r1  
+2:  mvn r1,r1  
 9:  ands r1,r1 
     pop {r1}
     _RET 
 
 /***************************************
-    is_bit 
-    check if char is '0'|'1' 
-    convert to binary digit. 
-    input:
-      r0    
-    output:
-      r0     if !Z then converted digit 
-      Z      BNE true | BEQ false         
-***************************************/
-    _FUNC is_bit
-    push  {r1}
-    mov r1,#-1 
-    sub r0,#'0' 
-    bmi 2f 
-    cmp r1,#2
-    bmi 9f 
-2:  eor r1,r1 
-9:  ands r1,r1 
-    pop {r1}
-    _RET 
-
-/***************************************
-    is_alpha 
+    is_letter 
     check if character is {a..z,A..Z} 
   input:
     r0   character 
   output: 
-    r0    same character 
-    Z    BNE true | BEQ false  
+    r0       same character 
+    Z flag   1 true | 0 false  
 ****************************************/
-    _FUNC is_alpha
+    _FUNC is_letter
     push {r1} 
-    mov r1,#-1
+    eor r1,r1 
     cmp r0,#'A' 
     bmi 8f 
     cmp r0,#'Z'+1 
@@ -1035,46 +1015,11 @@ escaped: .asciz "abtnvfr"
     bmi 8f 
     cmp r0,#'z'+1
     bmi 9f  
-8:  eor r1,r1  
+8:  mvn r1,r1  
 9:  ands r1,r1 
     pop {r1}
     _RET 
 
-/***************************************
-    is_num 
-    check if character is {0..9} 
-  input:
-    r0   character 
-  output: 
-    r0    same character 
-    Z    BNE true | BEQ false  
-****************************************/
-    _FUNC is_num 
-    push {r1} 
-    mov r1,#-1 
-    cmp r0,#'0' 
-    blt 8f 
-    cmp r0,#'9'+1 
-    bmi 9f 
-8:  eor r1,r1  
-9:  ands r1,r1 
-    pop {r1}
-    _RET 
-
-/*****************************************
-    is_alnum 
-    check if character is alphanumeric 
-    input:
-      r0 
-    output:
-      r0     same 
-      Z      BEQ false | BNE true 
-*****************************************/
-    _FUNC is_alnum 
-    _CALL is_alpha 
-    bne 9f 
-    _CALL is_num 
-9:  _RET 
 
 /******************************************
     atoi 
@@ -1137,15 +1082,15 @@ escaped: .asciz "abtnvfr"
     add r3,#1
     cbz r0,2f 
     _CALL upper 
-    _CALL is_alpha 
-    beq syntax_error 
+    _CALL is_letter 
+    bne syntax_error 
     strb r0,[T2],#1
 1:  ldrb r0,[T1,r3]
     add r3,#1 
     cbz r0,2f 
     _CALL upper 
-    _CALL is_alnum
-    beq 2f 
+    _CALL is_letter 
+    bne 2f 
     strb r0,[T2],#1
     b 1b 
 2:  sub r3,#1
@@ -1303,8 +1248,9 @@ decomp_loop:
     add r0,BPTR,IN
     mov r1,T1   
     _CALL strcpy
-    eor r0,r0 
-    strb r0,[T1]  
+    mov r0,T1 
+    _CALL strlen
+    add T1,r0
     ldr IN,[UPP,#COUNT]
     b 9f 
 1:  _CALL cmd_name
@@ -2390,7 +2336,6 @@ kword_end:
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
   _dict_entry TK_IFUNC,LSHIFT,LSHIFT_IDX //lshift
-  _dict_entry TK_IFUNC,LOG2,LOG2_IDX //log2 
   _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
   _dict_entry TK_CMD,LIST,LIST_IDX //list
   _dict_entry TK_CMD,LET,LET_IDX //let 
@@ -2443,7 +2388,7 @@ fn_table:
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,flash,for,forget,gosub,goto 
 	.word hex_base,if,inp,input_var,invert,key
-	.word let,list,load,log2,lshift,new,next
+	.word let,list,load,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word pick,poke8,poke16,poke32,fn_pop,print,cmd_push 
 	.word qkey,read,skip_line
@@ -3133,9 +3078,9 @@ target:
     ldrb r1,[r0]
     push {r0}
     mov r0,r1
-    _CALL is_alpha 
+    _CALL is_letter 
     pop {r0}
-    beq 3f 
+    bne 3f 
     and r1,#0x5f // uppercase  
     b 6f 
 3:  cmp r1,#'$'
@@ -3246,7 +3191,7 @@ let_array:
     ldr T1,[UPP,#TXTBGN]
     ldr T2,[UPP,#TXTEND]
     ldrh r2,[T1]
-    mov r3,#32768
+    mov r3,#65535 
     _CALL next_token 
     cbz r0,6f 
     cmp r0,#TK_INTGR

@@ -1,3 +1,4 @@
+A faire vérifier pour éviter doublon label
 #### 2021-02-24
 
 * exemple utiliation du mot **CONST** 

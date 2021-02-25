@@ -1650,7 +1650,7 @@ ARM GAS  terminal.s 			page 1
  852 06a2 00B5FFF7 	    _CALL is_digit 
  852      FEFF5DF8 
  852      04EB
- 853 06ac 03D0     	    beq 9f 
+ 853 06ac 03D1     	    bne 9f 
  854 06ae 09FB08F8 	    mul T1,T2 
  855 06b2 8044     	    add T1,r0 
  856 06b4 F0E7     	    b 1b

@@ -850,7 +850,7 @@ readln_exit:
     mov T2,#10 
 1:  _CALL uart_getc
     _CALL is_digit 
-    beq 9f 
+    bne 9f 
     mul T1,T2 
     add T1,r0 
     b 1b
