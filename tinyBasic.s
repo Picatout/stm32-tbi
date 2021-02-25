@@ -246,7 +246,7 @@ data_stack:
 ***********************************/
     _FUNC show_main_stack
     stmdb DP!,{r0,r1,T1,T2}
-    ldr r0,=main_stack 
+    ldr r0,main_stack 
     _CALL uart_puts 
     _MOV32 T2,RSTACK_TOP
     add T1,sp,#4
@@ -259,7 +259,9 @@ data_stack:
 9:  _CALL cr 
     ldmia DP!,{r0,r1,T1,T2}     
     _RET  
-main_stack: .asciz "rstack: " 
+main_stack:
+   .word .+4 
+   .asciz "rstack: " 
 
 /************************************
     show execution trace 
@@ -305,6 +307,98 @@ main_stack: .asciz "rstack: "
     mov r0,r2 
     pop {r2}
     _RET 
+
+
+/*********************************
+    search_target 
+    search for goto, gosub target
+    target is line number | label  
+*********************************/
+    _FUNC search_target
+    _CALL expression 
+    cmp r0,#TK_INTGR 
+    beq 2f 
+    _CALL next_token 
+    cmp r0,#TK_LBL 
+    bne syntax_error 
+    _CALL search_label
+    cbz r0,8f
+    b 9f 
+2:  mov r0,r1 
+    cbz r0,9f 
+    _CALL search_lineno 
+    cbz r1,9f 
+8:  mov r0,#ERR_BAD_VALUE 
+    b tb_error 
+9:  _RET 
+
+
+/***************************************
+  search_const 
+  search for constant 
+  input:
+    r0  constant label 
+  output:
+    r0  constant value  
+  use:
+    r1  temp 
+    T1   *list 
+    T2   BOUND 
+***************************************/
+    _FUNC search_const
+    push {r1,T1,T2} 
+    ldr T1,[UPP,#TXTEND]
+    ldr T2,[UPP,#HERE] 
+1:  cmp T1,T2 
+    bpl 8f 
+    ldr r1,[T1],#4
+    cmp r0,r1 
+    beq 2f 
+    add T1,#4
+    b 1b 
+2:  // found 
+    ldr r0,[T1]
+    pop {r1,T1,T2}
+    _RET
+8:  // that constant doesn't exist 
+    mov r0,#ERR_BAD_VALUE 
+    b tb_error      
+
+
+/***************************************
+    search_label 
+    search target label 
+    input:
+      r1    target label 
+    output:
+      r0    address or 0 
+    use:
+      r2    line address link 
+      r3    search limit 
+****************************************/
+    _FUNC search_label 
+    push {r2,r3}
+    ldr r2,[UPP,#TXTBGN]
+    ldr r3,[UPP,#TXTEND]
+1:  cmp r2,r3
+    beq 8f 
+    ldrb r0,[r2,#3]
+    cmp  r0,#TK_LBL 
+    beq 4f 
+2:  ldrb r0,[r2,#2]
+    add r2,r0 
+    b 1b 
+4:  // compare label 
+    ldr r0,[R2,#4]
+    cmp r1,r0 
+    bne 2b 
+    // found label 
+    mov r0,r2 
+    b 9f
+8:  eor r0,r0 
+9:  pop {r2,r3}
+    _RET 
+
 
 /***************************************
     search_lineno 
@@ -538,7 +632,14 @@ tok_idx0:
 single: 
     ldr r6,=tok_single
     ldrb r0,[r6,r1] 
-    b store_r0  
+    b store_r0
+label: 
+    _CALL parse_label
+    cbnz r0,1f
+    b syntax_error 
+1:  strb r0,[T2],#1
+    str r1,[T2],#4
+    b token_exit 
 lt:
     mov r0,#TK_LT
     ldrb r1,[T1,r3]
@@ -639,11 +740,11 @@ token_exit:
     _RET 
 
 char_list:
-  .asciz " ,;@():#-+*/%=<>\\?'\""
+  .asciz " ,;@():#-+*/%=!<>\\?'\""
 
 tok_single:
   .byte TK_NONE,TK_COMMA,TK_SEMIC,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON
-  .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
+  .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL,TK_LBL  
   
   .p2align 2
 token_ofs:
@@ -652,7 +753,7 @@ token_ofs:
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
   .hword  (single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2,(single-tok_idx0)/2
-  .hword  (single-tok_idx0)/2     
+  .hword  (single-tok_idx0)/2,(label-tok_idx0)/2     
   // '<','>'
   .hword  (lt-tok_idx0)/2,(gt-tok_idx0)/2
   // '\'
@@ -665,6 +766,48 @@ token_ofs:
   .hword (quote-tok_idx0)/2
 
   .p2align 2
+
+/****************************
+    parse_label 
+    label form: ![A..Z]+
+    maximum 6 letters
+    input:
+      *buffer 
+    output:
+      r0  TK_LBL 
+      r1  compressed label
+    use:
+      r2   compressed value
+      r3   updated 
+      r5   letter count maxim 6   
+****************************/
+    _FUNC parse_label
+    push {r2,r5}
+    eor r2,r2
+    mov r5,#6 
+1:  ldrb r0,[T1,r3]
+    _CALL is_alpha 
+    beq 8f // not letter 
+    _CALL upper 
+    sub r0,#'@' 
+    lsl r2,#5 
+    add r2,r0 
+    add r3,#1
+    subs r5,#1 
+    bne 1b
+2: // skip letters   
+    ldrb r0,[T1,r3]
+    _CALL is_alpha 
+    beq 8f 
+    add r3,#1 
+    b 2b       
+8:  eor r0,r0 
+    mov r1,r2 
+    cbz r1,9f
+    mov r0,#TK_LBL 
+9:  pop {r2,r5}
+    _RET 
+
 
 /****************************
     parse_int 
@@ -809,7 +952,7 @@ escaped: .asciz "abtnvfr"
       r0    char 
    output:
       r0    if !Z then converted digit 
-      Z     0 true | 1 false  
+      Z     BNE true | BEQ false  
 ***************************************/
     _GBL_FUNC is_digit 
     push {r1} 
@@ -833,7 +976,7 @@ escaped: .asciz "abtnvfr"
       r0    
     output:
       r0     if !Z then converted digit 
-      Z      0 true | 1 false         
+      Z      BNE true | BEQ false         
 ***************************************/
     _FUNC is_hex 
     push {r1}
@@ -858,7 +1001,7 @@ escaped: .asciz "abtnvfr"
       r0    
     output:
       r0     if !Z then converted digit 
-      Z      0 true | 1 false         
+      Z      BNE true | BEQ false         
 ***************************************/
     _FUNC is_bit
     push  {r1}
@@ -879,7 +1022,7 @@ escaped: .asciz "abtnvfr"
     r0   character 
   output: 
     r0    same character 
-    Z    0 true | 1 false  
+    Z    BNE true | BEQ false  
 ****************************************/
     _FUNC is_alpha
     push {r1} 
@@ -904,7 +1047,7 @@ escaped: .asciz "abtnvfr"
     r0   character 
   output: 
     r0    same character 
-    Z    0 true | 1 false  
+    Z    BNE true | BEQ false  
 ****************************************/
     _FUNC is_num 
     push {r1} 
@@ -925,7 +1068,7 @@ escaped: .asciz "abtnvfr"
       r0 
     output:
       r0     same 
-      Z      1 false | 0 true 
+      Z      BEQ false | BNE true 
 *****************************************/
     _FUNC is_alnum 
     _CALL is_alpha 
@@ -1066,7 +1209,7 @@ escaped: .asciz "abtnvfr"
     IN  offset in token list  
 ******************************/
     _GBL_FUNC decompile_line
-    push {r1,T1} 
+    push {r1,r2,r3,T1} 
     mov BPTR,r0 
     mov IN,#0
     mov T1,r1 
@@ -1098,6 +1241,22 @@ decomp_loop:
     _CALL strlen
     add T1,r0 
     b decomp_loop 
+1:  cmp r0,#TK_LBL
+    bne 1f
+    mov r0,#'!'
+    strb r0,[T1],#1 
+    mov r2,#25
+    mov r3,#0xffff 
+    movt r3,#0x3fff 
+0:  and r1,r3 
+    lsr r3,#5 
+    lsrs r0,r1,r2 
+    beq 2f
+    add r0,#'@'
+    strb r0,[T1],#1
+2:  subs r2,#5 
+    bge 0b 
+    b decomp_loop
 1:  cmp r0,#TK_VAR 
     bne 2f 
     add r0,r1,'A'
@@ -1179,7 +1338,7 @@ decomp_loop:
     b 2b 
 9:  eor r0,r0 
     strb r0,[T1]
-    pop {r1,T1}
+    pop {r1,r2,r3,T1}
     mov r0,r1 
     _RET 
 
@@ -1631,6 +1790,8 @@ interpreter:
   _CALL next_token 
   cmp r0,#TK_NONE 
   beq interpreter    
+  cmp r0,#TK_LBL 
+  beq interpreter 
   cmp r0,#TK_CMD 
   bne 2f
   mov r0,r1 
@@ -1702,7 +1863,7 @@ next_line:
     ldrb r0,[BPTR,IN] // token attribute
     add IN,#1  
     mov T1,r0 
-    and r0,#0x3f // limit mask 
+    and r0,#0x7f // limit mask 
     ldr r1,=tok_jmp 
     tbb [r1,r0]
 1: // pc reference point 
@@ -1747,6 +1908,7 @@ tok_jmp: // token id  tbb offset
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x2b..0x30 
   .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x31..0x36  TK_GT..TK_LE    
   .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x37..0x3f
+  .byte (4b-1b)/2 //0x40 TK_LBL 
 
   .p2align 2 
 
@@ -1887,7 +2049,13 @@ tok_jmp: // token id  tbb offset
 5:  mov r0,r1  
     _CALL execute
     b 8f 
-6:  _UNGET_TOKEN      
+6:  cmp r0,#TK_LBL
+    bne 7f 
+    orr r0,r1,#(1<<31) 
+    _CALL search_const
+    mov r1,r0 
+    b 8f 
+7:  _UNGET_TOKEN      
     mov r0,#TK_NONE
     b 9f  
 8:  mul r1,T1 
@@ -2246,6 +2414,7 @@ kword_end:
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
   _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
   _dict_entry TK_CMD,DATA,DATA_IDX //data  
+  _dict_entry TK_CMD,CONST,CONST_IDX // const 
   _dict_entry TK_CFUNC,CHAR,CHAR_IDX //char
   _dict_entry TK_CMD,BTOGL,BTOGL_IDX //bit_toggle
   _dict_entry TK_IFUNC,BTEST,BTEST_IDX //bit_test 
@@ -2270,7 +2439,7 @@ kword_dict: // first name field
   .type fn_table, %object
 fn_table:
 	.word abs,bit_and,ascii,awu,bitmask 
-	.word bit_reset,bit_set,bit_test,bit_toggle,char  
+	.word bit_reset,bit_set,bit_test,bit_toggle,char,const   
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,flash,for,forget,gosub,goto 
 	.word hex_base,if,inp,input_var,invert,key
@@ -2522,6 +2691,44 @@ fn_table:
     and r1,#127 
     mov r0,#TK_CHAR
     _RET 
+
+/**********************************
+  BASIC: CONST !label=expr [,!label=expr]
+  define constants constants are 
+  store at end of BASIC code.
+  use:
+    T1   *location 
+    T2   *bound 
+*********************************/
+    _FUNC const
+    _RTO 
+    ldr T1,[UPP,#HERE]
+    ldr T2,pad_adr  
+1:  cmp T1,T2 
+    bmi 2f 
+    mov r0,#ERR_MEM_FULL 
+    b tb_error 
+2:  _CALL next_token 
+    cmp r0,#TK_LBL 
+    bne syntax_error 
+    orr r1,#(1<<31) // this label identify a constant 
+    _PUSH r1 
+    mov r0,#TK_EQUAL
+    _CALL expect
+    _CALL expression  
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    _POP r0 
+    str r0,[T1],#4
+    str r1,[T1],#4 
+    str T1,[UPP,#HERE]
+    _CALL next_token
+    cmp r0,#TK_COMMA 
+    beq 1b 
+    _UNGET_TOKEN
+9:  
+    _RET 
+
 
 /**************************
   BASIC: DATALN expr 
@@ -2826,20 +3033,15 @@ user_space: .word user
     _CALL show_trace 
     _RET 
 
+
 /*********************************
   BASIC: GOSUB expr 
   call a subroutine at line# 
 *********************************/
     _FUNC gosub
-    _CALL expression
-    cmp r0,#TK_INTGR 
-    bne syntax_error 
-    mov r0,r1 
-    _CALL search_lineno  
-    cbz r1,1f 
-    mov r0,#ERR_BAD_VALUE 
-    b tb_error 
-1:  stmdb DP!,{IN,BPTR}
+    _CALL search_target 
+    stmdb DP!,{IN,BPTR}
+target:
     mov BPTR,r0 
     mov IN,#3 
     ldrb r0,[BPTR,#2]
@@ -2860,26 +3062,12 @@ user_space: .word user
 
 /**********************************
   BASIC: GOTO expr 
-  go to line # 
-  use:
-
+  go to line # | label 
 **********************************/
     _FUNC goto
-    _CALL expression 
-    cmp r0,#TK_INTGR 
-    bne syntax_error 
-    cbz r1,9f 
-1:  mov r0,r1 
-    _CALL search_lineno 
-    cbz r1,2f 
-    mov r0,#ERR_NO_LINE 
-    b tb_error 
-2:  mov BPTR,r0
-    ldrb r0,[BPTR,#2]
-    str r0,[UPP,#COUNT]
-9:  mov IN,#3
-    _CALL show_trace 
-    _RET 
+    _CALL search_target 
+    b target  
+
 
 /***************************************
   BASIC: HEX 
@@ -3518,6 +3706,7 @@ print_exit:
     _CLO 
     ldr r0,[UPP,#TXTBGN]
     ldr r1,[UPP,#TXTEND]
+    str r1,[UPP,#HERE]
     cmp r0,r1
     beq 9f
     ldr r1,[UPP,#FLAGS]
@@ -3534,6 +3723,7 @@ print_exit:
     str r1,[UPP,#COUNT]
     mov BPTR,r0 
     mov IN,#3
+    ldr r0,[UPP,#TXTEND]
     // reset dataline pointers 
     eor r0,r0 
     str r0,[UPP,#DATAPTR]

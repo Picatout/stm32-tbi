@@ -66,7 +66,8 @@
   .equ TK_MULT,0x20    // multiplication operator '*'
   .equ TK_DIV,0x21     // division operator '/'
   .equ TK_MOD,0x22     // modulo operator '%'
-
+  .equ TK_LBL,0x40     // label token 
+  
 // don't change these token values 
 // values chosen to be used as a mask.
 // bit 7   1 for dictionary words else 0 

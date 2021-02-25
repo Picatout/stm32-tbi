@@ -32,7 +32,8 @@
     .equ BTEST_IDX,BSET_IDX+1 // 
     .equ BTOGL_IDX,BTEST_IDX+1 // 
     .equ CHAR_IDX,BTOGL_IDX+1 // 
-    .equ DATA_IDX,CHAR_IDX+1 // 
+    .equ CONST_IDX,CHAR_IDX+1 //
+    .equ DATA_IDX,CONST_IDX+1 // 
     .equ DATALN_IDX,DATA_IDX+1 // 
     .equ DEC_IDX,DATALN_IDX+1 // 
     .equ DIR_IDX,DEC_IDX+1 // 

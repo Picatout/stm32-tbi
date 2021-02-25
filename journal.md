@@ -1,3 +1,33 @@
+#### 2021-02-24
+
+* exemple utiliation du mot **CONST** 
+```
+list
+10  CONST !C=2 *3 ,!D=2 *!C
+20  ? !C,!D
+30  END 
+READY
+run
+6 12 
+READY
+```
+
+* exemple utilisant les mots de gestion de la pile des arguments ainsi que les étiquettes. 
+```
+list
+10  FOR I=1  TO 10  PUSH I GOSUB !SQUARE ?  POP , NEXT I
+20  END 
+30 !SQUARE STORE  PICK (2 )* PICK (2 ),2 : RETURN 
+READY
+run
+1 4 9 16 25 36 49 64 81 100 
+READY
+```
+
+* **TK_LBL**  Les étiquettes cibles pour les **GOTO** et **GOSUB** débute par le caractère **!** suivit d'un maximum de 6 lettres.
+
+* Ajout de **CONST** et d'étiquettes cibles.
+
 #### 2021-02-23
 
 * Ajout de la variable système **HERE** dans le but d'ajouter le mot BASIC **CONST**. Le système va permettre de créer des constantes symboliques dans l'espace libre après le code BASIC.
