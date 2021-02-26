@@ -1,0 +1,2 @@
+#!/bin/bash 
+sendFile/SendFile -s/dev/ttyS0 tb_progs/$1

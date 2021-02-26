@@ -338,12 +338,12 @@ pad: .word _pad
 //      r0 
 //-------------------------- 
     _FUNC send_escape
-	push {r0}
+	  push {r0}
     mov r0,#ESC 
-	_CALL  uart_putc 
-	mov r0,#'['
-	_CALL  uart_putc 
-	pop {r0}
+	  _CALL  uart_putc 
+	  mov r0,#'['
+	  _CALL  uart_putc 
+	  pop {r0}
     _RET 
 
 
@@ -360,10 +360,11 @@ pad: .word _pad
  output:
    none 
  use:
+    r1   conversion 
     T1   digit counter 
 ***************************/
     _FUNC send_parameter
-    push {T1}
+    push {r1,T1}
     mov T1,#0
 1:  mov r1,#10  
     _CALL digit 
@@ -376,7 +377,7 @@ pad: .word _pad
     _CALL uart_putc  
     subs T1,#1
     bne 2b 
-	pop {T1}
+	pop {r1,T1}
     _RET 
 
 /**********************************
@@ -894,6 +895,24 @@ readln_exit:
     _RET 
 
 /***********************************
+    set_curpos y,x 
+    set terminal cursor position
+    input:
+      r0  y 
+      r1  x 
+**********************************/
+    _GBL_FUNC set_curpos 
+    _CALL send_escape
+    _CALL send_parameter
+    mov r0,#';'
+    _CALL uart_putc 
+    mov r0,r1 
+    _CALL send_parameter 
+    mov r0,#'H' 
+    _CALL uart_putc     
+    _RET 
+
+/***********************************
     tabulation 
     set cursor column to next 
     tabulation stop    
@@ -926,3 +945,15 @@ readln_exit:
     mov r0,#CR 
     _CALL uart_putc 
     _RET
+
+/********************************
+    clear_screen
+********************************/
+    _GBL_FUNC clear_screen 
+    mov r0,#1 
+    mov r1,#1
+    _CALL set_curpos
+    _CALL send_escape 
+    mov r0,#'J' 
+    _CALL uart_putc 
+    _RET 

@@ -31,13 +31,6 @@
 .equ EOF,0xff // end of file marker 
 
 //--------------------------------------
-//   constantes related to Arduino 
-//   API mapping 
-//-------------------------------------
-  .equ INP,0
-  .equ OUTP,1 
-
-//--------------------------------------
 //       token attribute
 //--------------------------------------
 // bits 4:5 identify token group 
@@ -214,13 +207,7 @@
 
 /********************************
     dictionary structure
-------------------------------
- format:
-   link:    
-   name_length+flags:  1 byte, bits 0:4 lenght,5:8 flags  
-   cmd_name: 31 characters max 
-   cmd_index: 2 bytes 
-**********************************/
+*********************************/
 	.macro _dict_entry tok_type,name,cmd_idx 
   .word LINK 
   .word \cmd_idx 

@@ -32,7 +32,8 @@
     .equ BTEST_IDX,BSET_IDX+1 // 
     .equ BTOGL_IDX,BTEST_IDX+1 // 
     .equ CHAR_IDX,BTOGL_IDX+1 // 
-    .equ CONST_IDX,CHAR_IDX+1 //
+    .equ CLS_IDX,CHAR_IDX+1 //
+    .equ CONST_IDX,CLS_IDX+1 //
     .equ DATA_IDX,CONST_IDX+1 // 
     .equ DATALN_IDX,DATA_IDX+1 // 
     .equ DEC_IDX,DATALN_IDX+1 // 
@@ -45,18 +46,23 @@
     .equ FLASH_IDX,ERASE_IDX+1
     .equ FOR_IDX, FLASH_IDX+1 // 
     .equ FORGET_IDX, FOR_IDX+1 // 
-    .equ GOSUB_IDX, FORGET_IDX+1 // 
-    .equ GOTO_IDX, GOSUB_IDX+1
-    .equ HEX_IDX, GOTO_IDX+1 // 
+    .equ GET_IDX,FORGET_IDX+1
+    .equ GOSUB_IDX, GET_IDX+1 // 
+    .equ GOTO_IDX, GOSUB_IDX+1 //
+    .equ GPIOA_IDX,GOTO_IDX+1 //
+    .equ GPIOB_IDX,GPIOA_IDX+1 // 
+    .equ GPIOC_IDX,GPIOB_IDX+1 //
+    .equ HEX_IDX, GPIOC_IDX+1 // 
     .equ IF_IDX, HEX_IDX+1 // 
-    .equ INP_IDX,IF_IDX+1
-    .equ INPUT_IDX, INP_IDX+1 // 
+    .equ IN_IDX,IF_IDX+1
+    .equ INPUT_IDX, IN_IDX+1 // 
     .equ INVERT_IDX, INPUT_IDX+1 // 
     .equ KEY_IDX, INVERT_IDX+1 // 
     .equ LET_IDX, KEY_IDX+1 // 
     .equ LIST_IDX, LET_IDX+1 // 
     .equ LOAD_IDX, LIST_IDX+1 // 
-    .equ LSHIFT_IDX, LOAD_IDX+1 // 
+    .equ LOCATE_IDX,LOAD_IDX+1 //
+    .equ LSHIFT_IDX, LOCATE_IDX+1 // 
     .equ NEW_IDX, LSHIFT_IDX+1 // 
     .equ NEXT_IDX, NEW_IDX+1 // 
     .equ NOT_IDX, NEXT_IDX+1 // 
@@ -68,14 +74,14 @@
     .equ PEEK8_IDX, PMODE_IDX+1 //
     .equ PEEK16_IDX,  PEEK8_IDX+1
     .equ PEEK32_IDX, PEEK16_IDX+1
-    .equ PICK_IDX,PEEK32_IDX+1
-    .equ POKE8_IDX, PICK_IDX+1 // 
+    .equ POKE8_IDX, PEEK32_IDX+1 // 
     .equ POKE16_IDX,POKE8_IDX+1 
     .equ POKE32_IDX,POKE16_IDX+1
     .equ POP_IDX,POKE32_IDX+1
     .equ PRT_IDX, POP_IDX+1 //  //  PRINT commande index 
     .equ PUSH_IDX,PRT_IDX+1
-    .equ QKEY_IDX, PUSH_IDX+1 // 
+    .equ PUT_IDX,PUSH_IDX+1
+    .equ QKEY_IDX, PUT_IDX+1 // 
     .equ READ_IDX, QKEY_IDX+1 // 
     .equ REM_IDX, READ_IDX+1  //  REMARK command index 
     .equ REST_IDX, REM_IDX+1 //  RESTORE
@@ -89,8 +95,7 @@
     .equ SPC_IDX,SLEEP_IDX+1 //
     .equ STEP_IDX, SPC_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
-    .equ STORE_IDX,STOP_IDX+1
-    .equ TAB_IDX, STORE_IDX+1 //
+    .equ TAB_IDX, STOP_IDX+1 //
     .equ THEN_IDX,TAB_IDX+1
     .equ TICKS_IDX, THEN_IDX+1 // 
     .equ TIMER_IDX, TICKS_IDX+1 // 

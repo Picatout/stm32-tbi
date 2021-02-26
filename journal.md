@@ -1,6 +1,16 @@
 #### 2021-02-25
 
-* nettoyage du code 
+* Ajout de **GPIOA**,**GPIOB**,**GPIOC**
+
+* Renommé **INP** à **IN** 
+
+* Ajout de **CLS** et **LOCATE** 
+
+* Racourci **REMARK** à **REM**.
+
+* Renommé  **PICK** **GET** et **STORE** **PUT** 
+
+* nettoyage du code. 
 
 * correction bogue dans **decompile_line**. 
 
@@ -10,12 +20,12 @@
 
 * exemple utiliation du mot **CONST** 
 ```
-list
+LIST
 10  CONST CA=2 *3 ,CB=2 *CA
 20  ? CA,CB
 30  END 
 READY
-run
+RUN
 6 12 
 READY
 ```
@@ -25,7 +35,7 @@ READY
 list
 10  FOR I=1  TO 10  PUSH I GOSUB SQUARE ?  POP , NEXT I
 20  END 
-30 SQUARE STORE  PICK (2 )* PICK (2 ),2 : RETURN 
+30 SQUARE PUT  GET (2 )* GET (2 ),2  RETURN 
 READY
 run
 1 4 9 16 25 36 49 64 81 100 

@@ -1214,18 +1214,26 @@ decomp_loop:
     bmi 5f 
     cmp r0,#TK_INTGR 
     bpl 5f
+    lsl r3,r0,#16  // TK_CMD|TK_IFUNC|TK_CFUNC|TK_CONST
     mov r0,#SPACE 
     strb r0,[T1],#1  
     mov r0,r1
-    cmp r0,#PRT_IDX 
-    bne 1f  
-    mov r0,#'?'
+    orr r3,r1 // _IDX  
+    _CALL cmd_name
+2:  push {r0}
+    mov r1,T1 
+    _CALL strcpy 
+    pop {r0}
+    _CALL strlen 
+    add T1,r0
+    lsr r0,r3,#16
+    cmp r0,#TK_IFUNC
+    beq 2f
+    mov r0,#SPACE 
     strb r0,[T1],#1 
-    b 3f 
-1:  cmp r0,#REM_IDX
-    bne 1f
-    mov r0,#'\''
-    strb r0,[T1],#1 
+2:  and r0,r3,#0xFF 
+    cmp r0,#REM_IDX
+    bne decomp_loop 
     add r0,BPTR,IN
     mov r1,T1   
     _CALL strcpy
@@ -1234,13 +1242,6 @@ decomp_loop:
     add T1,r0
     ldr IN,[UPP,#COUNT]
     b 9f 
-1:  _CALL cmd_name
-2:  push {r0}
-    mov r1,T1 
-    _CALL strcpy 
-    pop {r0}
-    _CALL strlen 
-    add T1,r0 
 3:  mov r0,#SPACE 
     strb r0,[T1],#1 
     b decomp_loop
@@ -2283,7 +2284,6 @@ kword_end:
   _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
   _dict_entry TK_CMD,THEN,THEN_IDX // then 
   _dict_entry TK_CMD,TAB,TAB_IDX //tab 
-  _dict_entry TK_CMD,STORE,STORE_IDX // store 
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
@@ -2295,9 +2295,10 @@ kword_end:
   _dict_entry TK_IFUNC,RND,RND_IDX //random 
   _dict_entry TK_CMD,RETURN,RET_IDX //return 
   _dict_entry TK_CMD,RESTORE,REST_IDX //restore 
-  _dict_entry TK_CMD,REMARK,REM_IDX //remark 
+  _dict_entry TK_CMD,REM,REM_IDX //remark 
   _dict_entry TK_IFUNC,READ,READ_IDX //read  
   _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey 
+  _dict_entry TK_CMD,PUT,PUT_IDX // put 
   _dict_entry TK_CMD,PUSH,PUSH_IDX //cmd_push  
   _dict_entry TK_CMD,PRINT,PRT_IDX //print 
   _dict_entry TK_IFUNC,POP,POP_IDX // fn_pop 
@@ -2305,7 +2306,6 @@ kword_end:
   _dict_entry TK_CMD,POKE32,POKE32_IDX //poke32
   _dict_entry TK_CMD,POKE16,POKE16_IDX // poke16
   _dict_entry TK_CMD,PMODE,PMODE_IDX // pin_mode 
-  _dict_entry TK_IFUNC,PICK,PICK_IDX // pick 
   _dict_entry TK_IFUNC,PEEK8,PEEK8_IDX //peek8
   _dict_entry TK_IFUNC,PEEK32,PEEK32_IDX //peek32
   _dict_entry TK_IFUNC,PEEK16,PEEK16_IDX //peek16
@@ -2317,17 +2317,22 @@ kword_end:
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
   _dict_entry TK_IFUNC,LSHIFT,LSHIFT_IDX //lshift
+  _dict_entry TK_CMD,LOCATE,LOCATE_IDX // locate 
   _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
   _dict_entry TK_CMD,LIST,LIST_IDX //list
   _dict_entry TK_CMD,LET,LET_IDX //let 
   _dict_entry TK_IFUNC,KEY,KEY_IDX //key 
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
   _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var
-  _dict_entry TK_IFUNC,INP,INP_IDX // inp   
+  _dict_entry TK_IFUNC,IN,IN_IDX // pin_input   
   _dict_entry TK_CMD,IF,IF_IDX //if 
   _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
+  _dict_entry TK_IFUNC,GPIOC,GPIOC_IDX // gpioc 
+  _dict_entry TK_IFUNC,GPIOB,GPIOB_IDX // gpiob 
+  _dict_entry TK_IFUNC,GPIOA,GPIOA_IDX // gpioa 
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
+  _dict_entry TK_IFUNC,GET,GET_IDX // get 
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
   _dict_entry TK_CMD,FLASH,FLASH_IDX // flash 
@@ -2341,6 +2346,7 @@ kword_end:
   _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
   _dict_entry TK_CMD,DATA,DATA_IDX //data  
   _dict_entry TK_CMD,CONST,CONST_IDX // const 
+  _dict_entry TK_CMD,CLS,CLS_IDX // cls 
   _dict_entry TK_CFUNC,CHAR,CHAR_IDX //char
   _dict_entry TK_CMD,BTOGL,BTOGL_IDX //bit_toggle
   _dict_entry TK_IFUNC,BTEST,BTEST_IDX //bit_test 
@@ -2365,16 +2371,16 @@ kword_dict: // first name field
   .type fn_table, %object
 fn_table:
 	.word abs,bit_and,ascii,awu,bitmask 
-	.word bit_reset,bit_set,bit_test,bit_toggle,char,const   
+	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
-	.word cmd_end,erase,flash,for,forget,gosub,goto 
-	.word hex_base,if,inp,input_var,invert,key
-	.word let,list,load,lshift,new,next
+	.word cmd_end,erase,flash,for,forget,get,gosub,goto,gpioa,gpiob,gpioc  
+	.word hex_base,if,pin_input,input_var,invert,key
+	.word let,list,load,locate,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
-	.word pick,poke8,poke16,poke32,fn_pop,print,cmd_push 
+	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,size 
-	.word sleep,spc,step,stop,store,tab
+	.word sleep,spc,step,stop,tab
 	.word then,get_ticks,set_timer,timeout,to,trace,ubound,uflash,until
 	.word wait,words,bit_xor
 	.word 0 
@@ -2603,6 +2609,15 @@ fn_table:
     cbz r1,9f 
     mov r1,#1
 9:  mov r0,#TK_INTGR    
+    _RET 
+
+/********************************
+  BASIC: CLS 
+  clear terminal screen move cursor 
+  home 
+************************************/
+    _FUNC cls 
+    _CALL clear_screen
     _RET 
 
 /*********************************
@@ -2994,6 +3009,32 @@ target:
     _CALL search_target 
     b target  
 
+/***********************************
+  BASIC: GPIOA 
+  return base address of GPIOA port 
+************************************/
+    _FUNC gpioa 
+    _MOV32 r1,GPIOA_BASE_ADR
+    mov r0,#TK_INTGR
+    _RET 
+
+/***********************************
+  BASIC: GPIOB 
+  return base address of GPIOB port 
+************************************/
+    _FUNC gpiob 
+    _MOV32 r1,GPIOB_BASE_ADR
+    mov r0,#TK_INTGR
+    _RET 
+
+/***********************************
+  BASIC: GPIOC 
+  return base address of GPIOC port 
+************************************/
+    _FUNC gpioc 
+    _MOV32 r1,GPIOC_BASE_ADR
+    mov r0,#TK_INTGR
+    _RET 
 
 /***************************************
   BASIC: HEX 
@@ -3215,17 +3256,16 @@ let_array:
 out_buff: .word _tib 
 
 /********************************
-  BASIC: LOG2(expr)
+  BASIC: LOCATE line,col
   return log base 2 of expr 
 ********************************/
-    _FUNC log2
-    _CALL func_args
-    cmp r0,#1 
+    _FUNC locate
+    _CALL arg_list 
+    cmp r0,#2 
     bne syntax_error
-    _POP r0 
-    clz r1,r0 
-    rsb r1,#31
-9:  mov r0,#TK_INTGR
+    _POP r1
+    _POP r0  
+    _CALL set_curpos 
     _RET 
 
 
@@ -3279,53 +3319,40 @@ out_buff: .word _tib
     _RET 
 
 /****************************************
-  BASIC: INP(\c) 
-  read gpio_idr (16 bits value) 
+  BASIC: IN(gpio,pin) 
+  read gpio_idr selected pin  
 ***************************************/
-    _FUNC inp 
-    mov r0,#TK_LPAREN 
-    _CALL expect 
-    mov r0,#TK_CHAR 
-    _CALL expect
-    mov r0,r1 
-    _CALL upper 
-    mov r2,r0 
-    mov r0,#TK_RPAREN
-    _CALL expect 
-    sub r2,#'A' 
-    mov r1,0x400 
-    mul r1,r2
-    _MOV32 r2,(GPIOA_BASE_ADR+GPIO_IDR)
-    add r2,r1 
-    ldr r1,[r2]
+    _FUNC pin_input 
+    _CALL func_args 
+    cmp r0,#2 
+    bne syntax_error  
+    ldmia DP!,{r0,r1}
+    mov r2,#GPIO_IDR 
+    ldr r2,[r1,r2]
+    and r0,#15 
+    lsr r2,r0 
+    and r1,r2,#1 
     mov r0,#TK_INTGR
     _RET 
 
 
 /****************************************
-  BASIC: OUT \c,expr1[,\c,expr2] 
-  output to gpio_odr expr lower 16 bits
+  BASIC: OUT gpio,pin,value 
+   output to gpio_odr
 ***************************************/
     _FUNC out
-1:  mov r0,#TK_CHAR 
-    _CALL expect 
-    mov r0,r1
-    _CALL upper
-    mov r2,r0 
-    mov r0,#TK_COMMA 
-    _CALL expect 
-    _CALL expression 
-    sub r2,#'A'
-    mov r3,#0x400 
-    mul r2,r3 
-    _MOV32 r3,(GPIOA_BASE_ADR+GPIO_ODR) // GPIO_ODR 
-    add r2,r3
-    strh r1,[r2]
-    _CALL next_token
-    cmp r0,#TK_COMMA
-    beq 1b 
-    _UNGET_TOKEN
+    _CALL arg_list 
+    cmp r0,#3 
+    bne syntax_error 
+    ldmia DP!,{r0,r1,r2} // value,pin,gpio 
+    mov r3,#GPIO_BSRR
+    cbnz r0,1f 
+    add r1,#16 
+1:  mov r0,#1 
+    lsl r0,r1 
+    str r0,[r2,r3]    
     _RET 
+
 
 /****************************************
   BASIC: PAD 
@@ -4232,10 +4259,10 @@ data_bytes: .asciz "bytes"
     _RET 
 
 /********************************
-  BASIC: pick(n) 
+  BASIC: GET(expr) 
   retreive nth element from stack 
 ********************************/
-    _FUNC pick 
+    _FUNC get 
     _CALL func_args
     cmp r0,#1 
     bne syntax_error 
@@ -4247,10 +4274,10 @@ data_bytes: .asciz "bytes"
     _RET 
 
 /*************************************
-  BASIC: store value,n  
+  BASIC: PUT value,n  
   store value at nth position on stack
 **************************************/
-    _FUNC store 
+    _FUNC put
     _CALL arg_list 
     cmp r0,#2 
     bne syntax_error 
