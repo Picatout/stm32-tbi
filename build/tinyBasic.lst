@@ -4717,7 +4717,7 @@ ARM GAS  tinyBasic.s 			page 1
  2983 0558 00B5FFF7 	    _CALL search_target 
  2983      FEFF5DF8 
  2983      04EB
- 2984 0562 2CE9000C 	    stmdb DP!,{IN,BPTR}
+ 2984 0562 2DE9000C 	    push {IN,BPTR}
  2985              	target:
  2986 0566 8346     	    mov BPTR,r0 
  2987 0568 4FF0030A 	    mov IN,#3 
@@ -4733,7 +4733,7 @@ ARM GAS  tinyBasic.s 			page 1
  2995              	  leave a subroutine 
  2996              	*********************************/
  2997 057e 00BF     	    _FUNC return 
- 2998 0580 BCE8000C 	    ldmia DP!,{IN,BPTR}
+ 2998 0580 BDE8000C 	    pop {IN,BPTR}
  2999 0584 9BF80200 	    ldrb r0,[BPTR,#2]
  3000 0588 6060     	    str r0,[UPP,#COUNT]
  3001 058a 00B5FFF7 	    _CALL show_trace 
@@ -5720,7 +5720,7 @@ ARM GAS  tinyBasic.s 			page 1
  3773 0d82 00B5FFF7 	    _CALL print_int 
  3773      FEFF5DF8 
  3773      04EB
- 3774 0d8c DFF8D404 	    ldr r0,=fcount 
+ 3774 0d8c DFF81C05 	    ldr r0,=fcount 
  3775 0d90 00B5FFF7 	    _CALL uart_puts 
  3775      FEFF5DF8 
  3775      04EB
@@ -5805,7 +5805,7 @@ ARM GAS  tinyBasic.s 			page 1
  3835 0e48 013B     	    subs r3,#1 
  3836 0e4a F9D1     	    bne 2b 
  3837              	// report file size 
- 3838 0e4c DFF81804 	    ldr r0,=fsize 
+ 3838 0e4c DFF86004 	    ldr r0,=fsize 
  3839 0e50 00B5FFF7 	    _CALL uart_puts
  3839      FEFF5DF8 
  3839      04EB
@@ -5816,14 +5816,14 @@ ARM GAS  tinyBasic.s 			page 1
  3844 0e66 00B5FFF7 	    _CALL print_int 
  3844      FEFF5DF8 
  3844      04EB
- 3845 0e70 FE48     	    ldr r0,=data_bytes 
- 3846 0e72 00B5FFF7 	    _CALL uart_puts      
+ 3845 0e70 DFF84004 	    ldr r0,=data_bytes 
+ 3846 0e74 00B5FFF7 	    _CALL uart_puts      
 ARM GAS  tinyBasic.s 			page 98
 
 
  3846      FEFF5DF8 
  3846      04EB
- 3847 0e7c 7047     	    _RET 
+ 3847 0e7e 7047     	    _RET 
  3848              	
  3849              	
  3850              	/*********************************
@@ -5842,7 +5842,7 @@ ARM GAS  tinyBasic.s 			page 1
  3863              	    r3  *ram  
  3864              	    T1  temp   
  3865              	********************************/
- 3866 0e7e 00BF     	    _FUNC save
+ 3866              	    _FUNC save
  3867 0e80 206C10F0 	    _CLO 
  3867      010F03D0 
  3867      4FF00700 
@@ -5933,7 +5933,7 @@ ARM GAS  tinyBasic.s 			page 1
  3929      FEFF5DF8 
  3929      04EB
  3930 0f7c E062     	    str r0,[UPP,#FSFREE]
- 3931 0f7e BA48     	    ldr r0,=fsize
+ 3931 0f7e CC48     	    ldr r0,=fsize
  3932 0f80 00B5FFF7 	    _CALL uart_puts
  3932      FEFF5DF8 
  3932      04EB
@@ -5945,7 +5945,7 @@ ARM GAS  tinyBasic.s 			page 1
  3935 0f90 00B5FFF7 	    _CALL print_int 
  3935      FEFF5DF8 
  3935      04EB
- 3936 0f9a B448     	    ldr r0,=data_bytes 
+ 3936 0f9a C648     	    ldr r0,=data_bytes 
  3937 0f9c 00B5FFF7 	    _CALL uart_puts  
  3937      FEFF5DF8 
  3937      04EB
@@ -6156,7 +6156,7 @@ ARM GAS  tinyBasic.s 			page 1
  4110              	  return user flash address
  4111              	*****************************/
  4112 10fa 00BF     	    _FUNC uflash
- 4113 10fc 5C49     	    ldr r1,=user
+ 4113 10fc 6E49     	    ldr r1,=user
  4114 10fe 4FF00F00 	    mov r0,#TK_INTGR 
  4115 1102 7047     	    _RET 
  4116              	
@@ -6211,156 +6211,178 @@ ARM GAS  tinyBasic.s 			page 1
  4158              	  BASIC: WORDS 
  4159              	  print list of BASIC WORDS in dictionary 
  4160              	  use:
- 4161              	    r0,r1,T1,T2  
+ 4161              	    r0,r1,r2,T1,T2  
  4162              	********************************************/
  4163 1156 00BF     	    _FUNC words
  4164 1158 206C10F0 	    _CLO 
  4164      010F03D0 
  4164      4FF00700 
  4164      FFF7FEBF 
- 4165 1168 DFF80881 	    ldr T1,=kword_dict
- 4166 116c 89EA0909 	    eor T2,T2 
- 4167              	1:  
- 4168 1170 4046     	    mov r0,T1
- 4169 1172 00B5FFF7 	    _CALL strlen
- 4169      FEFF5DF8 
- 4169      04EB
- 4170 117c E0B1     	    cbz r0,9f 
- 4171 117e 8144     	    add T2,r0 
- 4172 1180 B9F1500F 	    cmp T2,#80 
- 4173 1184 06D4     	    bmi 2f
- 4174 1186 89EA0909 	    eor T2,T2  
- 4175 118a 00B5FFF7 	    _CALL cr 
- 4175      FEFF5DF8 
- 4175      04EB
- 4176 1194 4046     	2:  mov r0,T1 
- 4177 1196 00B5FFF7 	    _CALL uart_puts 
- 4177      FEFF5DF8 
- 4177      04EB
- 4178 11a0 4FF02000 	    mov r0,#SPACE
+ 4165 1168 DFF85081 	    ldr T1,=kword_dict
+ 4166 116c 89EA0909 	    eor T2,T2
+ 4167 1170 82EA0202 	    eor r2,r2  
+ 4168              	1:  
+ 4169 1174 4046     	    mov r0,T1
+ 4170 1176 00B5FFF7 	    _CALL strlen
+ 4170      FEFF5DF8 
+ 4170      04EB
+ 4171 1180 F0B1     	    cbz r0,4f 
+ 4172 1182 8144     	    add T2,r0 
+ 4173 1184 B9F1500F 	    cmp T2,#80 
+ 4174 1188 06D4     	    bmi 2f
+ 4175 118a 89EA0909 	    eor T2,T2  
+ 4176 118e 00B5FFF7 	    _CALL cr 
+ 4176      FEFF5DF8 
+ 4176      04EB
+ 4177 1198 4046     	2:  mov r0,T1 
+ 4178 119a 00B5FFF7 	    _CALL uart_puts 
+ 4178      FEFF5DF8 
+ 4178      04EB
 ARM GAS  tinyBasic.s 			page 105
 
 
- 4179 11a4 09F10109 	    add T2,#1  
- 4180 11a8 00B5FFF7 	    _CALL uart_putc 
- 4180      FEFF5DF8 
- 4180      04EB
- 4181 11b2 58F80C8C 	    ldr T1,[T1,#-12]
- 4182 11b6 DBE7     	    b 1b 
- 4183 11b8 7047     	9:  _RET 
- 4184              	
- 4185              	
- 4186              	/**************************************
- 4187              	  BASIC: XOR(expr1,expr2)
- 4188              	  binary exclusive or between 2 expressions
- 4189              	**************************************/
- 4190 11ba 00BF     	    _FUNC bit_xor
- 4191 11bc 00B5FFF7 	    _CALL func_args
- 4191      FEFF5DF8 
- 4191      04EB
- 4192 11c6 0228     	    cmp r0,#2
- 4193 11c8 7FF4FEAF 	    bne syntax_error
- 4194 11cc 5CF8040B 	    _POP r0
- 4195 11d0 5CF8041B 	    _POP r1 
- 4196 11d4 81EA0001 	    eor r1,r0 
- 4197 11d8 4FF00F00 	    mov r0,#TK_INTGR
- 4198 11dc 7047     	    _RET 
- 4199              	
- 4200              	/**********************************
- 4201              	     argument stack manipulation
- 4202              	**********************************/
- 4203              	
- 4204              	/**********************************
- 4205              	  BASIC PUSH expr[,expr] 
- 4206              	  push integers on stack 
- 4207              	*********************************/
- 4208 11de 00BF     	    _FUNC cmd_push 
- 4209 11e0 00B5FFF7 	    _CALL arg_list
- 4209      FEFF5DF8 
- 4209      04EB
- 4210 11ea 7047     	    _RET 
+ 4179 11a4 4FF02000 	    mov r0,#SPACE
+ 4180 11a8 09F10109 	    add T2,#1  
+ 4181 11ac 00B5FFF7 	    _CALL uart_putc
+ 4181      FEFF5DF8 
+ 4181      04EB
+ 4182 11b6 02F10102 	    add r2,#1 
+ 4183 11ba 58F80C8C 	    ldr T1,[T1,#-12]
+ 4184 11be D9E7     	    b 1b 
+ 4185 11c0 19EA0909 	4:  ands T2,T2
+ 4186 11c4 04D0     	    beq 5f 
+ 4187 11c6 00B5FFF7 	    _CALL cr 
+ 4187      FEFF5DF8 
+ 4187      04EB
+ 4188 11d0 1046     	5:  mov r0,r2 
+ 4189 11d2 4FF00A01 	    mov r1,#10
+ 4190 11d6 00B5FFF7 	    _CALL print_int 
+ 4190      FEFF5DF8 
+ 4190      04EB
+ 4191 11e0 3748     	    ldr r0,=dict_words
+ 4192 11e2 00B5FFF7 	    _CALL uart_puts  
+ 4192      FEFF5DF8 
+ 4192      04EB
+ 4193 11ec 7047     	9:  _RET 
+ 4194              	
+ 4195 11ee 776F7264 	dict_words: .asciz "words in dictionary" 
+ 4195      7320696E 
+ 4195      20646963 
+ 4195      74696F6E 
+ 4195      61727900 
+ 4196              	
+ 4197              	
+ 4198              	/**************************************
+ 4199              	  BASIC: XOR(expr1,expr2)
+ 4200              	  binary exclusive or between 2 expressions
+ 4201              	**************************************/
+ 4202 1202 00BF     	    _FUNC bit_xor
+ 4203 1204 00B5FFF7 	    _CALL func_args
+ 4203      FEFF5DF8 
+ 4203      04EB
+ 4204 120e 0228     	    cmp r0,#2
+ 4205 1210 7FF4FEAF 	    bne syntax_error
+ 4206 1214 5CF8040B 	    _POP r0
+ 4207 1218 5CF8041B 	    _POP r1 
+ 4208 121c 81EA0001 	    eor r1,r0 
+ 4209 1220 4FF00F00 	    mov r0,#TK_INTGR
+ 4210 1224 7047     	    _RET 
  4211              	
- 4212              	/********************************
- 4213              	  BASIC: POP 
- 4214              	  pop an integer out of stack 
- 4215              	********************************/    
- 4216              	    _FUNC fn_pop 
- 4217 11ec 5CF8041B 	    _POP r1 
- 4218 11f0 4FF00F00 	    mov r0,#TK_INTGR 
- 4219 11f4 7047     	    _RET 
- 4220              	
- 4221              	/*******************************
- 4222              	  BASIC: DROP n 
- 4223              	  discard n integer from stack
- 4224              	*******************************/
- 4225 11f6 00BF     	    _FUNC drop 
- 4226 11f8 00B5FFF7 	    _CALL expression 
- 4226      FEFF5DF8 
- 4226      04EB
- 4227 1202 0F28     	    cmp r0,#TK_INTGR 
+ 4212              	/**********************************
+ 4213              	     argument stack manipulation
+ 4214              	**********************************/
+ 4215              	
+ 4216              	/**********************************
+ 4217              	  BASIC PUSH expr[,expr] 
+ 4218              	  push integers on stack 
+ 4219              	*********************************/
+ 4220 1226 00BF     	    _FUNC cmd_push 
+ 4221 1228 00B5FFF7 	    _CALL arg_list
 ARM GAS  tinyBasic.s 			page 106
 
 
- 4228 1204 7FF4FEAF 	    bne syntax_error 
- 4229 1208 4FF00400 	    mov r0,#4 
- 4230 120c 01FB00F0 	    mul r0,r1 
- 4231 1210 8444     	    add DP,r0 
- 4232 1212 7047     	    _RET 
- 4233              	
- 4234              	/********************************
- 4235              	  BASIC: GET(expr) 
- 4236              	  retreive nth element from stack 
- 4237              	********************************/
- 4238              	    _FUNC get 
- 4239 1214 00B5FFF7 	    _CALL func_args
- 4239      FEFF5DF8 
- 4239      04EB
- 4240 121e 0128     	    cmp r0,#1 
- 4241 1220 7FF4FEAF 	    bne syntax_error 
- 4242 1224 5CF8040B 	    _POP r0
- 4243 1228 4FF00401 	    mov r1,#4 
- 4244 122c 01FB00F0 	    mul r0,r1 
- 4245 1230 5CF80010 	    ldr r1,[DP,r0]
- 4246 1234 4FF00F00 	    mov r0,#TK_INTGR
- 4247 1238 7047     	    _RET 
- 4248              	
- 4249              	/*************************************
- 4250              	  BASIC: PUT value,n  
- 4251              	  store value at nth position on stack
- 4252              	**************************************/
- 4253 123a 00BF     	    _FUNC put
- 4254 123c 00B5FFF7 	    _CALL arg_list 
- 4254      FEFF5DF8 
- 4254      04EB
- 4255 1246 0228     	    cmp r0,#2 
- 4256 1248 7FF4FEAF 	    bne syntax_error 
- 4257 124c 5CF8040B 	    _POP r0 
- 4258 1250 4FF00401 	    mov r1,#4 
- 4259 1254 01FB00F0 	    mul r0,r1 
- 4260 1258 5CF8041B 	    _POP r1
- 4261 125c 4CF80010 	    str r1,[DP,r0]
- 4262 1260 7047     	    _RET 
- 4263              	
- 4264              	
- 4265 1262 0000     	  .section .rodata.user
- 4266              	  .p2align 10 
- 4267              	user:
- 4268 0000 FFFFFFFF 	  .space 1024,255
- 4268      FFFFFFFF 
- 4268      FFFFFFFF 
- 4268      FFFFFFFF 
- 4268      FFFFFFFF 
- 4269              	
- 4270              	/*************************************************
- 4271              	   extra FLASH memory not used by Tiny BASIC
- 4272              	   is used to save BASIC programs.
- 4273              	************************************************/
- 4274              	  .p2align 10  // align to 1KB, smallest erasable segment 
- 4275              	  .section .rodata.fs
- 4276              	FILE_SYSTEM: // file system start here
+ 4221      FEFF5DF8 
+ 4221      04EB
+ 4222 1232 7047     	    _RET 
+ 4223              	
+ 4224              	/********************************
+ 4225              	  BASIC: POP 
+ 4226              	  pop an integer out of stack 
+ 4227              	********************************/    
+ 4228              	    _FUNC fn_pop 
+ 4229 1234 5CF8041B 	    _POP r1 
+ 4230 1238 4FF00F00 	    mov r0,#TK_INTGR 
+ 4231 123c 7047     	    _RET 
+ 4232              	
+ 4233              	/*******************************
+ 4234              	  BASIC: DROP n 
+ 4235              	  discard n integer from stack
+ 4236              	*******************************/
+ 4237 123e 00BF     	    _FUNC drop 
+ 4238 1240 00B5FFF7 	    _CALL expression 
+ 4238      FEFF5DF8 
+ 4238      04EB
+ 4239 124a 0F28     	    cmp r0,#TK_INTGR 
+ 4240 124c 7FF4FEAF 	    bne syntax_error 
+ 4241 1250 4FF00400 	    mov r0,#4 
+ 4242 1254 01FB00F0 	    mul r0,r1 
+ 4243 1258 8444     	    add DP,r0 
+ 4244 125a 7047     	    _RET 
+ 4245              	
+ 4246              	/********************************
+ 4247              	  BASIC: GET(expr) 
+ 4248              	  retreive nth element from stack 
+ 4249              	********************************/
+ 4250              	    _FUNC get 
+ 4251 125c 00B5FFF7 	    _CALL func_args
+ 4251      FEFF5DF8 
+ 4251      04EB
+ 4252 1266 0128     	    cmp r0,#1 
+ 4253 1268 7FF4FEAF 	    bne syntax_error 
+ 4254 126c 5CF8040B 	    _POP r0
+ 4255 1270 4FF00401 	    mov r1,#4 
+ 4256 1274 01FB00F0 	    mul r0,r1 
+ 4257 1278 5CF80010 	    ldr r1,[DP,r0]
+ 4258 127c 4FF00F00 	    mov r0,#TK_INTGR
+ 4259 1280 7047     	    _RET 
+ 4260              	
+ 4261              	/*************************************
+ 4262              	  BASIC: PUT value,n  
+ 4263              	  store value at nth position on stack
+ 4264              	**************************************/
+ 4265 1282 00BF     	    _FUNC put
+ 4266 1284 00B5FFF7 	    _CALL arg_list 
+ 4266      FEFF5DF8 
+ 4266      04EB
+ 4267 128e 0228     	    cmp r0,#2 
+ 4268 1290 7FF4FEAF 	    bne syntax_error 
+ 4269 1294 5CF8040B 	    _POP r0 
+ 4270 1298 4FF00401 	    mov r1,#4 
 ARM GAS  tinyBasic.s 			page 107
 
 
+ 4271 129c 01FB00F0 	    mul r0,r1 
+ 4272 12a0 5CF8041B 	    _POP r1
+ 4273 12a4 4CF80010 	    str r1,[DP,r0]
+ 4274 12a8 7047     	    _RET 
+ 4275              	
+ 4276              	
+ 4277 12aa 0000     	  .section .rodata.user
+ 4278              	  .p2align 10 
+ 4279              	user:
+ 4280 0000 FFFFFFFF 	  .space 1024,255
+ 4280      FFFFFFFF 
+ 4280      FFFFFFFF 
+ 4280      FFFFFFFF 
+ 4280      FFFFFFFF 
+ 4281              	
+ 4282              	/*************************************************
+ 4283              	   extra FLASH memory not used by Tiny BASIC
+ 4284              	   is used to save BASIC programs.
+ 4285              	************************************************/
+ 4286              	  .p2align 10  // align to 1KB, smallest erasable segment 
+ 4287              	  .section .rodata.fs
+ 4288              	FILE_SYSTEM: // file system start here
 ARM GAS  tinyBasic.s 			page 108
 
 
@@ -6936,7 +6958,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2149   .text:0000000000001222 $d
          tinyBasic.s:2187   .text:0000000000001240 set_array_element
          tinyBasic.s:2223   .text:0000000000001264 set_var
-         tinyBasic.s:4276   .rodata.fs:0000000000000000 FILE_SYSTEM
+         tinyBasic.s:4288   .rodata.fs:0000000000000000 FILE_SYSTEM
          tinyBasic.s:2259   .rodata:0000000000000050 $d
          tinyBasic.s:2272   .rodata.dictionary:0000000000000000 kword_end
          tinyBasic.s:2271   *ABS*:0000000000000000 link
@@ -6959,7 +6981,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2788   .text.basic:000000000000038c dec_base
          tinyBasic.s:3744   .text.basic:0000000000000cec directory
          tinyBasic.s:2797   .text.basic:0000000000000394 do_loop
-         tinyBasic.s:4225   .text.basic:00000000000011f8 drop
+         tinyBasic.s:4237   .text.basic:0000000000001240 drop
          tinyBasic.s:2812   .text.basic:000000000000039c dump
 ARM GAS  tinyBasic.s 			page 118
 
@@ -6968,7 +6990,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2890   .text.basic:0000000000000488 erase
          tinyBasic.s:2901   .text.basic:000000000000049c for
          tinyBasic.s:3784   .text.basic:0000000000000da4 forget
-         tinyBasic.s:4238   .text.basic:0000000000001214 get
+         tinyBasic.s:4250   .text.basic:000000000000125c get
          tinyBasic.s:2982   .text.basic:0000000000000558 gosub
          tinyBasic.s:3008   .text.basic:0000000000000598 goto
          tinyBasic.s:3016   .text.basic:00000000000005a4 hex_base
@@ -6996,10 +7018,10 @@ DEFINED SYMBOLS
          tinyBasic.s:3478   .text.basic:0000000000000a6c poke8
          tinyBasic.s:3490   .text.basic:0000000000000a84 poke16
          tinyBasic.s:3502   .text.basic:0000000000000a9c poke32
-         tinyBasic.s:4216   .text.basic:00000000000011ec fn_pop
+         tinyBasic.s:4228   .text.basic:0000000000001234 fn_pop
          tinyBasic.s:3516   .text.basic:0000000000000ab4 print
-         tinyBasic.s:4208   .text.basic:00000000000011e0 cmd_push
-         tinyBasic.s:4253   .text.basic:000000000000123c put
+         tinyBasic.s:4220   .text.basic:0000000000001228 cmd_push
+         tinyBasic.s:4265   .text.basic:0000000000001284 put
          tinyBasic.s:3583   .text.basic:0000000000000b9c qkey
          tinyBasic.s:2713   .text.basic:00000000000002e8 read
          tinyBasic.s:2755   .text.basic:0000000000000348 restore
@@ -7029,7 +7051,7 @@ DEFINED SYMBOLS
          tinyBasic.s:4123   .text.basic:0000000000001104 until
          tinyBasic.s:4138   .text.basic:0000000000001124 wait
          tinyBasic.s:4163   .text.basic:0000000000001158 words
-         tinyBasic.s:4190   .text.basic:00000000000011bc bit_xor
+         tinyBasic.s:4202   .text.basic:0000000000001204 bit_xor
          tinyBasic.s:2406   .text.basic:0000000000000000 $t
          tinyBasic.s:2418   .text.basic:0000000000000028 power_adc
          tinyBasic.s:2421   .text.basic:000000000000002c analog_read
@@ -7041,7 +7063,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2836   .text.basic:00000000000003e8 print_dump_header
          tinyBasic.s:2894   .text.basic:0000000000000498 user_space
          tinyBasic.s:2894   .text.basic:0000000000000498 $d
-         tinyBasic.s:4267   .rodata.user:0000000000000000 user
+         tinyBasic.s:4279   .rodata.user:0000000000000000 user
          tinyBasic.s:2901   .text.basic:000000000000049c $t
          tinyBasic.s:2985   .text.basic:0000000000000566 target
          tinyBasic.s:3105   .text.basic:00000000000006b8 str_buffer
@@ -7073,17 +7095,20 @@ DEFINED SYMBOLS
          tinyBasic.s:3988   .text.basic:0000000000001014 spi_select
          tinyBasic.s:3991   .text.basic:0000000000001018 spi_write
          tinyBasic.s:4068   .text.basic:00000000000010b0 tone
-         tinyBasic.s:4266   .rodata.user:0000000000000000 $d
-         tinyBasic.s:4265   .text.basic:0000000000001262 $d
-         tinyBasic.s:4276   .text.basic:0000000000001264 $d
-         tinyBasic.s:4276   .text:0000000000001274 $d
+         tinyBasic.s:4195   .text.basic:00000000000011ee dict_words
+         tinyBasic.s:4195   .text.basic:00000000000011ee $d
+         tinyBasic.s:4202   .text.basic:0000000000001202 $t
+         tinyBasic.s:4278   .rodata.user:0000000000000000 $d
+         tinyBasic.s:4277   .text.basic:00000000000012aa $d
+         tinyBasic.s:4288   .text.basic:00000000000012ac $d
+         tinyBasic.s:4288   .text:0000000000001274 $d
          tinyBasic.s:247    .text:0000000000000195 $d
-         tinyBasic.s:247    .text:0000000000000196 $t
-         tinyBasic.s:269    .text:00000000000001e9 $d
-         tinyBasic.s:269    .text:00000000000001ea $t
 ARM GAS  tinyBasic.s 			page 120
 
 
+         tinyBasic.s:247    .text:0000000000000196 $t
+         tinyBasic.s:269    .text:00000000000001e9 $d
+         tinyBasic.s:269    .text:00000000000001ea $t
          tinyBasic.s:742    .text:00000000000005c3 $d
          tinyBasic.s:1590   .text:0000000000000d21 $d
          tinyBasic.s:1590   .text:0000000000000d22 $t

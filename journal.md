@@ -1,5 +1,7 @@
 #### 2021-02-26
 
+* Débogué **readln**  **CTRL_R** ne fonctionnait plus. 
+
 * Renommé les mots suivants: **PEEK8** en **PEEKB**, **PEEK16** en **PEEKH**  et **PEEK32** en **PEEKW**
 
 * Renommé les mots suivants: **POKE8** en **POKEB**, **POKE16** en **POKEH** et **POKE32** en **POKEW** 

@@ -377,7 +377,7 @@ pad: .word _pad
     _CALL uart_putc  
     subs T1,#1
     bne 2b 
-	pop {r1,T1}
+	  pop {r1,T1}
     _RET 
 
 /**********************************
@@ -613,7 +613,8 @@ pad: .word _pad
   CTRL_D delete line
   CTRL_E edit line#  
   CTRL_R edit last entered line
-  CTRL_O toggle between overwrite|insert   
+  CTRL_I insert mode 
+  CTRL_O overwrite mode    
   LEFT_ARROW move cursor left 
   RIGHT_ARROW move cursor right
   HOME cursor at start of line 
@@ -647,8 +648,6 @@ pad: .word _pad
   _CALL get_curpos
   mov r3,r1 
 readln_loop:
-  eor r0,r0
-  strb r0,[r6,r5]  
   _CALL uart_getc 
   cmp r0,#CR
   bne 0f
@@ -709,7 +708,7 @@ readln_loop:
   add r0,#1  
   b readln_loop   
 3: cmp r0,#CTRL_R    
-  bne 4f 
+  bne 3f 
 // edit last entered line if  available 
   ands r5,r5 
   bne readln_loop
@@ -719,14 +718,20 @@ readln_loop:
   mov r7,r0 
   mov r0,r6  
   _CALL uart_puts
-  b readln_loop     
-4: cmp r0,#CTRL_O 
-   bne 5f 
-   rsb T1,#5  
-   mov r0,T1 
+  b readln_loop
+3: cmp r0,#CTRL_I 
+   bne 3f
+   mov r0,#5
+   mov T1,r0 
+   _CALL cursor_shape 
+   b readln_loop  
+3: cmp r0,#CTRL_O 
+   bne 3f 
+   mov r0,#0
+   mov T1,r0   
    _CALL cursor_shape
    b readln_loop 
-5: cmp r0,#ESC 
+3: cmp r0,#ESC 
    bne character  
    _CALL get_escape
    cmp r0,#HOME 

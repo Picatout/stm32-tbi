@@ -2981,7 +2981,7 @@ user_space: .word user
 *********************************/
     _FUNC gosub
     _CALL search_target 
-    stmdb DP!,{IN,BPTR}
+    push {IN,BPTR}
 target:
     mov BPTR,r0 
     mov IN,#3 
@@ -2995,7 +2995,7 @@ target:
   leave a subroutine 
 *********************************/
     _FUNC return 
-    ldmia DP!,{IN,BPTR}
+    pop {IN,BPTR}
     ldrb r0,[BPTR,#2]
     str r0,[UPP,#COUNT]
     _CALL show_trace 
@@ -4158,16 +4158,17 @@ data_bytes: .asciz "bytes"
   BASIC: WORDS 
   print list of BASIC WORDS in dictionary 
   use:
-    r0,r1,T1,T2  
+    r0,r1,r2,T1,T2  
 ********************************************/
     _FUNC words
     _CLO 
     ldr T1,=kword_dict
-    eor T2,T2 
+    eor T2,T2
+    eor r2,r2  
 1:  
     mov r0,T1
     _CALL strlen
-    cbz r0,9f 
+    cbz r0,4f 
     add T2,r0 
     cmp T2,#80 
     bmi 2f
@@ -4177,10 +4178,21 @@ data_bytes: .asciz "bytes"
     _CALL uart_puts 
     mov r0,#SPACE
     add T2,#1  
-    _CALL uart_putc 
+    _CALL uart_putc
+    add r2,#1 
     ldr T1,[T1,#-12]
     b 1b 
+4:  ands T2,T2
+    beq 5f 
+    _CALL cr 
+5:  mov r0,r2 
+    mov r1,#10
+    _CALL print_int 
+    ldr r0,=dict_words
+    _CALL uart_puts  
 9:  _RET 
+
+dict_words: .asciz "words in dictionary" 
 
 
 /**************************************
