@@ -1,3 +1,13 @@
+#### 2021-02-26
+
+* Renommé les mots suivants: **PEEK8** en **PEEKB**, **PEEK16** en **PEEKH**  et **PEEK32** en **PEEKW**
+
+* Renommé les mots suivants: **POKE8** en **POKEB**, **POKE16** en **POKEH** et **POKE32** en **POKEW** 
+
+* Renommé le mot **FLASH** en **STORE** 
+
+* Modifié **pasre_label**  le compilateur convertie les symboles qui représente des constantes dans le dictionaire comme des **TK_INTGER** maintenant. Exécution plus rapide.
+
 #### 2021-02-25
 
 * Ajout de **GPIOA**,**GPIOB**,**GPIOC**

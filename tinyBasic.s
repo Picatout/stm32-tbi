@@ -628,16 +628,6 @@ main_stack:
     bne 1f
     sub r3,#1 
     _CALL parse_label
-    cmp r0,#TK_CMD
-    bne 0f 
-    cmp r1,#REM_IDX 
-    beq tick  
-0:  strb r0,[T2],#1
-    cmp r0,#TK_LBL 
-    beq 0f 
-    strb r1,[T2],#1
-    b token_exit 
-0:  str r1,[T2],#4
     b token_exit 
 1:  _CALL is_special
     ldr r6,=token_ofs
@@ -803,16 +793,26 @@ token_ofs:
     ldrb r1,[T2]
     sub r1,#'A' 
     mov r0,#TK_VAR
-    b 9f 
+    b 8f 
 3:  // try keyword 
     mov r0,T2 
     ldr r1,=kword_dict  
     _CALL search_dict 
-    cbnz r0,9f 
-// must be a label 
+    cbz r0,4f
+    cmp r0,TK_INTGR 
+    bne 8f 
+    strb r0,[T2],#1
+    str r1,[T2],#4
+    b 9f 
+4: // must be a label 
     mov r0,T2 
     _CALL compress_label
-    mov r0,#TK_LBL      
+    mov r0,#TK_LBL
+    strb r0,[T2],#1
+    str r1,[T2],#4
+    b 9f 
+8:  strb r0,[T2],#1
+    strb r1,[T2],#1          
 9:  pop {r2,r5}
     _RET 
 
@@ -2284,6 +2284,7 @@ kword_end:
   _dict_entry TK_IFUNC,TICKS,TICKS_IDX //get_ticks
   _dict_entry TK_CMD,THEN,THEN_IDX // then 
   _dict_entry TK_CMD,TAB,TAB_IDX //tab 
+  _dict_entry TK_CMD,STORE,STORE_IDX // store  
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
@@ -2302,13 +2303,13 @@ kword_end:
   _dict_entry TK_CMD,PUSH,PUSH_IDX //cmd_push  
   _dict_entry TK_CMD,PRINT,PRT_IDX //print 
   _dict_entry TK_IFUNC,POP,POP_IDX // fn_pop 
-  _dict_entry TK_CMD,POKE8,POKE8_IDX // poke8 
-  _dict_entry TK_CMD,POKE32,POKE32_IDX //poke32
-  _dict_entry TK_CMD,POKE16,POKE16_IDX // poke16
+  _dict_entry TK_CMD,POKEW,POKE32_IDX //poke32
+  _dict_entry TK_CMD,POKEH,POKE16_IDX // poke16
+  _dict_entry TK_CMD,POKEB,POKE8_IDX // poke8 
   _dict_entry TK_CMD,PMODE,PMODE_IDX // pin_mode 
-  _dict_entry TK_IFUNC,PEEK8,PEEK8_IDX //peek8
-  _dict_entry TK_IFUNC,PEEK32,PEEK32_IDX //peek32
-  _dict_entry TK_IFUNC,PEEK16,PEEK16_IDX //peek16
+  _dict_entry TK_IFUNC,PEEKW,PEEK32_IDX //peek32
+  _dict_entry TK_IFUNC,PEEKH,PEEK16_IDX //peek16
+  _dict_entry TK_IFUNC,PEEKB,PEEK8_IDX //peek8
   _dict_entry TK_CMD,PAUSE,PAUSE_IDX //pause 
   _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref 
   _dict_entry TK_CMD,OUT,OUT_IDX //out 
@@ -2327,15 +2328,14 @@ kword_end:
   _dict_entry TK_IFUNC,IN,IN_IDX // pin_input   
   _dict_entry TK_CMD,IF,IF_IDX //if 
   _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
-  _dict_entry TK_IFUNC,GPIOC,GPIOC_IDX // gpioc 
-  _dict_entry TK_IFUNC,GPIOB,GPIOB_IDX // gpiob 
-  _dict_entry TK_IFUNC,GPIOA,GPIOA_IDX // gpioa 
+  _dict_entry TK_INTGR,GPIOC,GPIOC_BASE_ADR //  
+  _dict_entry TK_INTGR,GPIOB,GPIOB_BASE_ADR //  
+  _dict_entry TK_INTGR,GPIOA,GPIOA_BASE_ADR //  
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
   _dict_entry TK_IFUNC,GET,GET_IDX // get 
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
-  _dict_entry TK_CMD,FLASH,FLASH_IDX // flash 
   _dict_entry TK_CMD,ERASE,ERASE_IDX // erase 
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
@@ -2373,14 +2373,14 @@ fn_table:
 	.word abs,bit_and,ascii,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
-	.word cmd_end,erase,flash,for,forget,get,gosub,goto,gpioa,gpiob,gpioc  
+	.word cmd_end,erase,for,forget,get,gosub,goto
 	.word hex_base,if,pin_input,input_var,invert,key
 	.word let,list,load,locate,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,size 
-	.word sleep,spc,step,stop,tab
+	.word sleep,spc,step,stop,store,tab
 	.word then,get_ticks,set_timer,timeout,to,trace,ubound,uflash,until
 	.word wait,words,bit_xor
 	.word 0 
@@ -2864,10 +2864,10 @@ dump01:
     _RET 
 
 /*******************************************
-  BASIC: FLASH adr, value 
+  BASIC: STORE adr, value 
   write value to user space in flash memory 
 *********************************************/
-    _FUNC flash 
+    _FUNC store 
     _CALL arg_list 
     cmp r0,#2 
     bne syntax_error 
@@ -3008,33 +3008,6 @@ target:
     _FUNC goto
     _CALL search_target 
     b target  
-
-/***********************************
-  BASIC: GPIOA 
-  return base address of GPIOA port 
-************************************/
-    _FUNC gpioa 
-    _MOV32 r1,GPIOA_BASE_ADR
-    mov r0,#TK_INTGR
-    _RET 
-
-/***********************************
-  BASIC: GPIOB 
-  return base address of GPIOB port 
-************************************/
-    _FUNC gpiob 
-    _MOV32 r1,GPIOB_BASE_ADR
-    mov r0,#TK_INTGR
-    _RET 
-
-/***********************************
-  BASIC: GPIOC 
-  return base address of GPIOC port 
-************************************/
-    _FUNC gpioc 
-    _MOV32 r1,GPIOC_BASE_ADR
-    mov r0,#TK_INTGR
-    _RET 
 
 /***************************************
   BASIC: HEX 

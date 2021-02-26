@@ -43,16 +43,12 @@
     .equ DUMP_IDX, DROP_IDX+1 
     .equ END_IDX,DUMP_IDX+1 // 
     .equ ERASE_IDX,END_IDX+1 
-    .equ FLASH_IDX,ERASE_IDX+1
-    .equ FOR_IDX, FLASH_IDX+1 // 
+    .equ FOR_IDX, ERASE_IDX+1 // 
     .equ FORGET_IDX, FOR_IDX+1 // 
     .equ GET_IDX,FORGET_IDX+1
     .equ GOSUB_IDX, GET_IDX+1 // 
     .equ GOTO_IDX, GOSUB_IDX+1 //
-    .equ GPIOA_IDX,GOTO_IDX+1 //
-    .equ GPIOB_IDX,GPIOA_IDX+1 // 
-    .equ GPIOC_IDX,GPIOB_IDX+1 //
-    .equ HEX_IDX, GPIOC_IDX+1 // 
+    .equ HEX_IDX, GOTO_IDX+1 // 
     .equ IF_IDX, HEX_IDX+1 // 
     .equ IN_IDX,IF_IDX+1
     .equ INPUT_IDX, IN_IDX+1 // 
@@ -95,7 +91,8 @@
     .equ SPC_IDX,SLEEP_IDX+1 //
     .equ STEP_IDX, SPC_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
-    .equ TAB_IDX, STOP_IDX+1 //
+    .equ STORE_IDX,STOP_IDX+1
+    .equ TAB_IDX, STORE_IDX+1 //
     .equ THEN_IDX,TAB_IDX+1
     .equ TICKS_IDX, THEN_IDX+1 // 
     .equ TIMER_IDX, TICKS_IDX+1 // 
