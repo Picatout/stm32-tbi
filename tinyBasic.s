@@ -316,7 +316,7 @@ main_stack:
 *********************************/
     _FUNC search_target
     _CALL next_token 
-    cmp r0,TK_LBL 
+    cmp r0,TK_LABEL 
     bne 2f 
     _CALL search_label
     cbz r0,8f  
@@ -384,7 +384,7 @@ main_stack:
 1:  cmp r2,r3
     beq 8f 
     ldrb r0,[r2,#3]
-    cmp  r0,#TK_LBL 
+    cmp  r0,#TK_LABEL 
     beq 4f 
 2:  ldrb r0,[r2,#2]
     add r2,r0 
@@ -608,11 +608,6 @@ main_stack:
       T2     updated 
       use:
 **********************************************/
-    .macro _case c, next  
-    cmp r0,#\c 
-    bne \next
-    .endm 
-
     _FUNC comp_token 
     push {r6}
     ldrb r0,[T1,r3]
@@ -627,7 +622,11 @@ main_stack:
     _CALL is_letter 
     bne 1f
     sub r3,#1 
-    _CALL parse_label
+    _CALL comp_label // parse and compile label 
+    cmp r0,#TK_CMD 
+    bne token_exit 
+    cmp r1,#REM_IDX 
+    beq tick2 
     b token_exit 
 1:  _CALL is_special
     ldr r6,=token_ofs
@@ -683,6 +682,7 @@ tick:
     mov r1,#REM_IDX 
     strb r0,[T2],#1 
     strb r1,[T2],#1
+tick2:
     add r0,T1,r3 
     mov r1,T2 
     _CALL strcpy 
@@ -738,7 +738,7 @@ char_list:
 tok_single:
   .byte TK_NONE,TK_COMMA,TK_SEMIC,TK_ARRAY,TK_LPAREN,TK_RPAREN,TK_COLON
   .byte TK_SHARP,TK_MINUS,TK_PLUS,TK_MULT,TK_DIV,TK_MOD,TK_EQUAL 
-  
+
   .p2align 2
 token_ofs:
   .hword  0 // not found
@@ -761,18 +761,21 @@ token_ofs:
   .p2align 2
 
 /****************************
-    parse_label 
+    comp_label
+    compile a label 
+    it can be a target|keyword|
+    variable| user constant  
     label form: [A..Z]+
-    can be a keyword, a target
-    or constant name. 
     input:
       *buffer 
     output:
-      T2  *label 
+      r0  token type 
+      r1  token value 
+      T2  updated 
       R3  updated
     use:
 ****************************/
-    _FUNC parse_label
+    _FUNC comp_label
     push {r2,r5}
     push {T2}
     eor r2,r2
@@ -800,14 +803,15 @@ token_ofs:
     _CALL search_dict 
     cbz r0,4f
     cmp r0,TK_INTGR 
-    bne 8f 
+    bne 8f
+    //system constant  
     strb r0,[T2],#1
     str r1,[T2],#4
     b 9f 
 4: // must be a label 
     mov r0,T2 
     _CALL compress_label
-    mov r0,#TK_LBL
+    mov r0,#TK_LABEL
     strb r0,[T2],#1
     str r1,[T2],#4
     b 9f 
@@ -1156,21 +1160,79 @@ escaped: .asciz "abtnvfr"
 decomp_loop:
     _CALL next_token
     cmp r0,#TK_NONE 
-    beq 9f  
-    cmp r0,#TK_INTGR 
-    bne 1f 
+    beq 9f
+    cmp r0,#TK_GE 
+    bpl 1f 
+    ldr r1,=single_char 
+    ldrb r0,[r1,r0]
+    strb r0,[T1],#1 
+    b decomp_loop
+1: 
+    cmp r0,#TK_CHAR  
+    bpl 2f 
+    sub r0,#TK_GE
+    lsl r0,#2 
+    ldr r1,=relop_str 
+    ldr r0,[r1,r0]
+    mov r1,T1 
+    _CALL strcpy 
+    mov r0,T1 
+    _CALL strlen 
+    add T1,r0 
+    b decomp_loop
+2:  cmp r0,#TK_CHAR 
+    bne 3f 
+    mov r0,#'\\'
+    strb r0,[T1],#1
+    strb r1,[T1],#1
+//    mov r0,#SPACE 
+//    strb r0,[T1],#1
+    b decomp_loop 
+3:  cmp r0,#TK_VAR 
+    bne 4f 
+    add r0,r1,'A'
+    strb r0,[T1],#1 
+    b decomp_loop 
+4:  cmp r0,#TK_LABEL 
+    bpl 5f   
+    push {r0,r1}
+    mov r0,#SPACE 
+    strb r0,[T1],#1  
+    mov r0,r1 
+    _CALL cmd_name
+    mov r1,T1 
+    _CALL strcpy 
+    mov r0,T1 
+    _CALL strlen 
+    add T1,r0
+    pop {r0,r1}
+    cmp r0,#TK_IFUNC
+    beq 4f
+    mov r0,#SPACE 
+    strb r0,[T1],#1 
+4:  cmp r1,#REM_IDX
+    bne decomp_loop 
+    add r0,BPTR,IN
+    mov r1,T1   
+    _CALL strcpy
+    mov r0,T1 
+    _CALL strlen
+    add T1,r0
+    ldr IN,[UPP,#COUNT]
+    b 9f 
+5:  cmp r0,#TK_INTGR
+    bne 6f  
     mov r0,r1 
     ldr r1,[UPP,#BASE]
     _CALL itoa
-    push {r0}
     mov r1,T1 
     _CALL strcpy
-    pop {r0} 
+    mov r0,T1 
     _CALL strlen
     add T1,r0 
     b decomp_loop 
-1:  cmp r0,#TK_LBL
-    bne 1f
+6:  cmp r0,#TK_LABEL
+    bne 7f
     mov r2,#25
     mov r3,#0xffff 
     movt r3,#0x3fff 
@@ -1183,105 +1245,33 @@ decomp_loop:
 2:  subs r2,#5 
     bge 0b 
     b decomp_loop
-1:  cmp r0,#TK_VAR 
-    bne 2f 
-    add r0,r1,'A'
-    strb r0,[T1],#1 
-    b decomp_loop 
-2:  cmp r0,#TK_CHAR 
-    bne 3f 
-    mov r0,#'\\'
-    strb r0,[T1],#1
-    strb r1,[T1],#1
-    mov r0,#SPACE 
-    strb r0,[T1],#1
-    b decomp_loop 
-3:  cmp r0,#TK_QSTR 
-    bne 4f 
-    mov r0,#'"'
+7:  mov r0,#'"'
     strb r0,[T1],#1 
     mov r0,r1
-    push {r1}
     mov r1,T1  
     _CALL strcpy
-    pop {r0}
+    mov r0,T1 
     _CALL strlen 
     add T1,r0 
     mov r0,#'"'
     strb r0,[T1],#1 
     b decomp_loop
-4:  cmp r0,#TK_CMD
-    bmi 5f 
-    cmp r0,#TK_INTGR 
-    bpl 5f
-    lsl r3,r0,#16  // TK_CMD|TK_IFUNC|TK_CFUNC|TK_CONST
-    mov r0,#SPACE 
-    strb r0,[T1],#1  
-    mov r0,r1
-    orr r3,r1 // _IDX  
-    _CALL cmd_name
-2:  push {r0}
-    mov r1,T1 
-    _CALL strcpy 
-    pop {r0}
-    _CALL strlen 
-    add T1,r0
-    lsr r0,r3,#16
-    cmp r0,#TK_IFUNC
-    beq 2f
-    mov r0,#SPACE 
-    strb r0,[T1],#1 
-2:  and r0,r3,#0xFF 
-    cmp r0,#REM_IDX
-    bne decomp_loop 
-    add r0,BPTR,IN
-    mov r1,T1   
-    _CALL strcpy
-    mov r0,T1 
-    _CALL strlen
-    add T1,r0
-    ldr IN,[UPP,#COUNT]
-    b 9f 
-3:  mov r0,#SPACE 
-    strb r0,[T1],#1 
-    b decomp_loop
-5:  push {r0}
-    ldr r1,=single_char 
-    ldrb r0,[r1,r0]
-    pop {r1}
-    cbz r0,6f 
-    strb r0,[T1],#1 
-    b decomp_loop
-6:  cmp r1,#TK_GE 
-    bne 7f 
-    ldr r0,=ge_str
-    b 2b 
-7:  cmp r1,#TK_LE 
-    bne 8f
-    ldr r0,=le_str
-    b 2b
-8:  cmp r1,#TK_NE 
-    bne 9f 
-    ldr r0,=ne_str 
-    b 2b 
 9:  eor r0,r0 
     strb r0,[T1]
     pop {r1,r2,r3,T1}
     mov r0,r1 
     _RET 
 
+relop_str: .word ge_str,le_str,ne_str 
 ge_str: .asciz ">="
 le_str: .asciz "<="
 ne_str: .asciz "<>"
 
 single_char:
-  .byte 0, ':', 0, 0, 0, '@', '(', ')', ',' , ';', '#' // 0..a
-  .space 5
-  .byte '+', '-'
-  .space 14
-  .byte '*', '/', '%'
-  .space 14
-  .byte '>', '=', 0, '<', 0, 0
+  .byte 0, ':', ',', ';', '#', '(', ')', '+' , '-', '*', '/', '%'
+  .byte '@','=', '>', '<' 
+
+
 
 
 /**********************************
@@ -1716,9 +1706,9 @@ ready: .asciz "\nREADY"
 // interpret tokenized line 
 interpreter:
   _CALL next_token 
-  cmp r0,#TK_NONE 
-  beq interpreter    
-  cmp r0,#TK_LBL 
+  cmp r0,#2
+  bmi interpreter    
+  cmp r0,#TK_LABEL 
   beq interpreter 
   cmp r0,#TK_CMD 
   bne 2f
@@ -1736,8 +1726,6 @@ interpreter:
   _CALL let_array 
   b interpreter
 4: 
-  cmp r0,#TK_COLON
-  beq interpreter
   b syntax_error
 
 /*****************************
@@ -1788,57 +1776,33 @@ next_line:
 0: 
     str IN,[UPP,#IN_SAVED]
     str BPTR,[UPP,#BASICPTR]
-    ldrb r0,[BPTR,IN] // token attribute
+    ldrb r0,[BPTR,IN] // token id 
     add IN,#1  
-    mov T1,r0 
-    and r0,#0x7f // limit mask 
-    ldr r1,=tok_jmp 
-    tbb [r1,r0]
-1: // pc reference point 
-    b 9f 
-2: // .byte param
-    ldrb r1,[BPTR,IN]
+    mov T1,r0 // save token id 
+    cmp r0,#TK_CHAR 
+    bmi 9f // these tokens have no value  
+    cmp r0,#TK_CONST 
+    bpl 1f
+    // tokens with .byte value 
+    ldrb r1,[BPTR,IN] 
+    add IN,#1 
+    b 9f  
+1:  cmp r0,#TK_QSTR 
+    bne 2f 
+    add r1,BPTR,IN
+    mov r0,r1 
+    _CALL strlen 
+    add IN,r0 
     add IN,#1 
     b 9f 
-3: // .hword param 
-    ldrh r1,[BPTR,IN]
-    add IN,#2 
+2:  // .word value 
+    ldr r1,[BPTR,IN] 
+    add IN,#4 
     b 9f 
-4: // .word param  
-    ldr r1,[BPTR,IN]
-    add IN,#4
-    b 9f 
-5: // .asciz param 
-    add r1,BPTR,IN 
-    mov r0,r1  
-    _CALL strlen 
-    add IN,r0
-    add IN,#1
-    b 9f  
-8: // syntax error 
-    b syntax_error 
 9:  mov r0,T1  
     pop {T1}
     _RET
 
-  .p2align 2
-tok_jmp: // token id  tbb offset 
-  .byte (9b-1b)/2,(9b-1b)/2   // 0x0..0x1  TK_NONE, TK_COLON
-  .byte (5b-1b)/2,(2b-1b)/2,(2b-1b)/2,(9b-1b)/2 // 0x2..0x5 TK_QSTR,TK_CHAR,TK_VAR,TK_ARRAY
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x6..0xa TK_LPAREN,TK_RPAREN,TK_COMMA,TK_SEMIC,TK_SHARP 
-  .byte (2b-1b)/2,(2b-1b)/2,(2b-1b)/2,(2b-1b)/2 // 0xb..0xe TK_CMD,TK_IFUNC,TK_CHAR,TK_CONST 
-  .byte (4b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0xf..0x11 TK_INTGR,TK_PLUS,TK_MINUS  
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x12..0x16
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 //0x17..0x1c
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x1d..0x1f
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x20..0x22  TK_MULT,TK_DIV,TK_MOD 
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x23..0x2a
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x2b..0x30 
-  .byte (9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2,(9b-1b)/2 // 0x31..0x36  TK_GT..TK_LE    
-  .byte (8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2,(8b-1b)/2 // 0x37..0x3f
-  .byte (4b-1b)/2 //0x40 TK_LBL 
-
-  .p2align 2 
 
 /*********************************
     expect 
@@ -1931,13 +1895,10 @@ tok_jmp: // token id  tbb offset
     mov T2,#TK_INTGR 
     mov T1,#1 // default sign +  
     _CALL next_token
-    mov r2,r0 
-    and r0,#TK_GRP_MASK 
-    cmp r0,#TK_GRP_ADD
-    mov r0,r2
-    bne 1f 
     cmp r0,#TK_PLUS 
     beq 0f 
+    cmp r0,#TK_MINUS  
+    bne 1f 
     mov T1,#-1 // minus sign 
 0:  _CALL next_token
 1:  cmp r0,#TK_INTGR 
@@ -1977,7 +1938,7 @@ tok_jmp: // token id  tbb offset
 5:  mov r0,r1  
     _CALL execute
     b 8f 
-6:  cmp r0,#TK_LBL
+6:  cmp r0,#TK_LABEL
     bne 7f 
     orr r0,r1,#(1<<31) 
     _CALL search_const
@@ -2013,26 +1974,26 @@ tok_jmp: // token id  tbb offset
     mov T2,r0  // TK_INTGR 
     mov r2,r1 // first factor    
 0:  _CALL next_token
-    mov r3,r0   
-    and r0,#TK_GRP_MASK 
-    cmp r0,#TK_GRP_MULT
-    beq 1f
-    _UNGET_TOKEN
+    mov T1,r0  // operator 
+    cmp r0,TK_MULT
+    bmi 1f 
+    cmp r0,#TK_MOD+1
+    bmi 2f
+1:  _UNGET_TOKEN
     b 9f 
-1:  mov T1,r3 
-    _CALL factor  
+2:  _CALL factor  
     beq syntax_error 
     cmp T1,#TK_MULT
-    bne 2f 
+    bne 3f 
 // multiplication
     mul r2,r1
     b 0b  
-2:  cmp T1,#TK_DIV 
-    bne 3f
+3:  cmp T1,#TK_DIV 
+    bne 4f
 // division
     sdiv r2,r2,r1
     b 0b  
-3: // modulo
+4: // modulo
     mov r0,r2 
     sdiv r2,r2,r1 
     mul  r2,r1 
@@ -2065,9 +2026,10 @@ tok_jmp: // token id  tbb offset
     mov r2,r1 // first term
     mov T2,#TK_INTGR    
 1:  _CALL next_token 
-    mov T1,r0 // token attribute 
-    and r0,#TK_GRP_MASK 
-    cmp r0,#TK_GRP_ADD 
+    mov T1,r0 // token type +|-
+    cmp r0,#TK_PLUS 
+    beq 3f 
+    cmp r0,#TK_MINUS  
     beq 3f 
     _UNGET_TOKEN
     b 9f  
@@ -2080,7 +2042,7 @@ tok_jmp: // token id  tbb offset
     b 1b 
 4:  add r2,r2,r1 // N1+N2
     b 1b
-9:  mov r0,T2 
+9:  movs r0,T2 
     mov r1,r2 
     pop {r2,t1,t2}
     _RET 
@@ -2105,35 +2067,35 @@ tok_jmp: // token id  tbb offset
     bne syntax_error 
     mov r2,r1  // first operand  
     _CALL next_token 
-    mov T1,r0  // relop  
-    and r0,#TK_GRP_MASK 
-    cmp r0,#TK_GRP_RELOP 
-    bne 8f  // single operand 
+    sub T1,r0,#TK_EQUAL  // relop  
+    cmp r0,#TK_EQUAL 
+    bmi 8f 
+    cmp r0,#TK_CHAR 
+    bpl 8f 
     _CALL expression 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     cmp r2,r1 // compare operands  
     mov r1,#-1 
     ldr r2,=relop_jmp
-    and T1,#7 // {1..6}
     tbb [r2,T1]    
 rel_idx0:
 rel_eq:
     beq 9f 
     b rel_false
-rel_lt: 
-    blt 9f   
-    b rel_false 
-rel_le:
-    ble 9f  
-    b rel_false 
 rel_gt:
     bgt 9f  
     b rel_false  
 rel_ge:
     bge 9f  
     b rel_false  
-rel_diff:
+rel_lt: 
+    blt 9f   
+    b rel_false 
+rel_le:
+    ble 9f  
+    b rel_false 
+rel_ne:
     bne 9f 
 rel_false:    
     eor r1,r1  // false
@@ -2146,13 +2108,12 @@ rel_false:
 
 
 relop_jmp: 
-  .byte 0 
+  .byte 0 // =  
   .byte (rel_gt-rel_idx0)/2 // > 
-  .byte 0 // =
-  .byte (rel_ge-rel_idx0)/2 // >= 
   .byte (rel_lt-rel_idx0)/2 // <
-  .byte (rel_diff-rel_idx0)/2 // <>
-  .byte (rel_le-rel_idx0)/2  // <=
+  .byte (rel_ge-rel_idx0)/2 // >=
+  .byte (rel_le-rel_idx0)/2 // <=
+  .byte (rel_ne-rel_idx0)/2 // <> 
 
 
 /***********************************
@@ -2650,7 +2611,7 @@ fn_table:
     mov r0,#ERR_MEM_FULL 
     b tb_error 
 2:  _CALL next_token 
-    cmp r0,#TK_LBL 
+    cmp r0,#TK_LABEL 
     bne syntax_error 
     orr r1,#(1<<31) // this label identify a constant 
     _PUSH r1 

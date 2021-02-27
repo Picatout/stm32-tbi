@@ -1,5 +1,27 @@
 #### 2021-02-26
 
+* Déboguage **relation**, **decompile_line**, **comp_token**. 
+
+#### 2021-02-26
+
+* Modification identifiants tokens et tout le code impliqué. 
+* Modififié **GOSUB** et **RETURN** maintenant sauvegarde adresse retour sur pile principale au lieu de la pile des arguments. 
+```
+list
+10  INPUT A,B
+20  PUSH A,B GOSUB PROD
+30  PRINT  POP
+40  GOTO 10 
+50 PROD PUSH  POP* POP  RETURN 
+READY
+RUN
+A=23
+B=67
+1541 
+A=
+READY
+```
+
 * Débogué **readln**  **CTRL_R** ne fonctionnait plus. 
 
 * Renommé les mots suivants: **PEEK8** en **PEEKB**, **PEEK16** en **PEEKH**  et **PEEK32** en **PEEKW**

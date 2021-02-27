@@ -33,53 +33,38 @@
 //--------------------------------------
 //       token attribute
 //--------------------------------------
-// bits 4:5 identify token group 
-// 0x0n -> miscelinous 
-// 0x1n -> +|- operators 
-// 0x2n -> *|/|% operators
-// 0x3n -> relational operators 
-  .equ TK_NONE,0       // not a token 
-  .equ TK_COLON,1      // command separator ':' 
-  .equ TK_QSTR,2     // quoted string  
-  .equ TK_CHAR,3       // ASCII character 
-  .equ TK_VAR,4      // variable index 
-  .equ TK_ARRAY,5     // array variable '@' 
-  .equ TK_LPAREN,6     // left parenthesis '('
-  .equ TK_RPAREN,7     // right parenthesis ')'
-  .equ TK_COMMA,8     // item separator ',' 
-  .equ TK_SEMIC,9     // semi-colon  
-  .equ TK_SHARP,0xa     // print colon width '#' 
-  .equ TK_CMD,0xb      // BASIC command   
-  .equ TK_IFUNC,0xc    // BASIC integer function
-  .equ TK_CFUNC,0xd    // BASIC character function
-  .equ TK_CONST,0xe    // BASIC constant 
-  .equ TK_INTGR,0xf    // 32 bits integer 
-  .equ TK_PLUS,0x10    // addition operator '+'
-  .equ TK_MINUS,0x11   // subtraction operator '-'
-  .equ TK_MULT,0x20    // multiplication operator '*'
-  .equ TK_DIV,0x21     // division operator '/'
-  .equ TK_MOD,0x22     // modulo operator '%'
-  .equ TK_LBL,0x40     // label token 
-  
-// don't change these token values 
-// values chosen to be used as a mask.
-// bit 7   1 for dictionary words else 0 
-// bits 6  always 0 
-// bits 5:4 identify group 
-// bits 3:0 token identifier inside group  
-  .equ TK_GT,0x31      // relation operator '>'
-  .equ TK_EQUAL,0x32   // assignment or relation operator '='
-  .equ TK_GE,0x33      // relation operator '>='
-  .equ TK_LT,0x34      // relation operator '<'
-  .equ TK_LE,0x36      // relation operator '<='
-  .equ TK_NE,0x35      // relation operator '<>' not equal 
-// token groups 
-  .equ TK_GRP_MASK,0x30 // groups bits selector 
-  .equ TK_GRP_MISC,0x00 // miscelinous group 
-  .equ TK_GRP_ADD,0x10  // additive operators
-  .equ TK_GRP_MULT,0x20 // multiplicative operators
-  .equ TK_GRP_RELOP,0x30 //relational operators. 
-  .equ CMD_END,2 
+// tokens without attributes 
+  .equ TK_NONE,0       // not a token mark end of line 
+  .equ TK_COLON,1      // ':' command separator 
+  .equ TK_COMMA,2      // ',' list separator
+  .equ TK_SEMIC,3      // ';' print command column align 
+  .equ TK_SHARP,4      // '#' print command set column width 
+  .equ TK_LPAREN,5     // '(' 
+  .equ TK_RPAREN,6     // ')'
+  .equ TK_PLUS,7       // '+'
+  .equ TK_MINUS,8      // '-'
+  .equ TK_MULT,9       // '*'
+  .equ TK_DIV,10       // '/'
+  .equ TK_MOD,11       // '%'   arithmetic modulo
+  .equ TK_ARRAY,12     // '@'   array variable  
+  .equ TK_EQUAL,13     // '='   assignment and relop 
+  .equ TK_GT,14        // '>'   relop 
+  .equ TK_LT,15        // '<'   relop 
+  .equ TK_GE,16        // '>='  relop 
+  .equ TK_LE,17        // '<='  relop
+  .equ TK_NE,18        // '<>'  relop 
+// tokens with .byte attribute 
+  .equ TK_CHAR,19      // ASCII character 
+  .equ TK_VAR,20       // variable index 
+  .equ TK_IFUNC,21     // BASIC integer function
+  .equ TK_CFUNC,22     // BASIC character function
+  .equ TK_CMD,23       // BASIC command   
+// token with .word attribute 
+  .equ TK_CONST,24    // BASIC constant 
+  .equ TK_LABEL,25
+  .equ TK_INTGR,26    // 32 bits integer 
+  .equ TK_QSTR,27     // quoted string  
+  .equ TK_INVALID,28  // value >=27 are invalid 
 
 //--------------------------------------
 //   error codes 
