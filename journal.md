@@ -1,4 +1,10 @@
-#### 2021-02-26
+#### 2021-02-27
+
+* Débogué **DUMP**,  la pile était débalancée lorsque l'entrée se faisait au point **dump01**. 
+
+* Ajout de **XPOS** et **YPOS** pour connaître la position actuelle du curseur à l'écran du terminal. 
+
+* Renommé **SIZE** en **FREE** 
 
 * Déboguage **relation**, **decompile_line**, **comp_token**. 
 

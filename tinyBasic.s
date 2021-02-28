@@ -2232,6 +2232,8 @@ ulast:
 	.equ link, 0
 kword_end:
   _dict_entry TK_NONE,"",0 
+  _dict_entry TK_IFUNC,YPOS,YPOS_IDX // ypos 
+  _dict_entry TK_IFUNC,XPOS,XPOS_IDX // xpos
   _dict_entry TK_IFUNC,XOR,XOR_IDX //bit_xor
   _dict_entry TK_CMD,WORDS,WORDS_IDX //words 
   _dict_entry TK_CMD,WAIT,WAIT_IDX //wait 
@@ -2250,7 +2252,6 @@ kword_end:
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
   _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
-  _dict_entry TK_IFUNC,SIZE,SIZE_IDX //size
   _dict_entry TK_CMD,SAVE,SAVE_IDX //save
   _dict_entry TK_CMD,RUN,RUN_IDX //run
   _dict_entry TK_IFUNC,RSHIFT,RSHIFT_IDX //rshift
@@ -2295,6 +2296,7 @@ kword_end:
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
   _dict_entry TK_IFUNC,GET,GET_IDX // get 
+  _dict_entry TK_IFUNC,FREE,FREE_IDX //free  
   _dict_entry TK_CMD,FORGET,FORGET_IDX //forget 
   _dict_entry TK_CMD,FOR,FOR_IDX //for 
   _dict_entry TK_CMD,ERASE,ERASE_IDX // erase 
@@ -2334,16 +2336,16 @@ fn_table:
 	.word abs,bit_and,ascii,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
-	.word cmd_end,erase,for,forget,get,gosub,goto
+	.word cmd_end,erase,for,forget,free,get,gosub,goto
 	.word hex_base,if,pin_input,input_var,invert,key
 	.word let,list,load,locate,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
 	.word qkey,read,skip_line
-	.word restore,return, random,rshift,run,save,size 
+	.word restore,return, random,rshift,run,save
 	.word sleep,spc,step,stop,store,tab
 	.word then,get_ticks,set_timer,timeout,to,trace,ubound,uflash,until
-	.word wait,words,bit_xor
+	.word wait,words,bit_xor,xpos,ypos 
 	.word 0 
 
 
@@ -2781,8 +2783,10 @@ no_data_line:
     cmp r0,#2
     bne syntax_error 
     _POP r2   // count 
-    _POP  r0  // adr 
+    _POP  r0  // adr
+    add sp,#4 // to balance stack when entering at dump01 
 dump01:
+    sub sp,#4
     _CALL print_dump_header 
 1:  mov r1,#16
     _CALL prt_row 
@@ -3902,13 +3906,13 @@ data_bytes: .asciz "bytes"
 
 
 /*******************************
-  BASIC: SIZE 
+  BASIC: FREE 
   return RAM free bytes 
 *******************************/
-    _FUNC size
-    ldr r0,[UPP,#TXTEND]
+    _FUNC free
+    ldr r0,[UPP,#HERE]
     ldr r1,[UPP,#ARRAY_ADR]
-    sub r1,R0
+    sub r1,r0
     mov r0,#TK_INTGR
     _RET  
 
@@ -4169,6 +4173,26 @@ dict_words: .asciz "words in dictionary"
     eor r1,r0 
     mov r0,#TK_INTGR
     _RET 
+
+/***************************************
+    BASIC: XPOS 
+    report cursor column on terminal 
+***************************************/
+    _FUNC xpos 
+    _CALL get_curpos
+    mov r0,#TK_INTGR
+    _RET 
+
+/***********************************
+    BASIC: YPOS 
+    report cursor line on terminal 
+***********************************/
+    _FUNC ypos 
+    _CALL get_curpos 
+    mov r1,r0 
+    mov r0,#TK_INTGR
+    _RET 
+
 
 /**********************************
      argument stack manipulation

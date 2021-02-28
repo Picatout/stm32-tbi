@@ -45,7 +45,8 @@
     .equ ERASE_IDX,END_IDX+1 
     .equ FOR_IDX, ERASE_IDX+1 // 
     .equ FORGET_IDX, FOR_IDX+1 // 
-    .equ GET_IDX,FORGET_IDX+1
+    .equ FREE_IDX, FORGET_IDX+1 // 
+    .equ GET_IDX,FREE_IDX+1
     .equ GOSUB_IDX, GET_IDX+1 // 
     .equ GOTO_IDX, GOSUB_IDX+1 //
     .equ HEX_IDX, GOTO_IDX+1 // 
@@ -86,8 +87,7 @@
     .equ RSHIFT_IDX, RND_IDX+1 // 
     .equ RUN_IDX, RSHIFT_IDX+1 // 
     .equ SAVE_IDX, RUN_IDX+1 // 
-    .equ SIZE_IDX, SAVE_IDX+1 // 
-    .equ SLEEP_IDX, SIZE_IDX+1 // 
+    .equ SLEEP_IDX, SAVE_IDX+1 // 
     .equ SPC_IDX,SLEEP_IDX+1 //
     .equ STEP_IDX, SPC_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
@@ -104,6 +104,8 @@
     .equ UNTIL_IDX, UFLASH_IDX+1 // 
     .equ WAIT_IDX, UNTIL_IDX+1 // 
     .equ WORDS_IDX, WAIT_IDX+1 // 
-    .equ WRITE_IDX, WORDS_IDX+1 // 
-    .equ XOR_IDX, WRITE_IDX+1 //  
+    .equ XOR_IDX, WORDS_IDX+1 //
+    .equ XPOS_IDX,XOR_IDX+1 //
+    .equ YPOS_IDX,XPOS_IDX+1 // 
+
     
