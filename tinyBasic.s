@@ -802,7 +802,7 @@ token_ofs:
     ldr r1,=kword_dict  
     _CALL search_dict 
     cbz r0,4f
-    cmp r0,TK_INTGR 
+    cmp r0,TK_SCONST  
     bne 8f
     //system constant  
     strb r0,[T2],#1
@@ -1196,8 +1196,8 @@ decomp_loop:
 4:  cmp r0,#TK_LABEL 
     bpl 5f   
     push {r0,r1}
-    mov r0,#SPACE 
-    strb r0,[T1],#1  
+//    mov r0,#SPACE 
+//    strb r0,[T1],#1  
     mov r0,r1 
     _CALL cmd_name
     mov r1,T1 
@@ -1781,7 +1781,7 @@ next_line:
     mov T1,r0 // save token id 
     cmp r0,#TK_CHAR 
     bmi 9f // these tokens have no value  
-    cmp r0,#TK_CONST 
+    cmp r0,#TK_SCONST 
     bpl 1f
     // tokens with .byte value 
     ldrb r1,[BPTR,IN] 
@@ -1944,7 +1944,11 @@ next_line:
     _CALL search_const
     mov r1,r0 
     b 8f 
-7:  _UNGET_TOKEN      
+7:  cmp r0,#TK_SCONST 
+    bne 7f 
+    mov r0,#TK_INTGR
+    b 8f 
+7: _UNGET_TOKEN      
     mov r0,#TK_NONE
     b 9f  
 8:  mul r1,T1 
@@ -2290,9 +2294,9 @@ kword_end:
   _dict_entry TK_IFUNC,IN,IN_IDX // pin_input   
   _dict_entry TK_CMD,IF,IF_IDX //if 
   _dict_entry TK_CMD,HEX,HEX_IDX //hex_base
-  _dict_entry TK_INTGR,GPIOC,GPIOC_BASE_ADR //  
-  _dict_entry TK_INTGR,GPIOB,GPIOB_BASE_ADR //  
-  _dict_entry TK_INTGR,GPIOA,GPIOA_BASE_ADR //  
+  _dict_entry TK_SCONST,GPIOC,GPIOC_BASE_ADR //  
+  _dict_entry TK_SCONST,GPIOB,GPIOB_BASE_ADR //  
+  _dict_entry TK_SCONST,GPIOA,GPIOA_BASE_ADR //  
   _dict_entry TK_CMD,GOTO,GOTO_IDX //goto 
   _dict_entry TK_CMD,GOSUB,GOSUB_IDX //gosub 
   _dict_entry TK_IFUNC,GET,GET_IDX // get 
@@ -2773,26 +2777,18 @@ no_data_line:
       r2   byte counter  
 ****************************************/
     _FUNC dump 
-    push {r2}
-    ldr r2,[UPP,#FLAGS]
-    tst r2,#FRUN 
-    beq 0f
-    mov r0,#ERR_CMD_ONLY 
-    b tb_error  
-0:  _CALL arg_list 
+    _CLO 
+    _CALL arg_list 
     cmp r0,#2
     bne syntax_error 
     _POP r2   // count 
     _POP  r0  // adr
-    add sp,#4 // to balance stack when entering at dump01 
 dump01:
-    sub sp,#4
     _CALL print_dump_header 
 1:  mov r1,#16
     _CALL prt_row 
     subs r2,#16 
     bpl 1b 
-2:  pop {r2}
     _RET 
 
 /********************************
@@ -3479,6 +3475,9 @@ pad_adr: .word _pad
   print list of arguments 
 ****************************/
     _FUNC print
+    ldr r0,[UPP,#FLAGS]
+    orr r0,#FPRINT 
+    str r0,[UPP,#FLAGS]
     eor T1,T1 
 0:  _CALL expression
     cmp r0,#TK_INTGR
@@ -3538,7 +3537,10 @@ unget_exit:
 print_exit:
     ands T1,T1 
     bne 9f
-    _CALL cr 
+    _CALL cr
+    ldr r0,[UPP,#FLAGS]
+    eor r0,#FPRINT 
+    str r0,[UPP,#FLAGS] 
 9:  _RET 
 
 /**************************************
@@ -3940,9 +3942,12 @@ data_bytes: .asciz "bytes"
     _CALL func_args 
     cmp r0,#1
     bne syntax_error 
+    ldr r0,[UPP,#FLAGS]
+    tst r0,#FPRINT 
     _POP r0 
+    beq 9f 
     _CALL spaces 
-    _RET 
+9:  _RET 
 
     _FUNC spi_read
     _RET 
@@ -3988,9 +3993,13 @@ data_bytes: .asciz "bytes"
     _CALL func_args  
     cmp r0,#1 
     bne syntax_error 
+    ldr r0,[UPP,#FLAGS]
+    tst r0,#FPRINT
     _POP r0 
+    beq 9f 
     _CALL cursor_x 
-    _RET 
+9:  _RET 
+
 
 /**************************
   BASIC: TICKS 

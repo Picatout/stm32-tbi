@@ -24,7 +24,7 @@
  R5         //  FOR loop variable address 
  R6         //  FOR loop limit 
  R7         //  FOR loop increment 
- T1-T2      //  temporary registers
+ R8,R9      //  temporary registers
  R10        //  interpreter line index 
  R11        //  interpreter BASIC line address 
  R12        //  parameters stack pointer 

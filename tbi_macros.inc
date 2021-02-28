@@ -58,13 +58,14 @@
   .equ TK_VAR,20       // variable index 
   .equ TK_IFUNC,21     // BASIC integer function
   .equ TK_CFUNC,22     // BASIC character function
-  .equ TK_CMD,23       // BASIC command   
+  .equ TK_CMD,23       // BASIC command
 // token with .word attribute 
-  .equ TK_CONST,24    // BASIC constant 
-  .equ TK_LABEL,25
-  .equ TK_INTGR,26    // 32 bits integer 
-  .equ TK_QSTR,27     // quoted string  
-  .equ TK_INVALID,28  // value >=27 are invalid 
+  .equ TK_SCONST,24    // SYSTEM constant    
+  .equ TK_CONST,25    // BASIC constant 
+  .equ TK_LABEL,26
+  .equ TK_INTGR,27    // 32 bits integer 
+  .equ TK_QSTR,28    // quoted string  
+  .equ TK_INVALID,29  // value >=27 are invalid 
 
 //--------------------------------------
 //   error codes 
@@ -95,11 +96,6 @@
 
 .equ CELL_SIZE,4 
 
-
-//-------------------------------
-//  macros used to help debugging
-//-------------------------------
-  .equ DEBUG,0
 
     UPP .req r4  // base address system variables 
     VADR .req r5  // address FOR loop variable 
@@ -152,11 +148,10 @@
 	.equ FBREAK,(1<<4) // break point flag 
 	.equ FCOMP,(1<<5)  // compiling flags 
 	.equ FAUTORUN,(1<<6) // auto start program running 
+  .equ FPRINT,(1<<7) // inside print command 
 
-	.equ AUTORUN_NAME,0x8001C00  // address in FLASH  where auto run file name is saved 
-  
   .equ FIRST_DATA_ITEM,6 // first DATA item offset on line.
-	.equ MAX_LINENO,0x7fff// BASIC maximum line number 
+	.equ MAX_LINENO,0xffff// BASIC maximum line number 
 
 /***********************************************
 *       MACROS
