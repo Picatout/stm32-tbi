@@ -688,6 +688,8 @@ readln_loop:
   b readln_loop 
 3: cmp r0,#CTRL_E 
   bne 3f 
+  eor r0,r0
+  strb r0,[r6,r5]
   mov r0,r6 // buffer 
   mov r1,#10  
   _CALL atoi

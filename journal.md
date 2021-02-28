@@ -1,3 +1,6 @@
+#### 2021-02-28
+
+* Corrigé bogue dans **readln**  la commande **CTRL_E** ne fonctionnait plus, c'était un bogue régressif. 
 #### 2021-02-27
 
 * Débogué **DUMP**,  la pile était débalancée lorsque l'entrée se faisait au point **dump01**. 

@@ -631,7 +631,7 @@ ARM GAS  terminal.s 			page 1
   68 0018 00B5FFF7 	1: _CALL  uart_getc 
   68      FEFF5DF8 
   68      04EB
-  69 0022 DFF8DC27 	    ldr r2,=convert_table
+  69 0022 DFF8E027 	    ldr r2,=convert_table
   70              	2:
   71 0026 1178     	    ldrb r1,[r2]
   72 0028 0940     	    ands r1,r1 
@@ -1348,7 +1348,7 @@ ARM GAS  terminal.s 			page 1
  651      04EB
  652 0402 0D28     	  cmp r0,#CR
  653 0404 00D1     	  bne 0f
- 654 0406 3BE1     	  b readln_exit 
+ 654 0406 3EE1     	  b readln_exit 
  655              	0:
  656 0408 0828     	  cmp r0,#BS 
  657 040a 2DD1     	  bne 2f 
@@ -1397,394 +1397,396 @@ ARM GAS  terminal.s 			page 1
  687 047a 85EA0505 	  eor r5,r5
  688 047e BBE7     	  b readln_loop 
  689 0480 0528     	3: cmp r0,#CTRL_E 
- 690 0482 29D1     	  bne 3f 
- 691 0484 3046     	  mov r0,r6 // buffer 
- 692 0486 4FF00A01 	  mov r1,#10  
- 693 048a 00B5FFF7 	  _CALL atoi
- 693      FEFF5DF8 
- 693      04EB
- 694 0494 0028     	  cmp r0,#0 
- 695 0496 AFD0     	  beq readln_loop 
- 696 0498 0846     	  mov r0,r1 // line# 
- 697 049a 00B5FFF7 	  _CALL search_lineno 
- 697      FEFF5DF8 
- 697      04EB
- 698 04a4 0029     	  cmp r1,#0 // not found 
- 699 04a6 A7D1     	  bne readln_loop 
- 700 04a8 3146     	  mov r1,r6 
- 701 04aa 00B5FFF7 	  _CALL decompile_line
- 701      FEFF5DF8 
- 701      04EB
- 702 04b4 00B5FFF7 	  _CALL strlen 
- 702      FEFF5DF8 
- 702      04EB
- 703 04be 0746     	  mov r7,r0 
- 704 04c0 0546     	  mov r5,r0
- 705 04c2 3046     	  mov r0,r6
- 706 04c4 00B5FFF7 	  _CALL update_line
- 706      6BFF5DF8 
- 706      04EB
- 707 04ce 03EB0700 	  add r0,r3,r7 
- 708 04d2 00F10100 	  add r0,#1  
- 709 04d6 8FE7     	  b readln_loop   
- 710 04d8 1228     	3: cmp r0,#CTRL_R    
- 711 04da 10D1     	  bne 3f 
- 712              	// edit last entered line if  available 
- 713 04dc 2D40     	  ands r5,r5 
- 714 04de 8BD1     	  bne readln_loop
- 715 04e0 3046     	  mov r0,r6 
- 716 04e2 00B5FFF7 	  _CALL strlen
- 716      FEFF5DF8 
- 716      04EB
- 717 04ec 0546     	  mov r5,r0
- 718 04ee 0746     	  mov r7,r0 
+ 690 0482 2CD1     	  bne 3f 
+ 691 0484 80EA0000 	  eor r0,r0
+ 692 0488 7055     	  strb r0,[r6,r5]
+ 693 048a 3046     	  mov r0,r6 // buffer 
+ 694 048c 4FF00A01 	  mov r1,#10  
+ 695 0490 00B5FFF7 	  _CALL atoi
+ 695      FEFF5DF8 
+ 695      04EB
+ 696 049a 0028     	  cmp r0,#0 
+ 697 049c ACD0     	  beq readln_loop 
+ 698 049e 0846     	  mov r0,r1 // line# 
+ 699 04a0 00B5FFF7 	  _CALL search_lineno 
+ 699      FEFF5DF8 
+ 699      04EB
+ 700 04aa 0029     	  cmp r1,#0 // not found 
+ 701 04ac A4D1     	  bne readln_loop 
+ 702 04ae 3146     	  mov r1,r6 
+ 703 04b0 00B5FFF7 	  _CALL decompile_line
+ 703      FEFF5DF8 
+ 703      04EB
+ 704 04ba 00B5FFF7 	  _CALL strlen 
+ 704      FEFF5DF8 
+ 704      04EB
+ 705 04c4 0746     	  mov r7,r0 
+ 706 04c6 0546     	  mov r5,r0
+ 707 04c8 3046     	  mov r0,r6
+ 708 04ca 00B5FFF7 	  _CALL update_line
+ 708      68FF5DF8 
+ 708      04EB
+ 709 04d4 03EB0700 	  add r0,r3,r7 
+ 710 04d8 00F10100 	  add r0,#1  
+ 711 04dc 8CE7     	  b readln_loop   
+ 712 04de 1228     	3: cmp r0,#CTRL_R    
+ 713 04e0 10D1     	  bne 3f 
+ 714              	// edit last entered line if  available 
+ 715 04e2 2D40     	  ands r5,r5 
+ 716 04e4 88D1     	  bne readln_loop
+ 717 04e6 3046     	  mov r0,r6 
+ 718 04e8 00B5FFF7 	  _CALL strlen
+ 718      FEFF5DF8 
+ 718      04EB
 ARM GAS  terminal.s 			page 25
 
 
- 719 04f0 3046     	  mov r0,r6  
- 720 04f2 00B5FFF7 	  _CALL uart_puts
- 720      FEFF5DF8 
- 720      04EB
- 721 04fc 7CE7     	  b readln_loop
- 722 04fe 0928     	3: cmp r0,#CTRL_I 
- 723 0500 08D1     	   bne 3f
- 724 0502 4FF00500 	   mov r0,#5
- 725 0506 8046     	   mov T1,r0 
- 726 0508 00B5FFF7 	   _CALL cursor_shape 
- 726      FEFF5DF8 
- 726      04EB
- 727 0512 71E7     	   b readln_loop  
- 728 0514 0F28     	3: cmp r0,#CTRL_O 
- 729 0516 08D1     	   bne 3f 
- 730 0518 4FF00000 	   mov r0,#0
- 731 051c 8046     	   mov T1,r0   
- 732 051e 00B5FFF7 	   _CALL cursor_shape
- 732      FEFF5DF8 
- 732      04EB
- 733 0528 66E7     	   b readln_loop 
- 734 052a 1B28     	3: cmp r0,#ESC 
- 735 052c 5CD1     	   bne character  
- 736 052e 00B5FFF7 	   _CALL get_escape
- 736      66FD5DF8 
- 736      04EB
- 737 0538 8228     	   cmp r0,#HOME 
- 738 053a 08D1     	   bne try_end
- 739 053c 3846     	   mov r0,r7 
- 740 053e 00B5FFF7 	   _call move_left 
- 740      9EFE5DF8 
- 740      04EB
- 741 0548 87EA0707 	   eor r7,r7  
- 742 054c 54E7     	   b readln_loop 
- 743              	try_end:
- 744 054e 8328     	   cmp r0,#END 
- 745 0550 08D1     	   bne try_left 
- 746 0552 A5EB0700 	   sub r0,r5,r7  
- 747 0556 00B5FFF7 	   _CALL move_right  
- 747      A6FE5DF8 
- 747      04EB
- 748 0560 2F46     	   mov r7,r5 
- 749 0562 49E7     	   b readln_loop 
- 750              	try_left: 
- 751 0564 8028     	   cmp r0,#ARROW_LEFT
- 752 0566 0CD1     	   bne try_right 
- 753 0568 3F40     	   ands r7,r7 
- 754 056a 3FF445AF 	   beq readln_loop
- 755 056e 4FF00100 	   mov r0,#1 
- 756 0572 00B5FFF7 	   _CALL move_left 
- 756      84FE5DF8 
- 756      04EB
- 757 057c A7F10107 	   sub r7,#1
- 758 0580 3AE7     	   b readln_loop
- 759              	try_right:
- 760 0582 8128     	   cmp r0,#ARROW_RIGHT 
- 761 0584 0CD1     	   bne try_suprim 
+ 719 04f2 0546     	  mov r5,r0
+ 720 04f4 0746     	  mov r7,r0 
+ 721 04f6 3046     	  mov r0,r6  
+ 722 04f8 00B5FFF7 	  _CALL uart_puts
+ 722      FEFF5DF8 
+ 722      04EB
+ 723 0502 79E7     	  b readln_loop
+ 724 0504 0928     	3: cmp r0,#CTRL_I 
+ 725 0506 08D1     	   bne 3f
+ 726 0508 4FF00500 	   mov r0,#5
+ 727 050c 8046     	   mov T1,r0 
+ 728 050e 00B5FFF7 	   _CALL cursor_shape 
+ 728      FEFF5DF8 
+ 728      04EB
+ 729 0518 6EE7     	   b readln_loop  
+ 730 051a 0F28     	3: cmp r0,#CTRL_O 
+ 731 051c 08D1     	   bne 3f 
+ 732 051e 4FF00000 	   mov r0,#0
+ 733 0522 8046     	   mov T1,r0   
+ 734 0524 00B5FFF7 	   _CALL cursor_shape
+ 734      FEFF5DF8 
+ 734      04EB
+ 735 052e 63E7     	   b readln_loop 
+ 736 0530 1B28     	3: cmp r0,#ESC 
+ 737 0532 5CD1     	   bne character  
+ 738 0534 00B5FFF7 	   _CALL get_escape
+ 738      63FD5DF8 
+ 738      04EB
+ 739 053e 8228     	   cmp r0,#HOME 
+ 740 0540 08D1     	   bne try_end
+ 741 0542 3846     	   mov r0,r7 
+ 742 0544 00B5FFF7 	   _call move_left 
+ 742      9BFE5DF8 
+ 742      04EB
+ 743 054e 87EA0707 	   eor r7,r7  
+ 744 0552 51E7     	   b readln_loop 
+ 745              	try_end:
+ 746 0554 8328     	   cmp r0,#END 
+ 747 0556 08D1     	   bne try_left 
+ 748 0558 A5EB0700 	   sub r0,r5,r7  
+ 749 055c 00B5FFF7 	   _CALL move_right  
+ 749      A3FE5DF8 
+ 749      04EB
+ 750 0566 2F46     	   mov r7,r5 
+ 751 0568 46E7     	   b readln_loop 
+ 752              	try_left: 
+ 753 056a 8028     	   cmp r0,#ARROW_LEFT
+ 754 056c 0CD1     	   bne try_right 
+ 755 056e 3F40     	   ands r7,r7 
+ 756 0570 3FF442AF 	   beq readln_loop
+ 757 0574 4FF00100 	   mov r0,#1 
+ 758 0578 00B5FFF7 	   _CALL move_left 
+ 758      81FE5DF8 
+ 758      04EB
+ 759 0582 A7F10107 	   sub r7,#1
+ 760 0586 37E7     	   b readln_loop
+ 761              	try_right:
 ARM GAS  terminal.s 			page 26
 
 
- 762 0586 AF42     	   cmp r7,r5
- 763 0588 3FF436AF 	   beq readln_loop
- 764 058c 07F10107 	   add r7,#1
- 765 0590 4FF00100 	   mov r0,#1  
- 766 0594 00B5FFF7 	   _CALL move_right  
- 766      87FE5DF8 
- 766      04EB
- 767 059e 2BE7     	   b readln_loop 
- 768              	try_suprim:
- 769 05a0 8428     	   cmp r0,#SUP
- 770 05a2 7FF429AF 	   bne readln_loop 
- 771              	// delete character at cursor 
- 772 05a6 AF42     	   cmp r7,r5
- 773 05a8 3FF426AF 	   beq readln_loop 
- 774 05ac 07EB0601 	   add r1,r7,r6 
- 775 05b0 01F10100 	   add r0,r1,#1 
- 776 05b4 A5EB0702 	   sub r2,r5,r7
- 777 05b8 00B5FFF7 	   _CALL cmove 
- 777      FEFF5DF8 
- 777      04EB
- 778 05c2 A5F10105 	   sub r5,#1 
- 779 05c6 80EA0000 	   eor r0,r0 
- 780 05ca 7055     	   strb r0,[r6,r5]
- 781 05cc 3046     	   mov r0,r6 
- 782 05ce 00B5FFF7 	   _CALL update_line
- 782      E6FE5DF8 
- 782      04EB
- 783 05d8 07EB0300 	   add  r0,r7,r3 
- 784 05dc 00B5FFF7 	   _CALL cursor_x 
- 784      FEFF5DF8 
+ 762 0588 8128     	   cmp r0,#ARROW_RIGHT 
+ 763 058a 0CD1     	   bne try_suprim 
+ 764 058c AF42     	   cmp r7,r5
+ 765 058e 3FF433AF 	   beq readln_loop
+ 766 0592 07F10107 	   add r7,#1
+ 767 0596 4FF00100 	   mov r0,#1  
+ 768 059a 00B5FFF7 	   _CALL move_right  
+ 768      84FE5DF8 
+ 768      04EB
+ 769 05a4 28E7     	   b readln_loop 
+ 770              	try_suprim:
+ 771 05a6 8428     	   cmp r0,#SUP
+ 772 05a8 7FF426AF 	   bne readln_loop 
+ 773              	// delete character at cursor 
+ 774 05ac AF42     	   cmp r7,r5
+ 775 05ae 3FF423AF 	   beq readln_loop 
+ 776 05b2 07EB0601 	   add r1,r7,r6 
+ 777 05b6 01F10100 	   add r0,r1,#1 
+ 778 05ba A5EB0702 	   sub r2,r5,r7
+ 779 05be 00B5FFF7 	   _CALL cmove 
+ 779      FEFF5DF8 
+ 779      04EB
+ 780 05c8 A5F10105 	   sub r5,#1 
+ 781 05cc 80EA0000 	   eor r0,r0 
+ 782 05d0 7055     	   strb r0,[r6,r5]
+ 783 05d2 3046     	   mov r0,r6 
+ 784 05d4 00B5FFF7 	   _CALL update_line
+ 784      E3FE5DF8 
  784      04EB
- 785 05e6 07E7     	   b readln_loop      
- 786              	character:
- 787 05e8 AF42     	   cmp r7,r5 
- 788 05ea 39D0     	   beq 5f // cursor at eol 
- 789              	// cursor in middle of line 
- 790              	// action depend on edit mode 
- 791 05ec 18EA0808 	  ands T1,T1  //check edit mode 
- 792 05f0 25D0     	  beq 2f 
- 793              	// insert mode
- 794 05f2 A945     	  cmp T2,r5 
- 795 05f4 3FF400AF 	  beq readln_loop // buffer full  
- 796 05f8 05B4     	  push {r0,r2}
- 797 05fa 06EB0700 	  add r0,r6,r7  // src 
- 798 05fe 00F10101 	  add r1,r0,#1   // dest 
- 799 0602 A5EB0702 	  sub r2,r5,r7  // move count 
- 800 0606 00B5FFF7 	  _CALL cmove   
- 800      FEFF5DF8 
- 800      04EB
- 801 0610 05BC     	  pop {r0,r2}
- 802 0612 F055     	  strb r0,[r6,r7] 
- 803 0614 05F10105 	  add r5,#1 
- 804 0618 80EA0000 	  eor r0,r0 
- 805 061c 7055     	  strb r0,[r6,r5]
- 806 061e 3046     	  mov r0,r6   
- 807 0620 00B5FFF7 	  _CALL update_line
- 807      BDFE5DF8 
+ 785 05de 07EB0300 	   add  r0,r7,r3 
+ 786 05e2 00B5FFF7 	   _CALL cursor_x 
+ 786      FEFF5DF8 
+ 786      04EB
+ 787 05ec 04E7     	   b readln_loop      
+ 788              	character:
+ 789 05ee AF42     	   cmp r7,r5 
+ 790 05f0 39D0     	   beq 5f // cursor at eol 
+ 791              	// cursor in middle of line 
+ 792              	// action depend on edit mode 
+ 793 05f2 18EA0808 	  ands T1,T1  //check edit mode 
+ 794 05f6 25D0     	  beq 2f 
+ 795              	// insert mode
+ 796 05f8 A945     	  cmp T2,r5 
+ 797 05fa 3FF4FDAE 	  beq readln_loop // buffer full  
+ 798 05fe 05B4     	  push {r0,r2}
+ 799 0600 06EB0700 	  add r0,r6,r7  // src 
+ 800 0604 00F10101 	  add r1,r0,#1   // dest 
+ 801 0608 A5EB0702 	  sub r2,r5,r7  // move count 
+ 802 060c 00B5FFF7 	  _CALL cmove   
+ 802      FEFF5DF8 
+ 802      04EB
+ 803 0616 05BC     	  pop {r0,r2}
+ 804 0618 F055     	  strb r0,[r6,r7] 
+ 805 061a 05F10105 	  add r5,#1 
+ 806 061e 80EA0000 	  eor r0,r0 
+ 807 0622 7055     	  strb r0,[r6,r5]
+ 808 0624 3046     	  mov r0,r6   
 ARM GAS  terminal.s 			page 27
 
 
- 807      04EB
- 808 062a 07F10107 	  add r7,#1
- 809 062e 07EB0300 	  add r0,r7,r3 
- 810 0632 00B5FFF7 	  _CALL cursor_x  
- 810      FEFF5DF8 
- 810      04EB
- 811 063c DCE6     	  b readln_loop   
- 812              	2: // overwrite mode 
- 813 063e F055     	  strb r0,[r6,r7]
- 814 0640 3046     	  mov r0,r6 
- 815 0642 00B5FFF7 	  _CALL update_line 
- 815      ACFE5DF8 
- 815      04EB
- 816 064c 07F10107 	  add r7,#1
- 817 0650 07EB0300 	  add r0,r7,r3
- 818 0654 00B5FFF7 	  _CALL cursor_x 
- 818      FEFF5DF8 
- 818      04EB
- 819 065e CBE6     	  b readln_loop 
- 820              	5: // cursor at eol, mode doesn't matter 
- 821 0660 CA45     	   cmp r10,T2 
- 822 0662 00D4     	   bmi 6f 
- 823 0664 C8E6     	   b readln_loop  // buffer full
- 824              	6: // only accept char>=32  
- 825 0666 2028     	   cmp r0,#SPACE 
- 826 0668 3FF5C6AE 	   bmi readln_loop 
- 827 066c F055     	   strb r0,[r6,r7] 
- 828 066e 00B5FFF7 	   _CALL uart_putc
- 828      FEFF5DF8 
- 828      04EB
- 829 0678 07F10107 	   add r7,#1
- 830 067c 3D46     	   mov r5,r7
- 831 067e BBE6     	   b readln_loop  
- 832              	readln_exit:
- 833 0680 00B5FFF7 	  _CALL uart_putc 
- 833      FEFF5DF8 
- 833      04EB
- 834 068a 80EA0000 	  eor r0,r0 
- 835 068e 7055     	  strb r0,[r6,r5]
- 836 0690 2946     	  mov r1,r5  // line length
- 837 0692 3046     	  mov r0,r6  // *buffer  
- 838 0694 BDE8EC03 	  pop {r2,r3,r5,r6,r7,T1,T2}
- 839 0698 7047     	  _RET 
- 840              	
- 841              	
- 842              	/*******************************
- 843              	    get_param 
- 844              	    read ANSI parameter 
- 845              	    input:
- 846              	      none 
- 847              	    output:
- 848              	      r0   value 
- 849              	    use:
- 850              	      T1   temp
- 851              	      T2   base 10  
- 852              	*******************************/
- 853 069a 00BF     	    _FUNC get_param
+ 809 0626 00B5FFF7 	  _CALL update_line
+ 809      BAFE5DF8 
+ 809      04EB
+ 810 0630 07F10107 	  add r7,#1
+ 811 0634 07EB0300 	  add r0,r7,r3 
+ 812 0638 00B5FFF7 	  _CALL cursor_x  
+ 812      FEFF5DF8 
+ 812      04EB
+ 813 0642 D9E6     	  b readln_loop   
+ 814              	2: // overwrite mode 
+ 815 0644 F055     	  strb r0,[r6,r7]
+ 816 0646 3046     	  mov r0,r6 
+ 817 0648 00B5FFF7 	  _CALL update_line 
+ 817      A9FE5DF8 
+ 817      04EB
+ 818 0652 07F10107 	  add r7,#1
+ 819 0656 07EB0300 	  add r0,r7,r3
+ 820 065a 00B5FFF7 	  _CALL cursor_x 
+ 820      FEFF5DF8 
+ 820      04EB
+ 821 0664 C8E6     	  b readln_loop 
+ 822              	5: // cursor at eol, mode doesn't matter 
+ 823 0666 CA45     	   cmp r10,T2 
+ 824 0668 00D4     	   bmi 6f 
+ 825 066a C5E6     	   b readln_loop  // buffer full
+ 826              	6: // only accept char>=32  
+ 827 066c 2028     	   cmp r0,#SPACE 
+ 828 066e 3FF5C3AE 	   bmi readln_loop 
+ 829 0672 F055     	   strb r0,[r6,r7] 
+ 830 0674 00B5FFF7 	   _CALL uart_putc
+ 830      FEFF5DF8 
+ 830      04EB
+ 831 067e 07F10107 	   add r7,#1
+ 832 0682 3D46     	   mov r5,r7
+ 833 0684 B8E6     	   b readln_loop  
+ 834              	readln_exit:
+ 835 0686 00B5FFF7 	  _CALL uart_putc 
+ 835      FEFF5DF8 
+ 835      04EB
+ 836 0690 80EA0000 	  eor r0,r0 
+ 837 0694 7055     	  strb r0,[r6,r5]
+ 838 0696 2946     	  mov r1,r5  // line length
+ 839 0698 3046     	  mov r0,r6  // *buffer  
+ 840 069a BDE8EC03 	  pop {r2,r3,r5,r6,r7,T1,T2}
+ 841 069e 7047     	  _RET 
+ 842              	
+ 843              	
+ 844              	/*******************************
+ 845              	    get_param 
+ 846              	    read ANSI parameter 
+ 847              	    input:
+ 848              	      none 
+ 849              	    output:
+ 850              	      r0   value 
+ 851              	    use:
+ 852              	      T1   temp
+ 853              	      T2   base 10  
 ARM GAS  terminal.s 			page 28
 
 
- 854 069c 2DE90003 	    push {T1,T2}
- 855 06a0 88EA0808 	    eor T1,T1 
- 856 06a4 4FF00A09 	    mov T2,#10 
- 857 06a8 00B5FFF7 	1:  _CALL uart_getc
- 857      FEFF5DF8 
- 857      04EB
- 858 06b2 00B5FFF7 	    _CALL is_digit 
- 858      FEFF5DF8 
- 858      04EB
- 859 06bc 03D1     	    bne 9f 
- 860 06be 09FB08F8 	    mul T1,T2 
- 861 06c2 8044     	    add T1,r0 
- 862 06c4 F0E7     	    b 1b
- 863              	9: 
- 864 06c6 4046     	    mov r0,T1     
- 865 06c8 BDE80003 	    pop {T1,T2}
- 866 06cc 7047     	    _RET 
- 867              	
- 868              	/*******************************
- 869              	    get_curpos 
- 870              	    report cursor position 
- 871              	  input:
- 872              	    none 
- 873              	  output:
- 874              	    r0    row 
- 875              	    r1    column
- 876              	  use:
- 877              	    r2
- 878              	    r3 
- 879              	*******************************/
- 880 06ce 00BF     	    _GBL_FUNC get_curpos 
- 881 06d0 0CB4     	    push {r2,r3}   
- 882 06d2 00B5FFF7 	    _CALL uart_flush_queue 
- 882      FEFF5DF8 
- 882      04EB
- 883 06dc 00B5FFF7 	    _CALL send_escape 
- 883      9FFD5DF8 
- 883      04EB
- 884 06e6 4FF03600 	    mov r0,#'6'
- 885 06ea 00B5FFF7 	    _CALL uart_putc
- 885      FEFF5DF8 
+ 854              	*******************************/
+ 855              	    _FUNC get_param
+ 856 06a0 2DE90003 	    push {T1,T2}
+ 857 06a4 88EA0808 	    eor T1,T1 
+ 858 06a8 4FF00A09 	    mov T2,#10 
+ 859 06ac 00B5FFF7 	1:  _CALL uart_getc
+ 859      FEFF5DF8 
+ 859      04EB
+ 860 06b6 00B5FFF7 	    _CALL is_digit 
+ 860      FEFF5DF8 
+ 860      04EB
+ 861 06c0 03D1     	    bne 9f 
+ 862 06c2 09FB08F8 	    mul T1,T2 
+ 863 06c6 8044     	    add T1,r0 
+ 864 06c8 F0E7     	    b 1b
+ 865              	9: 
+ 866 06ca 4046     	    mov r0,T1     
+ 867 06cc BDE80003 	    pop {T1,T2}
+ 868 06d0 7047     	    _RET 
+ 869              	
+ 870              	/*******************************
+ 871              	    get_curpos 
+ 872              	    report cursor position 
+ 873              	  input:
+ 874              	    none 
+ 875              	  output:
+ 876              	    r0    row 
+ 877              	    r1    column
+ 878              	  use:
+ 879              	    r2
+ 880              	    r3 
+ 881              	*******************************/
+ 882 06d2 00BF     	    _GBL_FUNC get_curpos 
+ 883 06d4 0CB4     	    push {r2,r3}   
+ 884 06d6 00B5FFF7 	    _CALL uart_flush_queue 
+ 884      FEFF5DF8 
+ 884      04EB
+ 885 06e0 00B5FFF7 	    _CALL send_escape 
+ 885      9DFD5DF8 
  885      04EB
- 886 06f4 4FF06E00 	    mov r0,#'n'
- 887 06f8 00B5FFF7 	    _CALL uart_putc  
+ 886 06ea 4FF03600 	    mov r0,#'6'
+ 887 06ee 00B5FFF7 	    _CALL uart_putc
  887      FEFF5DF8 
  887      04EB
- 888 0702 00B5FFF7 	    _CALL uart_getc 
- 888      FEFF5DF8 
- 888      04EB
- 889 070c 1B28     	    cmp r0,#ESC 
- 890 070e 13D1     	    bne 9f 
- 891 0710 00B5FFF7 	    _CALL uart_getc 
- 891      FEFF5DF8 
- 891      04EB
- 892 071a 5B28     	    cmp r0,#'[' 
- 893 071c 0CD1     	    bne 9f 
- 894 071e 00B5FFF7 	    _CALL get_param 
+ 888 06f8 4FF06E00 	    mov r0,#'n'
+ 889 06fc 00B5FFF7 	    _CALL uart_putc  
+ 889      FEFF5DF8 
+ 889      04EB
+ 890 0706 00B5FFF7 	    _CALL uart_getc 
+ 890      FEFF5DF8 
+ 890      04EB
+ 891 0710 1B28     	    cmp r0,#ESC 
+ 892 0712 13D1     	    bne 9f 
+ 893 0714 00B5FFF7 	    _CALL uart_getc 
+ 893      FEFF5DF8 
+ 893      04EB
+ 894 071e 5B28     	    cmp r0,#'[' 
 ARM GAS  terminal.s 			page 29
 
 
- 894      BCFF5DF8 
- 894      04EB
- 895 0728 0246     	    mov r2,r0 
- 896 072a 00B5FFF7 	    _CALL get_param 
- 896      B6FF5DF8 
+ 895 0720 0CD1     	    bne 9f 
+ 896 0722 00B5FFF7 	    _CALL get_param 
+ 896      BCFF5DF8 
  896      04EB
- 897 0734 0146     	    mov r1,r0 
- 898 0736 1046     	    mov r0,r2 
- 899 0738 0CBC     	9:  pop {r2,r3}
- 900 073a 7047     	    _RET 
- 901              	
- 902              	/***********************************
- 903              	    set_curpos y,x 
- 904              	    set terminal cursor position
- 905              	    input:
- 906              	      r0  y 
- 907              	      r1  x 
- 908              	**********************************/
- 909              	    _GBL_FUNC set_curpos 
- 910 073c 00B5FFF7 	    _CALL send_escape
- 910      6FFD5DF8 
- 910      04EB
- 911 0746 00B5FFF7 	    _CALL send_parameter
- 911      7CFD5DF8 
- 911      04EB
- 912 0750 4FF03B00 	    mov r0,#';'
- 913 0754 00B5FFF7 	    _CALL uart_putc 
- 913      FEFF5DF8 
+ 897 072c 0246     	    mov r2,r0 
+ 898 072e 00B5FFF7 	    _CALL get_param 
+ 898      B6FF5DF8 
+ 898      04EB
+ 899 0738 0146     	    mov r1,r0 
+ 900 073a 1046     	    mov r0,r2 
+ 901 073c 0CBC     	9:  pop {r2,r3}
+ 902 073e 7047     	    _RET 
+ 903              	
+ 904              	/***********************************
+ 905              	    set_curpos y,x 
+ 906              	    set terminal cursor position
+ 907              	    input:
+ 908              	      r0  y 
+ 909              	      r1  x 
+ 910              	**********************************/
+ 911              	    _GBL_FUNC set_curpos 
+ 912 0740 00B5FFF7 	    _CALL send_escape
+ 912      6DFD5DF8 
+ 912      04EB
+ 913 074a 00B5FFF7 	    _CALL send_parameter
+ 913      7AFD5DF8 
  913      04EB
- 914 075e 0846     	    mov r0,r1 
- 915 0760 00B5FFF7 	    _CALL send_parameter 
- 915      6FFD5DF8 
+ 914 0754 4FF03B00 	    mov r0,#';'
+ 915 0758 00B5FFF7 	    _CALL uart_putc 
+ 915      FEFF5DF8 
  915      04EB
- 916 076a 4FF04800 	    mov r0,#'H' 
- 917 076e 00B5FFF7 	    _CALL uart_putc     
- 917      FEFF5DF8 
+ 916 0762 0846     	    mov r0,r1 
+ 917 0764 00B5FFF7 	    _CALL send_parameter 
+ 917      6DFD5DF8 
  917      04EB
- 918 0778 7047     	    _RET 
- 919              	
- 920              	/***********************************
- 921              	    tabulation 
- 922              	    set cursor column to next 
- 923              	    tabulation stop    
- 924              	**********************************/
- 925 077a 00BF     	    _GBL_FUNC tabulation 
- 926 077c 07B4     	    push {r0,r1,r2}
- 927 077e 00B5FFF7 	    _CALL get_curpos 
- 927      FEFF5DF8 
- 927      04EB
- 928 0788 A1F10100 	    sub r0,r1,#1
- 929 078c 02B4     	    push {r1} 
- 930 078e 616C     	    ldr r1,[UPP,#TAB_WIDTH]
- 931 0790 00B5FFF7 	    _CALL modulo
- 931      FEFF5DF8 
- 931      04EB
- 932 079a 606C     	    ldr r0,[UPP,#TAB_WIDTH]
- 933 079c A0EB0100 	    sub r0,r1
+ 918 076e 4FF04800 	    mov r0,#'H' 
+ 919 0772 00B5FFF7 	    _CALL uart_putc     
+ 919      FEFF5DF8 
+ 919      04EB
+ 920 077c 7047     	    _RET 
+ 921              	
+ 922              	/***********************************
+ 923              	    tabulation 
+ 924              	    set cursor column to next 
+ 925              	    tabulation stop    
+ 926              	**********************************/
+ 927 077e 00BF     	    _GBL_FUNC tabulation 
+ 928 0780 07B4     	    push {r0,r1,r2}
+ 929 0782 00B5FFF7 	    _CALL get_curpos 
+ 929      FEFF5DF8 
+ 929      04EB
+ 930 078c A1F10100 	    sub r0,r1,#1
+ 931 0790 02B4     	    push {r1} 
+ 932 0792 616C     	    ldr r1,[UPP,#TAB_WIDTH]
+ 933 0794 00B5FFF7 	    _CALL modulo
+ 933      FEFF5DF8 
+ 933      04EB
 ARM GAS  terminal.s 			page 30
 
 
- 934 07a0 02BC     	    pop {r1}
- 935 07a2 0144     	    add r1,r0
- 936 07a4 5029     	    cmp r1,#80
- 937 07a6 05DA     	    bge 2f  
- 938 07a8 00B5FFF7 	    _CALL spaces
- 938      FEFF5DF8 
- 938      04EB
- 939 07b2 04E0     	    b 9f 
- 940 07b4 00B5FFF7 	2: _CALL cr 
+ 934 079e 606C     	    ldr r0,[UPP,#TAB_WIDTH]
+ 935 07a0 A0EB0100 	    sub r0,r1
+ 936 07a4 02BC     	    pop {r1}
+ 937 07a6 0144     	    add r1,r0
+ 938 07a8 5029     	    cmp r1,#80
+ 939 07aa 05DA     	    bge 2f  
+ 940 07ac 00B5FFF7 	    _CALL spaces
  940      FEFF5DF8 
  940      04EB
- 941 07be 07BC     	9:  pop {r0,r1,r2}
- 942 07c0 7047     	    _RET 
- 943              	
- 944              	/********************************
- 945              	    cr 
- 946              	    send a carriage return 
- 947              	    to terminal 
- 948              	********************************/ 
- 949 07c2 00BF     	    _GBL_FUNC cr 
- 950 07c4 4FF00D00 	    mov r0,#CR 
- 951 07c8 00B5FFF7 	    _CALL uart_putc 
- 951      FEFF5DF8 
- 951      04EB
- 952 07d2 7047     	    _RET
- 953              	
- 954              	/********************************
- 955              	    clear_screen
- 956              	********************************/
- 957              	    _GBL_FUNC clear_screen 
- 958 07d4 4FF00100 	    mov r0,#1 
- 959 07d8 4FF00101 	    mov r1,#1
- 960 07dc 00B5FFF7 	    _CALL set_curpos
- 960      FEFF5DF8 
- 960      04EB
- 961 07e6 00B5FFF7 	    _CALL send_escape 
- 961      1AFD5DF8 
- 961      04EB
- 962 07f0 4FF04A00 	    mov r0,#'J' 
- 963 07f4 00B5FFF7 	    _CALL uart_putc 
- 963      FEFF5DF8 
+ 941 07b6 04E0     	    b 9f 
+ 942 07b8 00B5FFF7 	2: _CALL cr 
+ 942      FEFF5DF8 
+ 942      04EB
+ 943 07c2 07BC     	9:  pop {r0,r1,r2}
+ 944 07c4 7047     	    _RET 
+ 945              	
+ 946              	/********************************
+ 947              	    cr 
+ 948              	    send a carriage return 
+ 949              	    to terminal 
+ 950              	********************************/ 
+ 951 07c6 00BF     	    _GBL_FUNC cr 
+ 952 07c8 4FF00D00 	    mov r0,#CR 
+ 953 07cc 00B5FFF7 	    _CALL uart_putc 
+ 953      FEFF5DF8 
+ 953      04EB
+ 954 07d6 7047     	    _RET
+ 955              	
+ 956              	/********************************
+ 957              	    clear_screen
+ 958              	********************************/
+ 959              	    _GBL_FUNC clear_screen 
+ 960 07d8 4FF00100 	    mov r0,#1 
+ 961 07dc 4FF00101 	    mov r1,#1
+ 962 07e0 00B5FFF7 	    _CALL set_curpos
+ 962      FEFF5DF8 
+ 962      04EB
+ 963 07ea 00B5FFF7 	    _CALL send_escape 
+ 963      18FD5DF8 
  963      04EB
- 964 07fe 70475400 	    _RET 
- 964      0000
+ 964 07f4 4FF04A00 	    mov r0,#'J' 
+ 965 07f8 00B5FFF7 	    _CALL uart_putc 
+ 965      FEFF5DF8 
+ 965      04EB
+ 966 0802 70475400 	    _RET 
+ 966      0000
 ARM GAS  terminal.s 			page 31
 
 
@@ -2132,23 +2134,23 @@ DEFINED SYMBOLS
           terminal.s:583    .text:0000000000000378 delete_right
           terminal.s:601    .text:00000000000003a0 update_line
           terminal.s:639    .text:00000000000003c8 readln
-          terminal.s:880    .text:00000000000006d0 get_curpos
+          terminal.s:882    .text:00000000000006d4 get_curpos
           terminal.s:650    .text:00000000000003f8 readln_loop
-          terminal.s:832    .text:0000000000000680 readln_exit
-          terminal.s:786    .text:00000000000005e8 character
-          terminal.s:743    .text:000000000000054e try_end
-          terminal.s:750    .text:0000000000000564 try_left
-          terminal.s:759    .text:0000000000000582 try_right
-          terminal.s:768    .text:00000000000005a0 try_suprim
-          terminal.s:853    .text:000000000000069c get_param
-          terminal.s:909    .text:000000000000073c set_curpos
-          terminal.s:925    .text:000000000000077c tabulation
-          terminal.s:949    .text:00000000000007c4 cr
-          terminal.s:957    .text:00000000000007d4 clear_screen
+          terminal.s:834    .text:0000000000000686 readln_exit
+          terminal.s:788    .text:00000000000005ee character
+          terminal.s:745    .text:0000000000000554 try_end
+          terminal.s:752    .text:000000000000056a try_left
+          terminal.s:761    .text:0000000000000588 try_right
+          terminal.s:770    .text:00000000000005a6 try_suprim
+          terminal.s:855    .text:00000000000006a0 get_param
+          terminal.s:911    .text:0000000000000740 set_curpos
+          terminal.s:927    .text:0000000000000780 tabulation
+          terminal.s:951    .text:00000000000007c8 cr
+          terminal.s:959    .text:00000000000007d8 clear_screen
 ARM GAS  terminal.s 			page 37
 
 
-          terminal.s:964    .text:0000000000000800 $d
+          terminal.s:966    .text:0000000000000804 $d
 
 UNDEFINED SYMBOLS
 uart_getc
