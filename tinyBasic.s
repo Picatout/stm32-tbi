@@ -340,26 +340,27 @@ main_stack:
   input:
     r0  constant label 
   output:
-    r0  constant value  
+    r0  TK_INTGR 
+    r1  constant value  
   use:
-    r1  temp 
-    T1   *list 
-    T2   BOUND 
+    r2   *list 
+    r3   BOUND 
 ***************************************/
     _FUNC search_const
-    push {r1,T1,T2} 
-    ldr T1,[UPP,#TXTEND]
-    ldr T2,[UPP,#HERE] 
-1:  cmp T1,T2 
+    push {r2,r3} 
+    ldr r2,[UPP,#TXTEND]
+    ldr r3,[UPP,#HERE] 
+1:  cmp r2,r3 
     bpl 8f 
-    ldr r1,[T1],#4
+    ldr r1,[r2],#4
     cmp r0,r1 
     beq 2f 
-    add T1,#4
+    add r2,#4
     b 1b 
 2:  // found 
-    ldr r0,[T1]
-    pop {r1,T1,T2}
+    ldr r1,[r2]
+    mov r0,#TK_INTGR 
+    pop {r2,r3}
     _RET
 8:  // that constant doesn't exist 
     mov r0,#ERR_BAD_VALUE 
@@ -1192,12 +1193,12 @@ decomp_loop:
     bne 4f 
     add r0,r1,'A'
     strb r0,[T1],#1 
+    mov r0,#SPACE 
+    strb r0,[T1],#1
     b decomp_loop 
 4:  cmp r0,#TK_LABEL 
     bpl 5f   
     push {r0,r1}
-//    mov r0,#SPACE 
-//    strb r0,[T1],#1  
     mov r0,r1 
     _CALL cmd_name
     mov r1,T1 
@@ -1206,11 +1207,9 @@ decomp_loop:
     _CALL strlen 
     add T1,r0
     pop {r0,r1}
-    cmp r0,#TK_IFUNC
-    beq 4f
     mov r0,#SPACE 
     strb r0,[T1],#1 
-4:  cmp r1,#REM_IDX
+    cmp r1,#REM_IDX
     bne decomp_loop 
     add r0,BPTR,IN
     mov r1,T1   
@@ -1754,16 +1753,10 @@ interpreter:
     T1    exit token type  
 ****************************/
     _FUNC next_token 
-    push {T1}
-    eor T1,T1 // TK_NONE 
     ldr r0,[UPP,#COUNT]
     cmp IN,r0 
     bmi 0f
-end_of_line:
-    ldrh r1,[BPTR] // line #
-    cbnz r1, next_line  // command line
-    b warm_start
-next_line:
+// reached end of line skip to next one 
     add BPTR,r0 // next line 
     ldr r0,[UPP,#TXTEND]
     cmp BPTR,r0 
@@ -1772,13 +1765,13 @@ next_line:
     str r0,[UPP,#COUNT] 
     mov IN,#3
     _CALL show_trace
-    b 9f  
+    eor r0,r0
+    _RET 
 0: 
     str IN,[UPP,#IN_SAVED]
     str BPTR,[UPP,#BASICPTR]
     ldrb r0,[BPTR,IN] // token id 
     add IN,#1  
-    mov T1,r0 // save token id 
     cmp r0,#TK_CHAR 
     bmi 9f // these tokens have no value  
     cmp r0,#TK_SCONST 
@@ -1786,22 +1779,20 @@ next_line:
     // tokens with .byte value 
     ldrb r1,[BPTR,IN] 
     add IN,#1 
-    b 9f  
+    _RET  
 1:  cmp r0,#TK_QSTR 
     bne 2f 
     add r1,BPTR,IN
     mov r0,r1 
     _CALL strlen 
     add IN,r0 
-    add IN,#1 
-    b 9f 
+    add IN,#1
+    mov r0,#TK_QSTR 
+    _RET  
 2:  // .word value 
     ldr r1,[BPTR,IN] 
     add IN,#4 
-    b 9f 
-9:  mov r0,T1  
-    pop {T1}
-    _RET
+9:  _RET
 
 
 /*********************************
@@ -1860,19 +1851,18 @@ next_line:
     push {T1}
     eor T1,T1 
 1:  _CALL expression 
-    cmp R0,#TK_NONE 
-    beq 9f 
-    cmp r0,#TK_INTGR
-    bne 9f 
+    cmp R0,#TK_INTGR  
+    bne 2f
     _PUSH r1 
     add T1,#1 
     _CALL next_token 
     cmp r0,#TK_COMMA 
     beq 1b 
-    _UNGET_TOKEN 
+2:  _UNGET_TOKEN 
 9:  mov r0,T1 
     pop {T1}
     _RET 
+
 
 /***********************************
  factor
@@ -1887,19 +1877,15 @@ next_line:
     r1   token value 
   use:
     r2   temp 
-    T1   sign 
-    T2   exit token attribute 
+    r3   sign 
 ***********************************/
     _FUNC factor 
-    push {r2,T1,T2}
-    mov T2,#TK_INTGR 
-    mov T1,#1 // default sign +  
+    push {r2,r3}
     _CALL next_token
-    cmp r0,#TK_PLUS 
-    beq 0f 
+    mov r3,#1 // default sign +  
     cmp r0,#TK_MINUS  
     bne 1f 
-    mov T1,#-1 // minus sign 
+    mov r3,#-1 // minus sign 
 0:  _CALL next_token
 1:  cmp r0,#TK_INTGR 
     beq 8f 
@@ -1910,7 +1896,6 @@ next_line:
     _CALL expression
     cmp r0,#TK_INTGR
     bne syntax_error
-    mov T2,r0
     mov r2,r1  
     mov r0,#TK_RPAREN
     _CALL expect 
@@ -1922,11 +1907,11 @@ next_line:
     _CALL expression 
     cmp r0,#TK_INTGR 
     bne syntax_error
-    mov T2,r0
     mov r2,r1   
     mov r0,#TK_RPAREN
     _CALL expect 
     mov r1,r2 
+    mov r0,#TK_INTGR
     b 8f       
 3:  cmp r0,#TK_VAR 
     bne 4f
@@ -1942,18 +1927,12 @@ next_line:
     bne 7f 
     orr r0,r1,#(1<<31) 
     _CALL search_const
-    mov r1,r0 
     b 8f 
 7:  cmp r0,#TK_SCONST 
-    bne 7f 
+    bne 9f 
     mov r0,#TK_INTGR
-    b 8f 
-7: _UNGET_TOKEN      
-    mov r0,#TK_NONE
-    b 9f  
-8:  mul r1,T1 
-    movs r0,T2 
-9:  pop {r2,T1,T2}   
+8:  mul r1,r3 
+9:  pop {r2,r3}   
     _RET 
 
 
@@ -1965,29 +1944,29 @@ next_line:
       r0  	token attribute 
       r1		integer
     use:
-      r2    first operand 
-      r3    temp 
-      T1    operator 
-      T2    exit token attribute 
+      r2    first factor 
+      r3    operator *|/|%
 ******************************************/
-     _FUNC term 
-    push {r2,r3,T1,T2}
-    mov T2,#TK_NONE 
+    _FUNC term 
     _CALL factor
-    cbz r0, 9f  // no factor   
-    mov T2,r0  // TK_INTGR 
+    cmp r0,#TK_INTGR
+    beq 0f 
+    _RET // not a factor    
+0:  push {r2,r3}
     mov r2,r1 // first factor    
 0:  _CALL next_token
-    mov T1,r0  // operator 
+    mov r3,r0  // operator 
     cmp r0,TK_MULT
     bmi 1f 
     cmp r0,#TK_MOD+1
     bmi 2f
 1:  _UNGET_TOKEN
+    mov r0,#TK_INTGR
     b 9f 
-2:  _CALL factor  
-    beq syntax_error 
-    cmp T1,#TK_MULT
+2:  _CALL factor
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    cmp r3,#TK_MULT
     bne 3f 
 // multiplication
     mul r2,r1
@@ -2004,9 +1983,9 @@ next_line:
     sub  r2,r0,r2
     b 0b  
 9:  mov r1,r2 
-    movs r0,T2 
-    pop {r2,r3,T1,T2}
+    pop {r2,r3}
     _RET 
+
 
 /*****************************************
     expression 
@@ -2017,38 +1996,36 @@ next_line:
       r0    TK_NONE || TK_INTGR 
       r1 	  integer
     use:
-      r2  left operand 
-      T1  operator 
-      T2  exit token attribute
+      r2  left term 
+      r3  operator +|-
 ******************************************/
     _FUNC expression 
-    push {r2,t1,t2}
-    mov T2,#TK_NONE
-    eor r2,r2 // zero 
     _CALL term 
-    beq 9f  // no term  
+    cmp r0,#TK_INTGR 
+    beq 0f 
+    _RET   
+0:  push {r2,r3}
     mov r2,r1 // first term
-    mov T2,#TK_INTGR    
 1:  _CALL next_token 
-    mov T1,r0 // token type +|-
+    mov r3,r0 //  +|-
     cmp r0,#TK_PLUS 
     beq 3f 
     cmp r0,#TK_MINUS  
-    beq 3f 
-    _UNGET_TOKEN
-    b 9f  
+    beq 3f
+    _UNGET_TOKEN 
+    mov r0,#TK_INTGR
+    b 9f 
 3:  _CALL term 
     cmp r0,#TK_INTGR 
     bne syntax_error 
-    cmp T1,#TK_PLUS 
+    cmp r3,#TK_PLUS 
     beq 4f 
-    sub r2,r2,r1 // N1-N2  
+    sub r2,r1 // term1-term2  
     b 1b 
-4:  add r2,r2,r1 // N1+N2
+4:  add r2,r1 // term1+term2
     b 1b
-9:  movs r0,T2 
-    mov r1,r2 
-    pop {r2,t1,t2}
+9:  mov r1,r2 
+    pop {r2,r3}
     _RET 
 
 
@@ -2062,16 +2039,16 @@ next_line:
         r1	integer 
     use:
         r2   first operand 
-        T1   relop   
+        r3   relop   
 **********************************************/
     _FUNC relation 
-    push {r2,T1}
+    push {r2,r3}
     _CALL expression 
     cmp r0,#TK_INTGR 
     bne syntax_error 
     mov r2,r1  // first operand  
     _CALL next_token 
-    sub T1,r0,#TK_EQUAL  // relop  
+    sub r3,r0,#TK_EQUAL  // relop  
     cmp r0,#TK_EQUAL 
     bmi 8f 
     cmp r0,#TK_CHAR 
@@ -2082,7 +2059,7 @@ next_line:
     cmp r2,r1 // compare operands  
     mov r1,#-1 
     ldr r2,=relop_jmp
-    tbb [r2,T1]    
+    tbb [r2,r3]    
 rel_idx0:
 rel_eq:
     beq 9f 
@@ -2107,7 +2084,7 @@ rel_false:
 8:  _UNGET_TOKEN 
     mov r1,r2    
 9:  mov r0,#TK_INTGR
-    pop {r2,T1}
+    pop {r2,r3}
     _RET 
 
 
@@ -2601,7 +2578,7 @@ fn_table:
     _RET 
 
 /**********************************
-  BASIC: CONST !label=expr [,!label=expr]
+  BASIC: CONST label=expr [,!label=expr]
   define constants constants are 
   store at end of BASIC code.
   use:
@@ -3486,8 +3463,7 @@ pad_adr: .word _pad
     ldr r1,[UPP,#BASE]
     _CALL print_int
     b 8f  
-1:  _CALL next_token
-    cmp r0,#TK_COLON 
+1:  cmp r0,#TK_COLON 
     bgt 2f
     b unget_exit 
 2:  cmp r0,#TK_QSTR 

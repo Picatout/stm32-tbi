@@ -1,4 +1,14 @@
+#### 2021-03-01
+
+* Corrigé bogue dans **next_token** qui ne retournait pas **TK_QSTR** dans r0.
+
+* Retravaillé  **relation** et **expression** ainsi que code dépendant. 
+
 #### 2021-02-28
+
+* Modifié **décompile_line** pour insérer espace après variable et fonction.
+
+* Optimisé **next_token**. 
 
 * Trouver bogue dans **decompile_line** qui m'a obligé à créer **TK_SCONST** pour distinguer les constantes système de celles-créées par l'utilisateur. Ajustement de code nécessaire.
 
