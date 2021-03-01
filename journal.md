@@ -1,6 +1,12 @@
 #### 2021-02-28
 
+* Trouver bogue dans **decompile_line** qui m'a obligé à créer **TK_SCONST** pour distinguer les constantes système de celles-créées par l'utilisateur. Ajustement de code nécessaire.
+
+* Création branche **interpreter** pour travaillé la performance de l'interpréteur.  
+
+
 * Corrigé bogue dans **readln**  la commande **CTRL_E** ne fonctionnait plus, c'était un bogue régressif. 
+
 #### 2021-02-27
 
 * Débogué **DUMP**,  la pile était débalancée lorsque l'entrée se faisait au point **dump01**. 
