@@ -1,5 +1,9 @@
 #### 2021-03-01
 
+* Modifié **ASC()** pour accepter les **TK_CFUNC** comme argument. 
+
+* Modifié le type de la fonction **KEY** dans le dictionnaire de **TK_INTGR**  à **TK_CHAR**.
+
 * Corrigé bogue dans **next_token** qui ne retournait pas **TK_QSTR** dans r0.
 
 * Retravaillé  **relation** et **expression** ainsi que code dépendant. 

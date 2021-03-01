@@ -2030,7 +2030,7 @@ interpreter:
 
 
 /**********************************************
-    relation parser 
+    relation
     rel ::= expr1 rel_op expr2
     rel_op ::=  '=','<','>','>=','<=','<>','><'
     relation return  integer , zero is false 
@@ -2051,7 +2051,7 @@ interpreter:
     sub r3,r0,#TK_EQUAL  // relop  
     cmp r0,#TK_EQUAL 
     bmi 8f 
-    cmp r0,#TK_CHAR 
+    cmp r0,#TK_NE+1
     bpl 8f 
     _CALL expression 
     cmp r0,#TK_INTGR 
@@ -2265,7 +2265,7 @@ kword_end:
   _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
   _dict_entry TK_CMD,LIST,LIST_IDX //list
   _dict_entry TK_CMD,LET,LET_IDX //let 
-  _dict_entry TK_IFUNC,KEY,KEY_IDX //key 
+  _dict_entry TK_CFUNC,KEY,KEY_IDX //key 
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
   _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var
   _dict_entry TK_IFUNC,IN,IN_IDX // pin_input   
@@ -2391,8 +2391,12 @@ fn_table:
     cmp r0,#TK_QSTR
     beq 2f 
     cmp r0,#TK_CHAR 
-    bne syntax_error 
-    b 9f 
+    bne 1f  
+    b 9f
+1:  cmp r0,#TK_CFUNC 
+    mov r0,r1 
+    _CALL execute
+    b 9f      
 2:  ldrb r1,[r1]
 9:  _PUSH r1 
     mov r0,#TK_RPAREN 
@@ -2978,6 +2982,9 @@ target:
 /****************************************
   BASIC: INPUT [string]var [,[string]var]+
   prompt user for variable value
+  use:
+    r2   
+    T1   variable indice 
 ***************************************/
      _FUNC input_var
     push {r2,T1}
@@ -3015,7 +3022,13 @@ target:
     pop {r0}
     bne 3f 
     and r1,#0x5f // uppercase  
-    b 6f 
+    b 7f 
+3:  mov r2,#1
+    cmp r1,#'-'
+    bne 3f 
+    mov r2,#-1 
+    add r0,#1 
+    b 4f  
 3:  cmp r1,#'$'
     bne 3f 
     mov r1,#16
@@ -3031,7 +3044,8 @@ target:
     cbnz r0,6f
     mov r0,#ERR_BAD_VALUE
     b tb_error
-6:  mov r0,T1 
+6:  mul r1,r2 
+7:  mov r0,T1 
     _CALL set_var
     _CALL next_token
     cmp r0,#TK_COMMA 
