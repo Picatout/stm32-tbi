@@ -288,7 +288,7 @@ wait_hserdy:
    multiply frequency by 9 
    APB1 clock is limited to 36 Mhz so divide by 2 
 ****************************************************/
-  mov r1,#(4<<8) /* PLLMUL,7|PLLSCR,HSE|PPRE1,HCLK/2| */
+  mov r1,#(4<<8)+(2<<14) /* PLLMUL,7|PLLSCR,HSE|PPRE1=HCLK/2|ADCPRE=PCLK2/6 */
   movt r1,#(7<<2)|1
   str r1,[r0,#RCC_CFGR]
   /* enable PLL */

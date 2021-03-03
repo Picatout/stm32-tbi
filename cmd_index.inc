@@ -23,7 +23,9 @@
 // --------------------------------------
 
     .equ ABS_IDX, 0  //  absolute function
-    .equ AND_IDX,ABS_IDX+1 // 
+    .equ ANA_IDX,ABS_IDX+1
+    .equ ADC_IDX,ANA_IDX+1
+    .equ AND_IDX,ADC_IDX+1 // 
     .equ ASC_IDX,AND_IDX+1  // 
     .equ AWU_IDX,ASC_IDX+1 //
     .equ BIT_IDX,AWU_IDX+1 //

@@ -1,4 +1,22 @@
+#### 2021-03-03
+
+* Ajout des mots **ADC**,**ANA** 
+
+* Ajout des constantes système: **ON**,**OFF**
+
+* Ajout du programme [pmode-test.bas](tb_progs/pmode-test.bas).
+
+#### 2021-03-02
+
+* Corrigé bogue dans **decompile_line**,  lable were not decompressed properly. 
+
+* Now accept underscore in label and keywords. 
+
+* Ajout des constantes système **OUTPUT_OD**,**OUTPUT_PP**,**OUTPUT_AFOD**,**OUTPUT_AFPP**,**INPUT_FLOT**,**INPUT_PD**,**INPUT_PU** et **INPUT_ANA**
+
 #### 2021-03-01
+
+* Modifié **INPUT** pour accepter les entiers négatifs. 
 
 * Modifié **ASC()** pour accepter les **TK_CFUNC** comme argument. 
 

@@ -781,14 +781,16 @@ token_ofs:
     push {T2}
     eor r2,r2
     mov r5,#6 
-1:  ldrb r0,[T1,r3]
-    _CALL is_letter 
-    bne 2f // not letter 
+0:  ldrb r0,[T1,r3]
+    cmp r0,#'_'
+    beq 2f
+1:  _CALL is_letter 
+    bne 3f // not letter 
     _CALL upper 
-    strb r0,[T2],#1
+2:  strb r0,[T2],#1
     add r3,#1
-    b 1b 
-2:  eor r0,r0 
+    b 0b 
+3:  eor r0,r0 
     strb r0,[T2]
 // is this a variable ?
     pop {T2}
@@ -836,13 +838,16 @@ token_ofs:
     eor r2,r2 // compress value
     mov r3,#6 // max characters 
 1:  ldrb r1,[r0],#1 
-    cbz r1,2f 
-    sub r1,#'@'
+    cbz r1,3f
+    cmp r1,#'_'
+    bne 2f 
+    sub r1,#4  
+2:  sub r1,#'@'
     lsl r2,#5
     add r2,r1
     subs r3,#1 
     bne 1b 
-2:  mov r1,r2     
+3:  mov r1,r2     
     pop {r2,r3}
     _RET 
 
@@ -1033,7 +1038,7 @@ escaped: .asciz "abtnvfr"
 
 /***************************************
     is_letter 
-    check if character is {a..z,A..Z} 
+    check if character is {a..z,A..Z,_} 
   input:
     r0   character 
   output: 
@@ -1108,7 +1113,8 @@ escaped: .asciz "abtnvfr"
     search bytecode in dictionary and 
     return its name 
   input:
-    r0    keyword bytecode 
+    r0    token type 
+    r1    keyword bytecode 
   ouput:
     r0    name string 
   use:
@@ -1118,10 +1124,13 @@ escaped: .asciz "abtnvfr"
     _FUNC cmd_name 
     push {T1,T2}
     ldr T1,=kword_dict 
-1:  ldr T2,[T1,#-8]
+1:  ldr T2,[T1,#-4]
     cmp T2,r0 
+    bne 3f 
+    ldr T2,[T1,#-8]
+    cmp T2,r1 
     beq 2f 
-    ldr T1,[T1,#-12]
+3:  ldr T1,[T1,#-12]
     cmp T1,#0
     bne 1b  
 2:  mov r0,T1 
@@ -1199,7 +1208,7 @@ decomp_loop:
 4:  cmp r0,#TK_LABEL 
     bpl 5f   
     push {r0,r1}
-    mov r0,r1 
+//    mov r0,r1 
     _CALL cmd_name
     mov r1,T1 
     _CALL strcpy 
@@ -1240,9 +1249,14 @@ decomp_loop:
     lsrs r0,r1,r2 
     beq 2f
     add r0,#'@'
-    strb r0,[T1],#1
+    cmp r0,#'['
+    bne 1f
+    add r0,#4 
+1:  strb r0,[T1],#1
 2:  subs r2,#5 
-    bge 0b 
+    bge 0b
+    mov r0,#SPACE 
+    strb r0,[T1],#1  
     b decomp_loop
 7:  mov r0,#'"'
     strb r0,[T1],#1 
@@ -2254,9 +2268,15 @@ kword_end:
   _dict_entry TK_IFUNC,PEEKH,PEEK16_IDX //peek16
   _dict_entry TK_IFUNC,PEEKB,PEEK8_IDX //peek8
   _dict_entry TK_CMD,PAUSE,PAUSE_IDX //pause 
-  _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref 
+  _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref
+  _dict_entry TK_SCONST,OUTPUT_PP,1
+  _dict_entry TK_SCONST,OUTPUT_OD,6
+  _dict_entry TK_SCONST,OUTPUT_AFPP,12
+  _dict_entry TK_SCONST,OUTPUT_AFOD,15 
   _dict_entry TK_CMD,OUT,OUT_IDX //out 
   _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
+  _dict_entry TK_SCONST,ON,1
+  _dict_entry TK_SCONST,OFF,0 
   _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
@@ -2267,6 +2287,10 @@ kword_end:
   _dict_entry TK_CMD,LET,LET_IDX //let 
   _dict_entry TK_CFUNC,KEY,KEY_IDX //key 
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
+  _dict_entry TK_SCONST,INPUT_PU, 17 
+  _dict_entry TK_SCONST,INPUT_PD, 16
+  _dict_entry TK_SCONST,INPUT_FLOAT,4
+  _dict_entry TK_SCONST,INPUT_ANA,0 
   _dict_entry TK_CMD,INPUT,INPUT_IDX //input_var
   _dict_entry TK_IFUNC,IN,IN_IDX // pin_input   
   _dict_entry TK_CMD,IF,IF_IDX //if 
@@ -2300,6 +2324,8 @@ kword_end:
   _dict_entry TK_CMD,AWU,AWU_IDX //awu 
   _dict_entry TK_IFUNC,ASC,ASC_IDX //ascii
   _dict_entry TK_IFUNC,AND,AND_IDX //bit_and
+  _dict_entry TK_CMD,ADC,ADC_IDX // adc 
+  _dict_entry TK_IFUNC,ANA,ANA_IDX // analog_read 
 first_link: 
   .word LINK 
   .word ABS_IDX 
@@ -2314,7 +2340,7 @@ kword_dict: // first name field
 //comands and fonctions address table
   .type fn_table, %object
 fn_table:
-	.word abs,bit_and,ascii,awu,bitmask 
+	.word abs,analog_read,adc,bit_and,ascii,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,for,forget,free,get,gosub,goto
@@ -2362,8 +2388,60 @@ fn_table:
     _FUNC power_adc
     _RET
 
+/*************************************
+  BASIC: ANA(pin)
+  read analog input 
+*************************************/
     _FUNC analog_read
+    _CALL func_args
+    cmp r0,#1 
+    bne syntax_error 
+    _MOV32 R1,ADC1_BASE_ADR
+    _POP r2 // channel
+    and r2,#31
+    str r2,[r1,#ADC_SQR3]
+// start conversion 
+    ldr r0,[r1,#ADC_CR2]
+    str r0,[r1,#ADC_CR2]
+adc_loop:
+    ldr r0,[R1,#ADC_SR]
+    tst r0,#2 // EOC bit test 
+    beq adc_loop
+    ldr r1,[r1,#ADC_DR]
+    mov r0,#TK_INTGR    
     _RET
+
+/***********************************
+  BASIC: ADC ON|OFF
+  enable|disable analog digital converter 
+  freq -> of conversion
+*****************************************/
+    _FUNC adc 
+    _CALL arg_list 
+    cmp r0,#1 
+    bne syntax_error 
+    _POP r1 
+1:  cbz r1,adc_off 
+adc_on:
+    _MOV32 r1,RCC_BASE_ADR
+    ldr r0,[r1,RCC_APB2ENR]
+    orr r0,#(1<<9) //ADC1ON clock gating 
+    str r0,[r1,RCC_APB2ENR]
+    _MOV32 r1,ADC1_BASE_ADR
+    _MOV32 r0,1+(1<<23)
+    str r0,[r1,ADC_CR2]
+    _RET 
+adc_off:
+    _MOV32 r1,ADC1_BASE_ADR 
+    eor r0,r0 
+    str r0,[r1,ADC_CR2]
+    _MOV32 r1,RCC_BASE_ADR 
+    ldr r0,[r1,RCC_APB2ENR]
+    mvn r2,#9 
+    and r0,r2 //reset ADC1ON clock gating 
+    str r0,[r1,RCC_APB2ENR]
+    _RET 
+
 
 /************************************
   BASIC: AND(expr1,expr2)
@@ -3306,80 +3384,49 @@ pad_adr: .word _pad
     _RET 
 
 /***************************************************
-  BASIC: PMODE \c,pin,mode[,opt] 
+  BASIC: PMODE GPIOx,pin,mode
   configure a digital pin for input|output
   paramters:
-    \c    port letter
-    pin   pin {0..15} 
-    mode  0->input,1->output 10Mhz,2->output 2Mhz,3->output 50Mhz 
+    GPIOx    port selector: GPIOA,GPIOB,GPIOC
+    pin      pin {0..15} 
+    mode 
     for input mode:
-      opt 0->analog, 1->floating,2->pulldown,3->pullup  
+      INPUT_FLOAT,INPUT_PD,INPUT_PU,INPUT_ANA    
     for output mode:
-      opt 0-> GPIO pushpull, 1->GPIO opendrain, 2->AF pushpull, 3->AF opendrain 
+      OUTPUT_AFOD,OUTPUT_AFPP,OUTPUT_OD,OUTPUT_PP 
   use:
-    r2  opt
-    r3  mode 
-    T1  pin  
-    T2  port      
+    r0  tmp 
+    r1  mode  
+    r2  pin  
+    r3  gpio
+    T1  mask
 ***************************************************/
-      _FUNC pin_mode
-      mov r0,#TK_CHAR 
-      _CALL expect
-      mov r0,r1 
-      _CALL upper 
-      sub T2,r0,#'A'
-      mov r0,#TK_COMMA
-      _CALL expect 
-      _CALL arg_list
-      cmp r0,#2 
-      bmi syntax_error
-      cmp r0,#4
-      bmi 1f 
-      b syntax_error
-  1:  mov r2,#0 // default opt, input floating or output opendrain 
-      cmp r0,#2
-      beq 2f 
-// 3 parameters, pin,mode,opt  
-    ldmia DP!,{r2,r3,T1}
-    b 4f  
-2: // 2 parameters, pin,mode 
-    ldmia DP!,{r3,T1}
-4:  mov r0,#0x400 
-    mul T2,r0 
-    _MOV32 r0,GPIOA_BASE_ADR
-    add T2,r0 // port base address 
-// if input mode set pull in ODR 
-    cbnz r3,2f 
-    cmp r2,#2
+    _FUNC pin_mode
+    _CALL arg_list
+    cmp r0,#3 
+    bne syntax_error 
+    ldmia DP!,{r1,r2,r3} // mode,pin,gpio 
+    mov r0,#1
+    lsl r0,r2 // pin mask in GPIO_ODR 
+    cmp r1,#16 
+    bmi 1f 
+    rors r1,#1
+    and r1,#15  
+    bcs 1f  
+    lsl r0,#16 // reset pin  
+1:  str r0,[r3,#GPIO_BSRR]
+    cmp r2,#8 
     bmi 2f 
-    mov r0,#1 
-    mov r1,T1 
-    cmp r2,#3 
-    beq 1f
-    add r1,#16 //reset bit 
-1:  lsl r0,r1
-    str r0,[T2,#GPIO_BSRR]
-    cmp r2,#3 
-    bmi 2f 
-    sub r2,#1
-2: // set CNF|MODE bits GPIO_CRx 
-    cmp T1,#8 
-    bmi 3f 
-    sub T1,#8 
-    add T2,#4 //CRH 
-3:  mov r0,#15   
-    lsl r1,T1,#2 
-    lsl r0,r1
-    mvn r0,r0 // bitmask 
-    ldr r1,[T2]
-    and r1,r0  // clear CNF|MODE bits  
-// combine opt|mode     
-    lsl r0,r2,#2 
-    orr r0,r3 // OPT|MODE 
-    lsl r3,T1,#2 
-    lsl r0,r3
-    orr r1,r0   
-    str r1,[T2] // mode and option set
+    add r3,#4 // GPIO_CRH 
+    sub r2,#8 
+2:  lsl r2,#2 // pin*4  
+    ldr r0,[r3] // actual CNF:MODE value in GPIO_CRx  
+    mvn T1,#15
+    lsl T1,r2
+    and r0,T1 //clear bit field  
+    lsl r1,r2 
+    orr r0,r1 
+    str r0,[r3]
     _RET 
 
 
