@@ -2311,7 +2311,6 @@ kword_end:
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
   _dict_entry TK_CMD,DEC,DEC_IDX //dec_base
-  _dict_entry TK_CMD,DATALN,DATALN_IDX //data_line  
   _dict_entry TK_CMD,DATA,DATA_IDX //data  
   _dict_entry TK_CMD,CONST,CONST_IDX // const 
   _dict_entry TK_CMD,CLS,CLS_IDX // cls 
@@ -2342,7 +2341,7 @@ kword_dict: // first name field
 fn_table:
 	.word abs,analog_read,adc,bit_and,ascii,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
-	.word skip_line,data_line,dec_base,directory,do_loop,drop,dump
+	.word skip_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,for,forget,free,get,gosub,goto
 	.word hex_base,if,pin_input,input_var,invert,key
 	.word let,list,load,locate,lshift,new,next
@@ -2696,40 +2695,6 @@ adc_off:
 9:  
     _RET 
 
-
-/**************************
-  BASIC: DATALN expr 
-  set data pointer to line#
-  specified by expr. 
-  if line# not valid program 
-  end with error.
-  use:
-
-**************************/
-    _FUNC data_line
-    _RTO // run time only 
-    _CALL expression 
-    cmp r0,#TK_INTGR
-    bne syntax_error
-    mov r0,r1 
-    _CALL search_lineno
-    cmp r1,#0
-    beq 1f 
-0:  mov r0,#ERR_BAD_VALUE
-    b syntax_error 
-1:  ldrb r1,[r0,#3]
-    cmp r1,#TK_CMD 
-    bne 0b
-    ldrb r1,[r0,#4]
-    cmp r1,#DATA_IDX 
-    bne 0b  
-    str r0,[UPP,#DATAPTR]
-    ldrb r1,[r0,#2]
-    str r1,[UPP,#DATALEN]
-    mov r1,#5 // position of first data item  
-    str r1,[UPP,#DATA]
-    _RET 
-
 /*****************************
   BASIC: READ 
   read next data item 
@@ -2743,13 +2708,20 @@ adc_off:
     ldr r2,[UPP,#DATA] // item on line  
     cmp r2,r0
     beq seek_next
-1:  ldrb r0,[r1,r2]
+1:  mov r3,#1 
+    ldrb r0,[r1,r2]
     add r2,#1
     cmp r0,#TK_NONE
     beq seek_next
-    cmp r0,#TK_COMMA
+    cmp r0,#TK_MINUS 
+    bne 2f 
+    mov r3,#-1
+    ldrb r0,[r1,r2]
+    add r2,#1
+    b 3f  
+2:  cmp r0,#TK_COMMA
     beq 1b  
-    cmp r0,#TK_INTGR 
+3:  cmp r0,#TK_INTGR 
     bne syntax_error  
     ldr r1,[r1,r2]
     add r2,#4
@@ -2775,22 +2747,32 @@ seek_next: // is next line data ?
 9:  _RET 
 
 /********************************
-  BASIC: RESTORE 
-  seek first data line 
+  BASIC: RESTORE [line#]
+  set data pointer to first data line 
+  or a specified line number 
 ********************************/
     _FUNC restore
     _RTO 
+    _CALL next_token 
+    cmp r0,#TK_INTGR 
+    beq 0f 
+    _UNGET_TOKEN
+    mov r1,#0 
+0:  mov r3,#(TK_CMD+(DATA_IDX<<8))
+    mov r2,r1 
     ldr r1,[UPP,#TXTBGN]
-1:  ldr r0,[UPP,#TXTEND]
-    beq no_data_line 
-    ldrb r0,[r1,#4]
-    cmp r0,#DATA_IDX
+    ldr T1,[UPP,#TXTEND]
+1:  cmp r1,T1 
+    bpl no_data_line 
+    ldrh r0,[r1,#3]
+    cmp r0,r3 
     bne try_next_line
-    ldrb r0,[r1,#3]
-    cmp r0,#TK_CMD
+// this is a data line
+    cbz r2,2f 
+    ldrh r0,[r1]
+    cmp r0,r2 
     bne try_next_line
-// this a the first data line 
-    str r1,[UPP,#DATAPTR]
+2:  str r1,[UPP,#DATAPTR]
     ldrb r0,[r1,#2]
     str r0,[UPP,#DATALEN]
     mov r0,#5 

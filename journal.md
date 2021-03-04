@@ -1,5 +1,9 @@
 #### 2021-03-03
 
+* Corrigé bogue dans fonction **READ** qui n'acceptait pas les entiers négatifs. 
+
+* Supprimer la commande **DATALN** et remplacé par un argument de la commande **RESTORE**.
+
 * Ajout des mots **ADC**,**ANA** 
 
 * Ajout des constantes système: **ON**,**OFF**

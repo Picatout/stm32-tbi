@@ -37,8 +37,7 @@
     .equ CLS_IDX,CHAR_IDX+1 //
     .equ CONST_IDX,CLS_IDX+1 //
     .equ DATA_IDX,CONST_IDX+1 // 
-    .equ DATALN_IDX,DATA_IDX+1 // 
-    .equ DEC_IDX,DATALN_IDX+1 // 
+    .equ DEC_IDX,DATA_IDX+1 // 
     .equ DIR_IDX,DEC_IDX+1 // 
     .equ DO_IDX,DIR_IDX+1 // 
     .equ DROP_IDX,DO_IDX+1
