@@ -1,3 +1,10 @@
+#### 2021-03-04
+
+* Ajout des constantes système **SERVO_A**, **SERVO_B**, **SERVO_C** et **SERVO_D**.
+
+* Ajout des mots **SERVO_INIT** et **SERVO_POS**. 
+
+
 #### 2021-03-03
 
 * Corrigé bogue dans fonction **READ** qui n'acceptait pas les entiers négatifs. 

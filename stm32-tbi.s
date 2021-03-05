@@ -316,8 +316,8 @@ wait_sws:
 
 /* enable peripheral clock for GPIOs and USART1 */
   _MOV32 r0,RCC_BASE_ADR
-  mov	r1, #0x41fd		/* all GPIO and USART1 */
-  str	r1, [r0, #RCC_APB2ENR]
+  mov	r1, #0x5e7d		/* all GPIO and USART1 */
+  str	r1, [r0,#RCC_APB2ENR]
 
 /* configure GPIOC:13 as output for user LED */
   _MOV32 r0,GPIOC_BASE_ADR 
@@ -330,6 +330,11 @@ wait_sws:
 /* turn off user LED */ 
   mov r1,#(1<<13)
   str r1,[r0,#GPIO_ODR]
+
+/* disable JTDI,JTDO,JTRST */
+  _MOV32 r0,AFIO_BASE_ADR
+  mov r1,#2<<24 
+  str r1,[r0,#AFIO_MAPR]
 
 /* configure systicks for 1msec ticks */
   _MOV32 r0,STK_BASE_ADR 
