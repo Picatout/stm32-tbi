@@ -1,3 +1,15 @@
+#### 2021-03-05
+
+* Corrigé erreur erronées pour les constantes système **OUTPUT_AFPP** et **OUTPUT_AFOD**.
+
+* Ajout du programme [servo-tes.bas](tb_progs/servo-test.bas).
+
+* Testé **SERVO_INIT** et **SERVO_POS**.
+
+* Ajout du programme [gpio-tes.bas](tb_progs/gpio-test.bas)
+
+* Désactivation de signaux **JTDI,JTDO,JTRST** qui empêchaient l'utilisation des **GPIOA:15,GPIOB:3,GPIOB:4**.
+
 #### 2021-03-04
 
 * Ajout des constantes système **SERVO_A**, **SERVO_B**, **SERVO_C** et **SERVO_D**.

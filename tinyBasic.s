@@ -2277,8 +2277,8 @@ kword_end:
   _dict_entry TK_IFUNC,PAD,PAD_IDX //pad_ref
   _dict_entry TK_SCONST,OUTPUT_PP,1
   _dict_entry TK_SCONST,OUTPUT_OD,6
-  _dict_entry TK_SCONST,OUTPUT_AFPP,12
-  _dict_entry TK_SCONST,OUTPUT_AFOD,15 
+  _dict_entry TK_SCONST,OUTPUT_AFPP,0xa
+  _dict_entry TK_SCONST,OUTPUT_AFOD,0xe 
   _dict_entry TK_CMD,OUT,OUT_IDX //out 
   _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
   _dict_entry TK_SCONST,ON,1
@@ -3419,7 +3419,7 @@ pad_adr: .word _pad
 
 
 /*****************************************
-  BASIC: PEEK8 (expr)  
+  BASIC: PEEKB (expr)  
   return byte value at address 
 *****************************************/
     _FUNC peek8
@@ -3432,7 +3432,7 @@ pad_adr: .word _pad
     _RET 
 
 /*****************************************
-  BASIC: PEEK16 (expr)  
+  BASIC: PEEKH (expr)  
   return byte value at address 
 *****************************************/
     _FUNC peek16
@@ -3445,7 +3445,7 @@ pad_adr: .word _pad
     _RET 
 
 /*****************************************
-  BASIC: PEEK32 (expr)  
+  BASIC: PEEKW (expr)  
   return byte value at address 
 *****************************************/
     _FUNC peek32
@@ -3952,8 +3952,8 @@ data_bytes: .asciz "bytes"
   D -> PWM3/2 pin B5
 ************************************/
     _FUNC servo_init 
-    _CALL next_token 
-    cmp r0,#TK_SCONST 
+    _CALL expression 
+    cmp r0,#TK_INTGR  
     bne syntax_error 
     cmp r1,#0xa 
     bpl 1f 
@@ -3990,29 +3990,45 @@ setup_pwm3: // ch1|ch2
     cmp r1,#2 
     bmi 3f 
     sub r1,#2
-3:  //set prescaler to 16 
-    mov r0,#15 
+3:  //set prescaler to 32
+    mov r0,#31 
     strh r0,[r2,#TIM_PSC]
     // set autoreload to 45000
     _MOV32 r0,45000
     strh r0,[r2,#TIM_ARR]
     // set compare value for 1500µsec 
-    _MOV32 r0,3375
+    mov r0,#3375
     cbz r1,3f 
     strh r0,[r2,#TIM_CCR2]
     b 4f 
 3:  strh r0,[r2,#TIM_CCR1]
     // set mode 
 4:  mov r0,#(0xd<<3)
+    mov T1,#0xff00 
     cbz r1,4f 
-    lsl r0,#8 
-4:  strh r0,[r2,#TIM_CCMR1]
+    lsl r0,#8
+    lsr T1,#8  
+4:  ldrh r3,[r2,#TIM_CCMR1]
+    and r3,T1 
+    orr r3,r0 
+    strh r3,[r2,#TIM_CCMR1]
     // enable OC output 
     mov r0,#1 
     cbz r1,5f 
     lsl r0,#4 
-5:  strh r0,[r2,#TIM_CCER]
+5:  ldrh r3,[r2,#TIM_CCER]
+    orr r3,r0 
+    strh r3,[r2,#TIM_CCER]
+    // enable counter 
+    mov r0,#1+(1<<7) // CE+ARPE  
+    ldrh r3,[r2,TIM_CR1]
+    orr r3,r0
+    strh r3,[r2,TIM_CR1]
+    // generate a reload event 
+    mov r0,#1 
+    strh r0,[r2,TIM_EGR]
     _RET 
+
 
 /*********************************
   BASIC: SERVO_POS SERVO_x,expr 
@@ -4030,14 +4046,16 @@ setup_pwm3: // ch1|ch2
     _MOV32 r3,TIMER2_BASE_ADR
     b 4f 
 3:  _MOV32 r3,TIMER3_BASE_ADR
-4:  cmp r2,#2 
-    bpl 5f 
-    sub r2,#2  
-5:  cbz r2,6f 
-    strh r1,[r3,#TIM_CCR2]
+    sub r2,#2 
+4:  _MOV32 r0,45000
+    mul r0,r1 
+    _MOV32 r1,20000
+    udiv r0,r1 
+    cbz r2,6f 
+    strh r0,[r3,#TIM_CCR2]
     b 7f 
-6:  strh r1,[r3,#TIM_CCR1]
-7:  mov r0,#7 
+6:  strh r0,[r3,#TIM_CCR1]
+7:  mov r0,#6 
     strh r0,[r3,#TIM_EGR]
     _RET 
 
