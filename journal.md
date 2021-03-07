@@ -1,3 +1,13 @@
+#### 2021-03-07
+
+* Corrigé bogue dans **gpio_config**. 
+
+* Ajout de **SERVO_OFF** pour désactiver un canal servo-moteur.
+
+* Supprimer constantes **SERVO_x** maintenant **SERVO_INIT** et **SERVO_POS** prennent pour argument entiers {1..4}.
+
+* Supprimer les constantes **ON** et **OFF**  maintenant les arguments {1|0} doivent-être utilisés.
+
 #### 2021-03-06
 
 * Modifié **SERVO_INIT** la configuration du GPIO utilisé est maintenant faite par cette commande.

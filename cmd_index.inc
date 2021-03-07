@@ -89,7 +89,8 @@
     .equ RUN_IDX, RSHIFT_IDX+1 // 
     .equ SAVE_IDX, RUN_IDX+1 // 
     .equ SERVO_INIT_IDX,SAVE_IDX+1
-    .equ SERVO_POS_IDX,SERVO_INIT_IDX+1
+    .equ SERVO_OFF_IDX,SERVO_INIT_IDX+1
+    .equ SERVO_POS_IDX,SERVO_OFF_IDX+1
     .equ SLEEP_IDX, SERVO_POS_IDX+1 // 
     .equ SPC_IDX,SLEEP_IDX+1 //
     .equ STEP_IDX, SPC_IDX+1 // 

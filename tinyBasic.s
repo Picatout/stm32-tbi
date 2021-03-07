@@ -2249,11 +2249,8 @@ kword_end:
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
   _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
-  _dict_entry TK_SCONST,SERVO_D,0xd   
-  _dict_entry TK_SCONST,SERVO_C,0xc 
-  _dict_entry TK_SCONST,SERVO_B,0xb 
-  _dict_entry TK_SCONST,SERVO_A,0xa 
   _dict_entry TK_CMD,SERVO_POS,SERVO_POS_IDX // servo_pos 
+  _dict_entry TK_CMD,SERVO_OFF,SERVO_OFF_IDX, // servo_off 
   _dict_entry TK_CMD,SERVO_INIT,SERVO_INIT_IDX // servo_init  
   _dict_entry TK_CMD,SAVE,SAVE_IDX //save
   _dict_entry TK_CMD,RUN,RUN_IDX //run
@@ -2283,8 +2280,6 @@ kword_end:
   _dict_entry TK_SCONST,OUTPUT_AFOD,0xe 
   _dict_entry TK_CMD,OUT,OUT_IDX //out 
   _dict_entry TK_IFUNC,OR,OR_IDX //bit_or
-  _dict_entry TK_SCONST,ON,1
-  _dict_entry TK_SCONST,OFF,0 
   _dict_entry TK_IFUNC,NOT,NOT_IDX //func_not 
   _dict_entry TK_CMD,NEXT,NEXT_IDX //next 
   _dict_entry TK_CMD,NEW,NEW_IDX //new
@@ -2356,7 +2351,7 @@ fn_table:
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
 	.word qkey,read,skip_line
-	.word restore,return, random,rshift,run,save,servo_init,servo_pos 
+	.word restore,return, random,rshift,run,save,servo_init,servo_off,servo_pos 
 	.word sleep,spc,step,stop,store,tab
 	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace,ubound,uflash,until
 	.word wait,words,bit_xor,xpos,ypos 
@@ -3413,10 +3408,11 @@ pad_adr: .word _pad
     cmp r2,#16
     bmi 0f
     rors r2,#1  
+    and r2,#15
     bcc 0f 
     mov r0,#1
 0:  lsl r0,r1
-    strh r0,[r2,#GPIO_ODR]
+    strh r0,[T1,#GPIO_ODR]
 1:  cmp r1,#8
     bmi 2f 
     add T1,#4 // CRH
@@ -3961,108 +3957,150 @@ data_bytes: .asciz "bytes"
     _RET  
 
 /*********************************
-  BASIC: SERVO_INIT SERVO_x 
-  initialize servo motor A,B,C or D
-  A -> PWM2/1 pin A15
-  B -> PWM2/2 pin B3 
-  C -> PWM3/1 pin B4 
-  D -> PWM3/2 pin B5
+  BASIC: SERVO_INIT n 
+  initialize servo motor 1,2,3,4
+  1 -> PWM2/1 pin A15
+  2 -> PWM2/2 pin B3 
+  3 -> PWM3/1 pin B4 
+  4 -> PWM3/2 pin B5
+  TIMER parameters are for Fclk=72Mhz 
+  period=20msec 
+  default pos = 1500µSec 
 ************************************/
     _FUNC servo_init 
     _CALL expression 
     cmp r0,#TK_INTGR  
     bne syntax_error 
-    cmp r1,#0xa 
+    cmp r1,#1 
     bpl 1f 
 0:  mov r0,#ERR_BAD_VALUE
     b tb_error 
-1:  cmp r1,#0xe
-    bpl 0b 
-  // configure port pin
-    _MOV32 r0,GPIOA_BASE_ADR
-    push {r1}
-    cmp r1,#0xa 
-    beq 1f 
-    add r0,#0X400 // GPIOB 
-1:  mov r2,#0xa // OUTPUT_AFPP 
-    sub r1,0xa 
-    cbnz r1,1f 
-    mov r1,#15 
-    b 2f 
-1:  add r1,#2
-2:  _CALL gpio_config 
-    pop {r1}
+1:  cmp r1,#5
+    bpl 0b
+    sub r3,r1,#1
+1:  // configure port pin
+    ldr r2,=servo_port
+    lsl r1,r3,#3
+    add r2,r1  
+    ldr r0,[r2],#4 //GPIOx_BASE_ADR
+    ldr r1,[r2]  // pin 
+    mov r2,#0xa // OUTPUT_AFPP 
+    _CALL gpio_config 
     _MOV32 r2,RCC_BASE_ADR 
-    ldr r3,[r2,#RCC_APB1ENR]
-    cmp r1,#0xc 
-    bpl setup_pwm3 
+    ldr r0,[r2,#RCC_APB1ENR]
+    cmp r3,#2
+    bmi 1f 
+    sub r3,#2
+    b setup_pwm3  
 // setup pwm2 ch1|ch2
-    orr r3,#1
-    str r3,[r2,#RCC_APB1ENR]
+1:  // TIMER2 clock enable 
+    orr r0,#1
+    str r0,[r2,#RCC_APB1ENR]
+    // TIMER2 OC remapping 
     _MOV32 r2,AFIO_BASE_ADR
-    ldr r3,[r2,#AFIO_MAPR]
-    mov r0,#(3<<8)
-    orr r3,r0
-    str r3,[r2,#AFIO_MAPR]
+    ldr r0,[r2,#AFIO_MAPR]
+    mov r1,#(3<<8)
+    orr r0,r1
+    str r0,[r2,#AFIO_MAPR]
     _MOV32 r2,TIMER2_BASE_ADR
     b 2f 
 setup_pwm3: // ch1|ch2 
-    orr r3,#2
-    str r3,[r2,#RCC_APB1ENR]
+    // TIMER3 clock enable 
+    orr r0,#2
+    str r0,[r2,#RCC_APB1ENR]
+    // TIMER3 OC remapping 
     _MOV32 r2,AFIO_BASE_ADR
-    ldr r3,[r2,#AFIO_MAPR]
-    mvn r0,#3<<10 
-    and r3,r0 
-    mov r0,#2<<10
-    orr r3,r0 
-    str r3,[r2,#AFIO_MAPR]
+    ldr r0,[r2,#AFIO_MAPR]
+    mvn r1,#3<<10 
+    and r0,r1 
+    mov r1,#2<<10
+    orr r0,r1 
+    str r0,[r2,#AFIO_MAPR]
     _MOV32 r2,TIMER3_BASE_ADR
-2:  sub r1,#0xa 
-    cmp r1,#2 
-    bmi 3f 
-    sub r1,#2
-3:  //set prescaler to 32
+2:  // PWM configuration 
+    //set TIMER prescaler to 32
     mov r0,#31 
     strh r0,[r2,#TIM_PSC]
-    // set autoreload to 45000
+    // set autoreload value to 45000 (20msec period)
     _MOV32 r0,45000
     strh r0,[r2,#TIM_ARR]
     // set compare value for 1500µsec 
     mov r0,#3375
-    cbz r1,3f 
+    cbz r3,3f 
     strh r0,[r2,#TIM_CCR2]
     b 4f 
 3:  strh r0,[r2,#TIM_CCR1]
     // set mode 
 4:  mov r0,#(0xd<<3)
     mov T1,#0xff00 
-    cbz r1,4f 
+    cbz r3,4f 
     lsl r0,#8
     lsr T1,#8  
-4:  ldrh r3,[r2,#TIM_CCMR1]
-    and r3,T1 
-    orr r3,r0 
-    strh r3,[r2,#TIM_CCMR1]
+4:  ldrh r1,[r2,#TIM_CCMR1]
+    and r1,T1 
+    orr r1,r0 
+    strh r1,[r2,#TIM_CCMR1]
     // enable OC output 
     mov r0,#1 
-    cbz r1,5f 
+    cbz r3,5f 
     lsl r0,#4 
-5:  ldrh r3,[r2,#TIM_CCER]
-    orr r3,r0 
-    strh r3,[r2,#TIM_CCER]
+5:  ldrh r1,[r2,#TIM_CCER]
+    orr r1,r0 
+    strh r1,[r2,#TIM_CCER]
     // enable counter 
     mov r0,#1+(1<<7) // CE+ARPE  
-    ldrh r3,[r2,TIM_CR1]
-    orr r3,r0
-    strh r3,[r2,TIM_CR1]
+    ldrh r1,[r2,TIM_CR1]
+    orr r1,r0
+    strh r1,[r2,TIM_CR1]
     // generate a reload event 
     mov r0,#1 
     strh r0,[r2,TIM_EGR]
     _RET 
 
+servo_port: .word GPIOA_BASE_ADR,15
+            .word GPIOB_BASE_ADR,3
+            .word GPIOB_BASE_ADR,4
+            .word GPIOB_BASE_ADR,5
+
 
 /*********************************
-  BASIC: SERVO_POS SERVO_x,expr 
+  BASIC: SERVO_OFF expr 
+  disable servomotor channel
+*********************************/
+    _FUNC servo_off 
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    cmp r1,#1
+    bpl 1f 
+0:  mov r0,#ERR_BAD_VALUE
+    b tb_error 
+1:  cmp r1,#5
+    bpl 0b 
+    sub r3,r1,#1
+    ldr r2,=servo_port 
+    lsl r1,r3,#3
+    // reconfigure GPIO 
+    ldr r0,[r2],#4
+    ldr r1,[r2]
+    mov r2,#16 // INPUT_PD 
+    _CALL gpio_config
+    _MOV32 r2, TIMER2_BASE_ADR  
+    cmp r3,#2
+    bmi 2f
+    sub r3,#2 
+    _MOV32 r2,TIMER3_BASE_ADR
+2:  mov r0,#1 
+    cbz r3,3f 
+    lsl r0,#4 
+3:  ldrh r1,[r2,TIM_CCER]
+    eor r1,r0 
+    strh r1,[r2,TIM_CCER] 
+    _RET 
+
+
+/*********************************
+  BASIC: SERVO_POS {1..4},expr 
   set servo position 
 *********************************/
     _FUNC servo_pos 
@@ -4070,7 +4108,7 @@ setup_pwm3: // ch1|ch2
     cmp r0,#2
     bne syntax_error 
     ldmia DP!,{r1,r2} // value, channel 
-    sub r2,#0xa 
+    sub r2,#1 
     cmp r2,#2 
     bpl 3f // timer 3 channels 
 // timer 2 channels 
