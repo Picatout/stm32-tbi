@@ -80,7 +80,7 @@
     .equ GPIO_ODR, 12
     .equ GPIO_BSRR, 16
     .equ GPIO_BRR, 20
-    .equ GPIO_LOCKR, 24 
+    .equ GPIO_LCKR, 24 
     
    /* AFIO base address */
    .equ AFIO_BASE_ADR, 0x40010000

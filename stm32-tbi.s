@@ -347,27 +347,36 @@ wait_sws:
 /*******************************
   initialize UART peripheral 
 ********************************/
-	_FUNC uart_init
+	  _FUNC uart_init
 /* set GPIOA PIN 9, uart TX  */
-  _MOV32 r0,GPIOA_BASE_ADR
-  ldr r1,[r0,#GPIO_CRH]
-  mvn r2,#(15<<4)
-  and r1,r1,r2
-  mov r2,#(0xA<<4)
-  orr r1,r1,r2 
-  str r1,[r0,#GPIO_CRH]
-  _MOV32 r0,UART 
+    _MOV32 r0,GPIOA_BASE_ADR
+    ldr r1,[r0,#GPIO_CRH]
+    mvn r2,#(15<<4)
+    and r1,r1,r2
+    mov r2,#(0xA<<4)
+    orr r1,r1,r2 
+    str r1,[r0,#GPIO_CRH]
+/* lock PA9,PA10 to block pins reconfiguration */
+    mov r1,#(1<<9)+(1<<10)
+    mov r2,#4
+    movt r1,#1
+1:  str r1,[r0,#GPIO_LCKR]
+    eor r1,#(1<<16) 
+    subs r2,#1 
+    bne 1b 
+/* configure usart */     
+    _MOV32 r0,UART 
 /* BAUD rate */
-  mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
-  str r1,[r0,#USART_BRR]
-  mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
-  str r1,[r0,#USART_CR1] /*enable usart*/
+    mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
+    str r1,[r0,#USART_BRR]
+    mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
+    str r1,[r0,#USART_CR1] /*enable usart*/
 /* enable interrupt in NVIC */
-  _MOV32 r0,NVIC_BASE_ADR
-  ldr r1,[r0,#NVIC_ISER1]
-  orr r1,#32   
-  str r1,[r0,#NVIC_ISER1]
-  bx lr 
+    _MOV32 r0,NVIC_BASE_ADR
+    ldr r1,[r0,#NVIC_ISER1]
+    orr r1,#32   
+    str r1,[r0,#NVIC_ISER1]
+    bx lr 
 
 /***************************
     uart_flush_queue

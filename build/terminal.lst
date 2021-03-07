@@ -126,7 +126,7 @@ ARM GAS  terminal.s 			page 1
   80              	    .equ GPIO_ODR, 12
   81              	    .equ GPIO_BSRR, 16
   82              	    .equ GPIO_BRR, 20
-  83              	    .equ GPIO_LOCKR, 24 
+  83              	    .equ GPIO_LCKR, 24 
   84              	    
   85              	   /* AFIO base address */
   86              	   .equ AFIO_BASE_ADR, 0x40010000
@@ -1888,7 +1888,7 @@ DEFINED SYMBOLS
        stm32f103.inc:80     *ABS*:000000000000000c GPIO_ODR
        stm32f103.inc:81     *ABS*:0000000000000010 GPIO_BSRR
        stm32f103.inc:82     *ABS*:0000000000000014 GPIO_BRR
-       stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LOCKR
+       stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LCKR
        stm32f103.inc:86     *ABS*:0000000040010000 AFIO_BASE_ADR
        stm32f103.inc:89     *ABS*:0000000000000000 AFIO_EVCR
 ARM GAS  terminal.s 			page 33

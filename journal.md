@@ -1,3 +1,11 @@
+#### 2021-03-06
+
+* Modifié **SERVO_INIT** la configuration du GPIO utilisé est maintenant faite par cette commande.
+
+* Ajout des mots **TONE_INIT**, **TONE**.
+
+* Modifié **uart_init** pour ajouter verouillage de broches PA9,PA10.
+
 #### 2021-03-05
 
 * Corrigé erreur erronées pour les constantes système **OUTPUT_AFPP** et **OUTPUT_AFOD**.

@@ -2236,6 +2236,8 @@ kword_end:
   _dict_entry TK_IFUNC,UFLASH,UFLASH_IDX //uflash 
   _dict_entry TK_IFUNC,UBOUND,UBOUND_IDX //ubound
   _dict_entry TK_CMD,TRACE,TRACE_IDX // trace 
+  _dict_entry TK_CMD,TONE_INIT,TONE_INIT_IDX // tone_init
+  _dict_entry TK_CMD,TONE,TONE_IDX // tone 
   _dict_entry TK_CMD,TO,TO_IDX //to
   _dict_entry TK_CMD,TIMER,TIMER_IDX //set_timer
   _dict_entry TK_IFUNC,TIMEOUT,TMROUT_IDX //timeout 
@@ -2356,7 +2358,7 @@ fn_table:
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,servo_init,servo_pos 
 	.word sleep,spc,step,stop,store,tab
-	.word then,get_ticks,set_timer,timeout,to,trace,ubound,uflash,until
+	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace,ubound,uflash,until
 	.word wait,words,bit_xor,xpos,ypos 
 	.word 0 
 
@@ -3381,40 +3383,55 @@ pad_adr: .word _pad
       INPUT_FLOAT,INPUT_PD,INPUT_PU,INPUT_ANA    
     for output mode:
       OUTPUT_AFOD,OUTPUT_AFPP,OUTPUT_OD,OUTPUT_PP 
-  use:
-    r0  tmp 
-    r1  mode  
-    r2  pin  
-    r3  gpio
-    T1  mask
 ***************************************************/
     _FUNC pin_mode
     _CALL arg_list
     cmp r0,#3 
     bne syntax_error 
-    ldmia DP!,{r1,r2,r3} // mode,pin,gpio 
+    _POP r2 // mode 
+    _POP r1 // pin 
+    _POP r0 // gpio 
+    _CALL gpio_config 
+    _RET 
+
+/**********************************
+  gpio_config 
+  Configure gpio mode 
+  input:
+    r0   GPIOx 
+    r1   pin 
+    r2   mode 
+  output:
+    none 
+  use:
+    r3,T1 
+**********************************/
+    _FUNC gpio_config
+    push {r3,T1}
+    mov T1,r0 
+    eor r0,r0 
+    cmp r2,#16
+    bmi 0f
+    rors r2,#1  
+    bcc 0f 
     mov r0,#1
-    lsl r0,r2 // pin mask in GPIO_ODR 
-    cmp r1,#16 
-    bmi 1f 
-    rors r1,#1
-    and r1,#15  
-    bcs 1f  
-    lsl r0,#16 // reset pin  
-1:  str r0,[r3,#GPIO_BSRR]
-    cmp r2,#8 
+0:  lsl r0,r1
+    strh r0,[r2,#GPIO_ODR]
+1:  cmp r1,#8
     bmi 2f 
-    add r3,#4 // GPIO_CRH 
-    sub r2,#8 
-2:  lsl r2,#2 // pin*4  
-    ldr r0,[r3] // actual CNF:MODE value in GPIO_CRx  
-    mov T1,#15
-    lsl T1,r2
-    mvn T1,T1 
-    and r0,T1 //clear bit field  
-    lsl r1,r2 
-    orr r0,r1 
-    str r0,[r3]
+    add T1,#4 // CRH
+    sub r1,#8 
+2:  
+    lsl r1,#2 
+    mov r0,#15
+    lsl r0,r1
+    mvn r0,r0 
+    ldr r3,[T1]
+    and r3,r0 
+    lsl r2,r1
+    orr r3,r2 
+    str r3,[T1]
+    pop {r3,T1}
     _RET 
 
 
@@ -3961,6 +3978,20 @@ data_bytes: .asciz "bytes"
     b tb_error 
 1:  cmp r1,#0xe
     bpl 0b 
+  // configure port pin
+    _MOV32 r0,GPIOA_BASE_ADR
+    push {r1}
+    cmp r1,#0xa 
+    beq 1f 
+    add r0,#0X400 // GPIOB 
+1:  mov r2,#0xa // OUTPUT_AFPP 
+    sub r1,0xa 
+    cbnz r1,1f 
+    mov r1,#15 
+    b 2f 
+1:  add r1,#2
+2:  _CALL gpio_config 
+    pop {r1}
     _MOV32 r2,RCC_BASE_ADR 
     ldr r3,[r2,#RCC_APB1ENR]
     cmp r1,#0xc 
@@ -4185,9 +4216,64 @@ setup_pwm3: // ch1|ch2
     _CALL arg_list 
     cmp r0,#2 
     bne syntax_error
-    ldmia DP!,{T1,T2}
-    
+    _MOV32 r2,TIMER4_BASE_ADR
+    ldr r0,[DP,#4] // freq
+    _MOV32 r1,4500000
+    udiv r1,r0 
+    strh r1,[r2,#TIM_ARR]
+    lsr r1,#1 
+    strh r1,[r2,#TIM_CCR1]
+    mov r0,#1
+    strh r0,[r2,#TIM_CCER]
+    strh r0,[r2,#TIM_CR1]
+    ldrh r0,[r2,#TIM_EGR]
+    orr r0,#2 
+    strh r0,[r2,#TIM_EGR] 
+    ldmia DP!,{r0,r1}
+    // pause duration  
+    ldr r1,[UPP,#TICKS]
+    add r0,r1 
+1:  ldr r1,[UPP,#TICKS]
+    cmp r1,r0 
+    bmi 1b 
+    // stop tone 
+    ldrh r0,[R2,#TIM_CR1]
+    eor r0,#1 
+    strh r0,[R2,#TIM_CR1]     
     _RET 
+
+/************************************
+  BASIC: TONE_INIT 
+  initialize tone_generator
+  output on GPIOB:6 
+************************************/
+    _FUNC tone_init 
+    // configure pin 
+    _MOV32 r0,GPIOB_BASE_ADR
+    mov r1,#6 // gpio pin 
+    mov r2,#0xa // OUTPUT_AFPP 
+    _CALL gpio_config
+    // enable timer4 clock 
+    _MOV32 r2,RCC_BASE_ADR
+    mov r0,#(1<<2)
+    ldr r1,[R2,#RCC_APB1ENR]
+    orr r0,r1 
+    str r0,[R2,#RCC_APB1ENR]
+    // configure TIMER4 in PWM mode 
+    _MOV32 r2,TIMER4_BASE_ADR
+    // prescale divisor 16 
+    mov r0,#15 
+    str r0,[r2,#TIM_PSC]
+    // pwm mode 6
+    ldrh r3,[r2,#TIM_CCMR1]
+    mov r0,#255
+    mvn r0,r0 
+    and r3,r0 // clear bit field 
+    mov r0,#0x68
+    orr r3,r0  
+    strh r3,[R2,#TIM_CCMR1]     
+    _RET 
+
 
 /****************************************
   BASIC: TRACE n 

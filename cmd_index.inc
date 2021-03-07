@@ -101,7 +101,9 @@
     .equ TIMER_IDX, TICKS_IDX+1 // 
     .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
     .equ TO_IDX, TMROUT_IDX+1 // 
-    .equ TRACE_IDX,TO_IDX+1
+    .equ TONE_IDX,TO_IDX+1
+    .equ TONE_INIT_IDX,TONE_IDX+1 
+    .equ TRACE_IDX,TONE_INIT_IDX+1
     .equ UBOUND_IDX, TRACE_IDX+1 // 
     .equ UFLASH_IDX, UBOUND_IDX+1 // 
     .equ UNTIL_IDX, UFLASH_IDX+1 // 
