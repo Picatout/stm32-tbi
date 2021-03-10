@@ -1985,7 +1985,7 @@ interpreter:
 // multiplication
     mul r2,r1
     b 0b  
-3:  cmp T1,#TK_DIV 
+3:  cmp r3,#TK_DIV 
     bne 4f
 // division
     sdiv r2,r2,r1
@@ -1999,7 +1999,6 @@ interpreter:
 9:  mov r1,r2 
     pop {r2,r3}
     _RET 
-
 
 /*****************************************
     expression 
@@ -2324,6 +2323,7 @@ kword_end:
   _dict_entry TK_CMD,BRES,BRES_IDX //bit_reset
   _dict_entry TK_IFUNC,BIT,BIT_IDX //bitmask
   _dict_entry TK_CMD,AWU,AWU_IDX //awu 
+  _dict_entry TK_CMD,AUTORUN,AUTORUN_IDX // autorun 
   _dict_entry TK_IFUNC,ASC,ASC_IDX //ascii
   _dict_entry TK_IFUNC,AND,AND_IDX //bit_and
   _dict_entry TK_CMD,ADC,ADC_IDX // adc 
@@ -2342,7 +2342,7 @@ kword_dict: // first name field
 //comands and fonctions address table
   .type fn_table, %object
 fn_table:
-	.word abs,analog_read,adc,bit_and,ascii,awu,bitmask 
+	.word abs,analog_read,adc,bit_and,ascii,autorun,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,for,forget,free,get,gosub,goto
@@ -2414,7 +2414,7 @@ adc_loop:
     _RET
 
 /***********************************
-  BASIC: ADC ON|OFF
+  BASIC: ADC 1|0
   enable|disable analog digital converter 
   freq -> of conversion
 *****************************************/
@@ -2483,9 +2483,6 @@ adc_off:
     _CALL expect 
     mov r0,#TK_INTGR 
     _POP r1 
-    _RET
-
-    _FUNC autorun
     _RET
 
 /*******************************************
@@ -3943,6 +3940,16 @@ new_file:
     _RET 
 fsize: .asciz "file size: "
 data_bytes: .asciz "bytes"
+
+
+/******************************
+  BASIC: AUTORUN ["name"]
+  set a file name as the one to 
+  execute at boot up.
+*********************************/
+    _FUNC autorun
+
+    _RET 
 
 
 /*******************************

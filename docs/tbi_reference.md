@@ -7,6 +7,8 @@
 
 * [Variables](#variables)
 
+* [Constantes utilisateur](#userconst)
+
 * [Expressions arithmétiques](#expressions)
 
 * [Syntaxe](#syntaxe)
@@ -29,7 +31,8 @@
 
 <a id="data"></a>
 ### Type de données 
-Le seul type de donné numérique est l'entier 16 bits donc dans l'intervalle **-32768...32767**.  
+
+Le seul type de donné numérique est l'entier 32 bits donc dans l'intervalle **-2147483650...2147483649**.  
 
 Cependant pour des fins d'impression des chaînes de caractères entre guillemets sont disponibles. Seul les commandes **PRINT** et **INPUT** utilisent ces chaînes comme arguments. 
 
@@ -44,11 +47,31 @@ Il est aussi possible d'imprimer un caractère en utilisant la fonction **CHAR()
 
 Le nombre des variables est limité à 26 et chacune d'elle est représentée par une lettre de l'alphabet. 
 
+[index principal](#index-princ)
+
+<a id="tableau"></a>
 ### Tableau 
 
 Il n'y a qu'un seul tableau appelé **@** et dont la taille dépend de la taille du programme. En effet ce tableau utilise la mémoire RAM laissée libre par le programme. Un programme peut connaître la taille de ce tableau en invoquant la fonction **UBOUND**. 
 
 [index principal](#index-princ)
+
+<a id="userconst"></a>
+### Constantes utilisateurs
+
+Il est possible de définir des constantets symboliques en utilisant le mot réservé  **CONST** les noms de constantes doivent avaoir un maximum de 6 caractères. Seules les lettres et le caractère **'_'** sont acceptés. Les lettres sont converties en majuscules.
+```
+HEX LIST
+5 REM  Adresse de base des UART2 et 3
+10 CONST UART_B =$40000400 ,UART_C =$40000800 
+15 PRINT UART_B ,UART_C 
+READY
+RUN
+1073742848 1073743872 
+```
+
+[index principal](#index-princ)
+
 <a id="expressions"></a>
 ### expression arithmétiques 
 
@@ -57,11 +80,12 @@ Il y a 5 opérateurs arithmétiques par ordre de précédence:
 1.  __'*'__ mulitipliation, **'/'** division, **'%'** modulo 
 1. **'+'** addition, **'-'** soustraction.
 
-Notez que les opérations de division et de modulo réponde à la définition de la [division Euclidienne sur entiers relatif](https://fr.wikipedia.org/wiki/Division_euclidienne#Extension_aux_entiers_relatifs). Ce qui peut réserver des surprises aux non informés. Dans ce type de division le quotient est arrondie vers l'entier le plus petit et le reste (modulo) est toujours positif. Ainsi **-5/3=-2** et **-5%3=1** de sorte que __D=q*n+r__ où **D** est le dénominateur, **q** le quotient, **n** le diviseur et **r** le reste. Dans cet exemple on a donc __-5=-2*3+1__.  
+**NOTE:** La divison n'est pas arrondie. 
 
 ### opérateurs relationnels.
 
-Les opérateurs relationnels ont une priorités inférieure à celle des opérateurs arithmétiques. Le résultat d'une relation est **0|1** et ce résultat peut-être utilisé dans une expression arithmérique. Puisque les relations sont de moindre priorité elle doivent-être misent entre parenthèses lorsqu'elles sont utilisées dans une expression arithmétique.
+Les opérateurs relationnels sont utilisés pour comparer la valeur de 2 expressions arithmétiques. Les relations ne peuvent-être utilisées qu'après le **IF** ou le **UNTIL**.
+Toute valeur non nulle est considérée comme vrai.
 
 1. **'&gt;'**   Retourne vrai si le premier terme est plus grand que le deuxième.
 1. **'&lt;'** Retourne vrai si le premier terme est plus petit que le second.
@@ -76,27 +100,24 @@ Les opérateurs relationnels ont une priorités inférieure à celle des opérat
 
 Le code utilisé pour le texte est le code [ASCII](https://fr.wikipedia.org/wiki/American_Standard_Code_for_Information_Interchange).
 
-Un programme débute par un numéro de ligne suivit d'une ou plusieurs commandes séparées par le caractère **':'**.
+Un programme débute par un numéro de ligne suivit optionnellement d'une *étiquette cible* et d'une ou plusieurs commandes séparées par le caractère **':'**. Les lignes vides sont supprimées. 
 
-Une commande est suivie de ses arguments séparés par une virgule. Les arguments des fonctions doivent-être mis entre parenthèses. Par fonction j'entends une sous-routine qui retourne une valeur. Cependant une fonction qui n'utilise pas d'arguments n'est pas suivie de parenthèses. Les commandes , c'est à dire les sous-routines qui ne retoune pas de valeur, reçoivent leur arguments sans parenthèses. 
+Une commande est suivie de ses arguments séparés par une virgule. Les arguments des fonctions doivent-être mis entre parenthèses. Par fonction j'entends une sous-routine qui retourne une valeur. Cependant une fonction qui n'utilise pas d'arguments n'est pas suivie de parenthèses. Les commandes , c'est à dire les sous-routines qui ne retoune pas de valeur, reçoivent leur arguments sans parenthèses sauf pout **TAB** et **SPC**. 
 
 Les *espaces* entre les *unitées lexicales* sont facultatifs sauf s'il y a ambiguité. Par exemple si le nom d'un commande est immédiatement suivit par le nom d'une variable un espace doit les séparer. 
 
 Les commandes peuvent-être entrées indifféremment en minuscule ou majuscule.
 L'analyseur lexical convertie les lettres en  majuscule sauf à l'intérieur d'une chaîne entre guillemets.
 
-Les commandes peuvent-être abrégées au plus court à 2 caractères à condition qu'il n'y est pas d'ambiguité entre 2 commandes. L'abréviation doit-être d'au moins 2 lettres pour éviter la confusion avec les variables. Par exemple **GOTO**peut-être abrégé **GOT** et **GOSUB** peut-être abrégé **GOS**. 
+Les commandes peuvent-être abrégées au plus court à 2 caractères à condition qu'il n'y est pas d'ambiguité entre 2 commandes. L'abréviation doit-être d'au moins 2 lettres pour éviter la confusion avec les variables. Par exemple **GOTO**peut-être abrégé **GOT** et **GOSUB** peut-être abrégé **GOS**.  Ces abréviations de sauve pas d'espaces mémoire et n'accélère aucunement l'exécution car chaque ligne est compilée en jetons à la fin de sa saisie.  Seule cette version compilée est sauvegardée. La commande **LIST** décompile le programme avant de l'affiché.
 
-Certaines commandes sont représentées facultativement par une caractère unique. Par exemple la commande **PRINT** peut-être remplacée par le caractère **'?'**. La commande **REMARK** peut-être remplacée par un apostrophe (**'**). 
+Certaines commandes sont représentées facultativement par une caractère unique. Par exemple la commande **PRINT** peut-être remplacée par le caractère **'?'**. La commande **REM** peut-être remplacée par un apostrophe (**'**). 
 
 Plusieurs commandes peuvent-être présentent sur la même ligne. Le caractère **':'** est utilisé pour indiqué la fin d'une commande. Son utilisation est facultif s'il n'y pas pas d'ambiguité. 
 ```
 >A=2:B=4   ' valide
 
 >C=3 D=35 ' valide car il n'y pas d'ambiguité.
-
->? a=3 b<=45  ' pas d'ambiguité il s,agit de 2 comparaisons. 
-   0   1
 
 ```
 
@@ -112,8 +133,8 @@ Forme lexicale des entiers. Dans la liste qui suit ce qui est entre **'['** et *
 *  digit::= ('0','1','2','3','4','5','6','7','8','9')
 *  hex_digit::= (digit,'A','B','C','D','E','F') 
 *  entier décimaux::=  ['+'|'-']digit+
-*  entier hexadécimaux::= '$'hex_digit+
-*  entier binaire::= '&'('0'|'1')+   
+*  entier hexadécimaux::= ['+'|'-']'$'hex_digit+
+*  entier binaire::= ['+'|'-']'&'('0'|'1')+   
 
 examples d'entiers:
 
@@ -125,17 +146,15 @@ examples d'entiers:
 <a id="cli"></a>
 ## Ligne de commande et programmes 
  
-Au démarrage l'information sur Tiny BASIC est affichée. Ensuite viens l'invite de commande qui est représentée par le caractère **&gt;**. 
+Au démarrage l'information sur Tiny BASIC est affichée. Ensuite viens le texte **READY** sur la ligne suivante. Ce qui signifit que le terminal est prêt à recevoir des commandes. 
 ```
-Tiny BASIC for STM8
-Copyright, Jacques Deschenes 2019,2020
-version 1.0
-
->
+blue pill tiny BASIC, version 1.0
+READY
 ```
-À partir de là l'utilisateur doit saisir une commande au clavier. Cette commande est considérée comme complétée lorsque la touche **ENTER** est enfoncée. La texte est d'abord compilé en *tokens*. Si il y a un numéro de ligne alors cette ligne est inséré dans l'espace mémoire réservé aux programmes sinon elle est exébutée immédiatement. 
 
-* Un numéro de ligne doit-être dans l'intervalle {1...32767}.
+À partir de là l'utilisateur doit saisir une commande au clavier. Cette commande est considérée comme complétée lorsque la touche **ENTER** est enfoncée. La texte est d'abord compilé en *jetons*. Si il y a un numéro de ligne alors cette ligne est inséré dans l'espace mémoire réservé aux programmes sinon elle est exécutée immédiatement. 
+
+* Un numéro de ligne doit-être dans l'intervalle {1...65535}.
 
 * Si une ligne avec le même numéro existe déjà elle est remplacée par la nouvelle. 
 
@@ -150,11 +169,11 @@ Le programme en mémoire RAM est perdu à chaque réinitialiation du processeur 
 [index principal](#index-princ)
 <a id="fichiers"></a>
 ## Système de fichier
-Le microcontrôleur de la carte NUCLEO-8S208RB possède 128Ko de mémoire flash. Cependant seulement 32Ko sont dans la plage de mémoire standard {0..65535}. Le reste fait partie de la mémoire étendue {32768..131071}. 
-Cette mémoire étendu n'est pas utilisée par Tiny BASIC, elle est réservée pour un mini système de fichiers qui sert à sauvegarder les programmes BASIC.
+Le microcontrôleur de la carte blue pill possède 64Ko de mémoire flash. Cependant seulement une partie de cette mémoire est utilisée par l'interpréteur BASIC. 1Ko de la mémoire 
+restante est utilisée comme émulation EEPROM et le reste par le système de fichier.
 
 <a id="reference"></a>
-## Référence des commandes et fonctions.
+## Référence des commandes, fonctions et constantes système.
 la remarque **{C,P}** après le nom de chaque commande indique dans quel contexte cette commande ou fonction peut-être utilisée. **P** pour *programme* et **C** pour ligne de commande. Une fonction ne peut-être utilisée que comme argument d'une commande ou comme partie d'une expression. 
 
 [index principal](#index-princ)
@@ -164,8 +183,8 @@ la remarque **{C,P}** après le nom de chaque commande indique dans quel context
 nom|abrévation
 -|-
 [ABS](#abs)|AB
-[ADCON](#adcon)|ADCO
-[ADCREAD](#adcread)|ADCR
+[ANA](#adcread)|AN
+[ADC](#adcon)|ADCO
 [AND](#and)|AN
 [ASC](#asc)|AS
 [AUTORUN](#autorun)|AU
@@ -175,86 +194,91 @@ nom|abrévation
 [BSET](#bset)|BS
 [BTEST](#btest)|BTE
 [BTOGL](#btogl)|BTO
-[BYE](#bye)|BY
 [CHAR](#char)|CH
-[CRH](#chr)|CRH
-[CRL](#crl)|CRL
-[DATA](#data)|DATA
-[DATALN](#dataln)|DATAL
-[DDR](#ddr)|DD
+[CLS](#cls)|CL
+[CONST](#const)|CO 
+[DATA](#data)|DA
 [DEC](#dec)|DE
 [DIR](#dir)|DI
 [DO](#do)|DO
-[DREAD](#dread)|DR
-[DWRITE](#dwrite)|DW
-[EEPROM](#eeprom)|EE
+[DROP](#drop)|DR
+[DUMP](#dump)|DU 
 [END](#end)|EN
-[FCPU](#fcpu)|FC 
+[ERASE](#erase)|ER
 [FOR](#for)|FO
 [FORGET](#forget)|FORG
+[FREE](#free)|FR
+[GET](#get)|GE
 [GOSUB](#gosub)|GOS
 [GOTO](#goto)|GOT
-[GPIO](#gpio)|GP
+[GPIOA](#gpioa)|GPIOA
+[GPIOB](#gpiob)|GPIOB
+[GPIOC](#gpioc)|GPIOC
 [HEX](#hex)|HE
-[IDR](#idr)|ID
 [IF](#if)|IF
-[INPUT](#input)|IN
+[IN](#in)|IN
+[INPUT](#input)|INP
+[INPUT_ANA](#inputana)|INPUT_A
+[INPUT_FLOAT](#inputfloat)|INPUT_F
+[INPUT_PD](#inputpd)|INPUT_PD
+[INPUT_PU](#inputpu)|INPUT_PU
 [INVERT](#invert)|INV
-[IWDGEN](#iwdgen)|IDGE
-[IWDGREF](#iwdgref)|IWGR
 [KEY](#key)|KE
 [LET](#let)|LE
 [LIST](#list)|LI
-[LOAD](#load)|LO
-[LOG](#log)|LOG
+[LOCATE](#locate)|LO
 [LSHIFT](#lshift)|LS
-[MULDIV](#muldiv)|MU
 [NEW](#new)|NEW
 [NEXT](#next)|NE
 [NOT](#not)|NO
-[ODR](#odr)|OD
 [OR](#or)|OR
+[OUT](#out)|OU
+[OUTPUT_AFOD](#outputafod)|OUTPUT_AF
+[OUTPUT_AFPP](#outputafpp)|OUTPUT_AFP
+[OUTPUT_OD](#outputod)|OUTPUT_O
+[OUTPUT_PP](#outputpp)|OUTPUT_P
 [PAD](#pad)|PA
 [PAUSE](#pause)|PA
-[PEEK](#peek)|PE
-[PINP](#pinp)|PI
+[PEEKB](#peekb)|PE
+[PEEKH](#peekh)|PEEKH 
+[PEEKW](#peekw)|PEEKW
 [PMODE](#pmode)|PM
-[POKE](#poke)|PO
-[POUT](#pout)|POU
+[POKEB](#pokeb)|PO
+[POKEH](#pokeh)|POKEH
+[POKEW](#pokew)|POKEW
+[POP](#pop)|POP
 [PRINT](#print)|?
-[PRTA](#prtx)|PRTA
-[PRTB](#prtx)|PRTB
-[PRTC](#prtx)|PRTC
-[PRTD](#prtx)|PRTD
-[PRTE](#prtx)|PRTE
-[PRTF](#prtx)|PRTF
-[PRTG](#prtx)|PRTG
-[PRTH](#prtx)|PRTH
-[PRTI](#prtx)|PRTI
+[PUSH](#push)|PU
+[PUT](#put)|PUT
 [QKEY](#qkey)|QK
 [READ](#read)|REA
-[REBOOT](#reboot)|REB
-[REMARK](#remark)|'
+[REM](#remark)|'
 [RESTORE](#restore)|RES
 [RETURN](#return)|RET
 [RND](#rnd)|RN
 [RSHIFT](#rshift)|RS
 [RUN](#run)|RU
 [SAVE](#save)|SA
-[SHOW](#show)|SH
-[SIZE](#size)|SI
+[SERVO_INIT](#servoinit)|SE
+[SERVO_OFF](#servooff)|SERVO_O
+[SERVO_POS](#servopos)|SERVO_P
 [SLEEP](#sleep)|SL
+[SPC](#space)|SP
 [SPIEN](#spien)|SPIE
 [SPIRD](#spird)|SPIR
 [SPISEL](#spisel)|SPIS
-[SPIWR](#spiwr)|SPIW
 [STEP](#step)|STE
 [STOP](#stop)|ST
+[STORE](#store)|STO
+[TAB](#tab)|TA
+[THEN](#then)|TH
 [TICKS](#ticks)|TI
 [TIMEOUT](#timeout)|TIMEO
 [TIMER](#timer)|TIMER
 [TO](#to)|TO
 [TONE](#tone)|TON
+[TONE_INIT](#toneinit)|TONE_
+[TRACE](#trace)|TR
 [UBOUND](#ubound)|UB
 [UFLASH](#uflash)|UF
 [UNTIL](#until)|UN
@@ -263,8 +287,8 @@ nom|abrévation
 [WORDS](#words)|WO
 [WRITE](#write)|WR
 [XOR](#xor)|XO
-[XRCV](#xrcv)|XR
-[XTRMT](#xtrmt)|XT
+[XPOS](#xpos)|XP
+[YPOS](#ypos)|YP 
 
 <hr>
 
@@ -272,43 +296,33 @@ nom|abrévation
 ### ABS(*expr*)  {C,P}
 Cette fonction retourne la valeur absolue de l'expression fournie en argument. 
 
-    >? abs(-45)
+    ? abs(-45)
     45
 [index](#index)
 <a id="adcon"></a>
-### ADCON 0|1 [,diviseur]
-Active **1** ou désactive **0** le convertisseur analogique/numérique. *diviseur* détermine la fréquence d'horloge du convertisseur et doit-être un entier dans l'intervalle {0..7}. Il s'agit d'un diviseur donc **7** correspond à la fréquence la plus basse. Le diviseur s'applique à Fosc qui est de 16Mhz. Il faut 11 cycles d'horloges pour chaque conversion.  Il s'agit d'un convertisseur 10 bits donc le résultat est entre 0...1023. Si l'argument *diviseur* est omis c'est la fréquence maximale qui est utilisée.
-
-paramètre|diviseur|fréquence
--|-|-
-0|2|8Mhz
-1|3|5,33Mhz
-2|4|4Mhz
-3|6|2,66Mhz
-4|8|2Mhz
-5|10|1,6Mhz
-6|12|1,33Mhz 
-7|18|0,89Mhz
+### ADC 0|1 {C,P}
+Active **1** ou désactive **0** le convertisseur analogique/numérique.
 ```
->adcon 1,0 ' active ADC fréquence maximale
-
->?adcread(0) 'Lecture canal 0 
- 757
-
->adcon 0 ' desactive l'ADC.
+pmode gpioa,0,input_ana 'set pin mode GPIOA:0       
+READY
+adc 1 ' active l'ADC 
+READY
+? ana(0)
+2291 
+READY
+? ana(16) ' sonde de température interne au MCU.
+1619 
+READY
+adc 0
+READY
 ```
 On peut désactiver le convertisseur pour réduire la consommation du MCU.
 
 [index](#index)
 <a id="adcread"></a>
-### ADCREAD(canal)
-Lecture d'une des 6 entrées analogiques reliées au connecteur CN4. L'argument **canal** détermine quel entrée est lue {0..5}. Cette fonction est l'équivalent de la fonction *AnalogRead* de l'API Arduino.
+### ANA(canal) {C,P}
+Lecture d'une des 17 entrées analogiques reliées au connecteur CN4. L'argument **canal** détermine quel entrée est lue {0..17}. Cette fonction est l'équivalent de 
 ```
->adcon 1,0 ' active ADC fréquence maximale
-
->?adcread(0) 'Lecture canal 0 
- 655
-
 ```
 
 [index](#index)
@@ -1560,22 +1574,14 @@ Cette fonction applique la fonction **ou exclusif** bit à bit entre les 2 epxre
 ```
 
 [index](#index)
-<a id="xrcv"></a>
-### XRCV 
-Commande pour revevoir un fichier BASIC qui est sur le PC hôte en utilisant le protocole **XMODEM**. Il faut donc utiliser sur le PC un émulateur de terminal qui supporte le transfert de fichier par **XMODEM**, par exemple **minicom**. Il faut donc 2 émulateurs de terminal. L'un pour la console utilisateur et l'autre pour le transfert. On doit activer la transmission avant de passer la commande **XRCV** sur la console. <br/>
-![docs/images/xrcv.png](docs/images/xrcv.png)
-Dans cette capture d'écran **GTKTerm** est utiliser comme console utilisateur et **minicom** pour activer la transmission du fichier à partir du PC. La console communique via **UART1** et xmodem via le canal **UART3**. 
-
-Cette commande peut aussi être utilisée pour transmettre un programm BASIC directement d'une carte à l'autre.
+<a id="xpos"></a>
+### XPOS {C,P}
+Retourne la colonne où se trouve le curseur du terminal.
 
 [index](#index)
-<a id="xtrmt"></a>
-### XTRMT 
-Commande pour transmettre le fichier BASIC qui est en émoire RAM vers le PC hôte en utlisant le protocole **XMODEM**. On doit lancer la commande **XTRMT** sur la console avant de lancer la réception **XMODEM** sur l'autre terminal.<br/> 
-![docs/images/xtrmt.png](docs/images/xtrmt.png)
-Sur cette capture d'écran **GTKTerm** branché sur **UART1** est utilisé comme console utilisateur et **minicom** branché sur **UART3** est utilisé pour la réception vers le PC. 
-
-Cette commande peut aussi être utilisée pour transmettre un programm BASIC directement d'une carte à l'autre.
+<a id="ypos"></a>
+### YPOS {C,P}
+Retourne la ligne sur laquelle se trouve le curseur du terminal.
 
 [index](#index)
 

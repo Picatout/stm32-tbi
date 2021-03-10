@@ -1125,7 +1125,7 @@ ARM GAS  tinyBasic.s 			page 1
  324 0268 D4F800A0 	2:  _UNGET_TOKEN
  324      D4F808B0 
  325 0270 00B500F0 	    _CALL expression 
- 325      0DFF5DF8 
+ 325      0BFF5DF8 
  325      04EB
  326 027a 1B28     	    cmp r0,#TK_INTGR 
  327 027c 40F0EC83 	    bne syntax_error 
@@ -1480,14 +1480,14 @@ ARM GAS  tinyBasic.s 			page 1
  632 04a0 00B500F0 	1:  _CALL is_special
  632      6FF85DF8 
  632      04EB
- 633 04aa DFF8046D 	    ldr r6,=token_ofs
+ 633 04aa DFF8006D 	    ldr r6,=token_ofs
  634 04ae D6E811F0 	    tbh [r6,r1] 
  635              	tok_idx0:     
  636              	//  not special char.  
  637 04b2 57E0     	    b try_number 
  638              	// single char token with no value 
  639              	single: 
- 640 04b4 DFF8FC6C 	    ldr r6,=tok_single
+ 640 04b4 DFF8F86C 	    ldr r6,=tok_single
  641 04b8 705C     	    ldrb r0,[r6,r1] 
  642 04ba 50E0     	    b store_r0
  643              	lt:
@@ -1586,7 +1586,7 @@ ARM GAS  tinyBasic.s 			page 1
  722 0582 00BF     	    _FUNC is_special 
  723 0584 0CB4     	    push {r2,r3}
  724 0586 4FF00101 	    mov r1,#1
- 725 058a DFF82C3C 	    ldr r3,=char_list 
+ 725 058a DFF8283C 	    ldr r3,=char_list 
  726 058e 5A5C     	1:  ldrb r2,[r3,r1]
  727 0590 22B1     	    cbz r2,8f 
  728 0592 8242     	    cmp r2,r0 
@@ -1685,7 +1685,7 @@ ARM GAS  tinyBasic.s 			page 1
  802 0644 1CE0     	    b 8f 
  803              	3:  // try keyword 
  804 0646 4846     	    mov r0,T2 
- 805 0648 DFF8701B 	    ldr r1,=kword_dict  
+ 805 0648 DFF86C1B 	    ldr r1,=kword_dict  
  806 064c 00B500F0 	    _CALL search_dict 
  806      C5FA5DF8 
  806      04EB
@@ -1833,7 +1833,7 @@ ARM GAS  tinyBasic.s 			page 1
  936 072a 03F10103 	    add r3,#1
  937 072e 2228     	    cmp r0,#'"' 
  938 0730 0BD0     	    beq 9f 
- 939 0732 DFF88C1A 	1:  ldr r1,=escaped 
+ 939 0732 DFF8881A 	1:  ldr r1,=escaped 
  940 0736 11F8012B 	2:  ldrb r2,[r1],#1
  941 073a 12B1     	    cbz r2,6f 
  942 073c 8242     	    cmp r2,r0 
@@ -2032,7 +2032,7 @@ ARM GAS  tinyBasic.s 			page 1
  1123              	*********************************************/
  1124 082a 00BF     	    _FUNC cmd_name 
  1125 082c 2DE90003 	    push {T1,T2}
- 1126 0830 DFF88889 	    ldr T1,=kword_dict 
+ 1126 0830 DFF88489 	    ldr T1,=kword_dict 
  1127 0834 58F8049C 	1:  ldr T2,[T1,#-4]
  1128 0838 8145     	    cmp T2,r0 
  1129 083a 03D1     	    bne 3f 
@@ -2093,7 +2093,7 @@ ARM GAS  tinyBasic.s 			page 1
  1173 08aa 00F0AD80 	    beq 9f
  1174 08ae 1028     	    cmp r0,#TK_GE 
  1175 08b0 05D5     	    bpl 1f 
- 1176 08b2 DFF81019 	    ldr r1,=single_char 
+ 1176 08b2 DFF80C19 	    ldr r1,=single_char 
  1177 08b6 085C     	    ldrb r0,[r1,r0]
  1178 08b8 08F8010B 	    strb r0,[T1],#1 
  1179 08bc EFE7     	    b decomp_loop
@@ -2105,7 +2105,7 @@ ARM GAS  tinyBasic.s 			page 1
  1182 08c0 14D5     	    bpl 2f 
  1183 08c2 A0F11000 	    sub r0,#TK_GE
  1184 08c6 4FEA8000 	    lsl r0,#2 
- 1185 08ca DFF8FC18 	    ldr r1,=relop_str 
+ 1185 08ca DFF8F818 	    ldr r1,=relop_str 
  1186 08ce 0858     	    ldr r0,[r1,r0]
  1187 08d0 4146     	    mov r1,T1 
  1188 08d2 00B5FFF7 	    _CALL strcpy 
@@ -2302,12 +2302,12 @@ ARM GAS  tinyBasic.s 			page 1
  1342              	rt_error:
  1343 0a68 5246     	    mov r2,IN 
  1344 0a6a 01B4     	    push {r0}
- 1345 0a6c DFF85C07 	    ldr r0,=rt_error_msg 
+ 1345 0a6c DFF85807 	    ldr r0,=rt_error_msg 
  1346 0a70 00B5FFF7 	    _CALL uart_puts 
  1346      FEFF5DF8 
  1346      04EB
  1347 0a7a 01BC     	    pop {r0}
- 1348 0a7c DFF85017 	    ldr r1,=err_msg  
+ 1348 0a7c DFF84C17 	    ldr r1,=err_msg  
  1349 0a80 4FEA8000 	    lsl r0,#2 
  1350 0a84 0858     	    ldr r0,[r1,r0]
  1351 0a86 00B5FFF7 	    _CALL uart_puts
@@ -2327,7 +2327,7 @@ ARM GAS  tinyBasic.s 			page 1
  1358      FEFF5DF8 
  1358      04EB
  1359              	// print error offset on line      
- 1360 0ab6 DFF81C07 	    ldr r0,=token_at_msg 
+ 1360 0ab6 DFF81807 	    ldr r0,=token_at_msg 
  1361 0aba 00B5FFF7 	    _CALL uart_puts 
  1361      FEFF5DF8 
  1361      04EB
@@ -2350,7 +2350,7 @@ ARM GAS  tinyBasic.s 			page 1
  1369      04EB
  1370 0aec FFF7FEBF 	    b warm_start 
  1371              	compile_error:
- 1372 0af0 DFF8DC16 	    ldr r1,=err_msg 
+ 1372 0af0 DFF8D816 	    ldr r1,=err_msg 
  1373 0af4 4FEA8000 	    lsl r0,#2 
  1374 0af8 0858     	    ldr r0,[r1,r0]
  1375 0afa 00B5FFF7 	    _CALL uart_puts
@@ -2672,7 +2672,7 @@ ARM GAS  tinyBasic.s 			page 1
  1564              	      r0 
  1565              	***********************************/
  1566              	    _FUNC prt_version 
- 1567 0c84 DFF85005 	    ldr r0,=version_msg 
+ 1567 0c84 DFF84C05 	    ldr r0,=version_msg 
  1568 0c88 00B5FFF7 	    _CALL uart_puts
  1568      FEFF5DF8 
  1568      04EB
@@ -2825,7 +2825,7 @@ ARM GAS  tinyBasic.s 			page 1
  1691              	// reset main stack 
  1692 0db4 5FF82400 	    ldr r0,mstack
  1693 0db8 8546     	    mov sp,r0 
- 1694 0dba DFF82004 	    ldr r0,=ready 
+ 1694 0dba DFF81C04 	    ldr r0,=ready 
  1695 0dbe 00B5FFF7 	    _CALL uart_puts 
  1695      FEFF5DF8 
  1695      04EB
@@ -2902,7 +2902,7 @@ ARM GAS  tinyBasic.s 			page 1
  1751              	    depend on SUB|FUNc
  1752              	*****************************/
  1753              	    _FUNC execute 
- 1754 0e3c E849     	    ldr r1,=fn_table 
+ 1754 0e3c E749     	    ldr r1,=fn_table 
  1755 0e3e 51F82000 	    ldr r0,[r1,r0,lsl #2]
  1756 0e42 0047     	    bx r0 
  1757              	
@@ -3034,7 +3034,7 @@ ARM GAS  tinyBasic.s 			page 1
  1865 0f04 4DF8048D 	    push {T1}
  1866 0f08 88EA0808 	    eor T1,T1 
  1867 0f0c 00B500F0 	1:  _CALL expression 
- 1867      BFF85DF8 
+ 1867      BDF85DF8 
  1867      04EB
  1868 0f16 1B28     	    cmp R0,#TK_INTGR  
  1869 0f18 0AD1     	    bne 2f
@@ -3091,7 +3091,7 @@ ARM GAS  tinyBasic.s 			page 1
  1909      A4FF5DF8 
  1909      04EB
  1910 0f78 00B500F0 	    _CALL expression
- 1910      89F85DF8 
+ 1910      87F85DF8 
  1910      04EB
  1911 0f82 1B28     	    cmp r0,#TK_INTGR
  1912 0f84 7FF468AD 	    bne syntax_error
@@ -3102,13 +3102,13 @@ ARM GAS  tinyBasic.s 			page 1
  1915      04EB
  1916 0f98 1046     	    mov r0,r2 
  1917 0f9a 00B500F0 	    _CALL get_array_element 
- 1917      E4F85DF8 
+ 1917      E2F85DF8 
  1917      04EB
  1918 0fa4 35E0     	    b 8f
  1919 0fa6 0528     	2:  cmp r0,#TK_LPAREN 
  1920 0fa8 13D1     	    bne 3f 
  1921 0faa 00B500F0 	    _CALL expression 
- 1921      70F85DF8 
+ 1921      6EF85DF8 
  1921      04EB
  1922 0fb4 1B28     	    cmp r0,#TK_INTGR 
  1923 0fb6 7FF44FAD 	    bne syntax_error
@@ -3127,7 +3127,7 @@ ARM GAS  tinyBasic.s 			page 1
  1931 0fd4 06D1     	    bne 4f
  1932 0fd6 0846     	    mov r0,r1  
  1933 0fd8 00B500F0 	    _CALL get_var 
- 1933      D9F85DF8 
+ 1933      D7F85DF8 
  1933      04EB
  1934 0fe2 16E0     	    b 8f 
  1935 0fe4 1528     	4:  cmp r0,#TK_IFUNC 
@@ -3186,7 +3186,7 @@ ARM GAS  tinyBasic.s 			page 1
  1977 1044 D4F800A0 	1:  _UNGET_TOKEN
  1977      D4F808B0 
  1978 104c 4FF01B00 	    mov r0,#TK_INTGR
- 1979 1050 1AE0     	    b 9f 
+ 1979 1050 19E0     	    b 9f 
  1980 1052 00B5FFF7 	2:  _CALL factor
  1980      74FF5DF8 
  1980      04EB
@@ -3197,20 +3197,20 @@ ARM GAS  tinyBasic.s 			page 1
  1985              	// multiplication
  1986 1066 01FB02F2 	    mul r2,r1
  1987 106a E1E7     	    b 0b  
- 1988 106c B8F10A0F 	3:  cmp T1,#TK_DIV 
- 1989 1070 02D1     	    bne 4f
+ 1988 106c 0A2B     	3:  cmp r3,#TK_DIV 
+ 1989 106e 02D1     	    bne 4f
  1990              	// division
- 1991 1072 92FBF1F2 	    sdiv r2,r2,r1
- 1992 1076 DBE7     	    b 0b  
+ 1991 1070 92FBF1F2 	    sdiv r2,r2,r1
+ 1992 1074 DCE7     	    b 0b  
  1993              	4: // modulo
- 1994 1078 1046     	    mov r0,r2 
- 1995 107a 92FBF1F2 	    sdiv r2,r2,r1 
- 1996 107e 01FB02F2 	    mul  r2,r1 
- 1997 1082 A0EB0202 	    sub  r2,r0,r2
- 1998 1086 D3E7     	    b 0b  
- 1999 1088 1146     	9:  mov r1,r2 
- 2000 108a 0CBC     	    pop {r2,r3}
- 2001 108c 7047     	    _RET 
+ 1994 1076 1046     	    mov r0,r2 
+ 1995 1078 92FBF1F2 	    sdiv r2,r2,r1 
+ 1996 107c 01FB02F2 	    mul  r2,r1 
+ 1997 1080 A0EB0202 	    sub  r2,r0,r2
+ 1998 1084 D4E7     	    b 0b  
+ 1999 1086 1146     	9:  mov r1,r2 
+ 2000 1088 0CBC     	    pop {r2,r3}
+ 2001 108a 7047     	    _RET 
  2002              	
  2003              	
  2004              	/*****************************************
@@ -3225,44 +3225,44 @@ ARM GAS  tinyBasic.s 			page 1
  2013              	      r2  left term 
  2014              	      r3  operator +|-
  2015              	******************************************/
- 2016 108e 00BF     	    _FUNC expression 
- 2017 1090 00B5FFF7 	    _CALL term 
- 2017      C3FF5DF8 
+ 2016              	    _FUNC expression 
+ 2017 108c 00B5FFF7 	    _CALL term 
+ 2017      C5FF5DF8 
  2017      04EB
- 2018 109a 1B28     	    cmp r0,#TK_INTGR 
- 2019 109c 00D0     	    beq 0f 
- 2020 109e 7047     	    _RET   
- 2021 10a0 0CB4     	0:  push {r2,r3}
- 2022 10a2 0A46     	    mov r2,r1 // first term
- 2023 10a4 00B5FFF7 	1:  _CALL next_token 
- 2023      CDFE5DF8 
+ 2018 1096 1B28     	    cmp r0,#TK_INTGR 
+ 2019 1098 00D0     	    beq 0f 
+ 2020 109a 7047     	    _RET   
+ 2021 109c 0CB4     	0:  push {r2,r3}
+ 2022 109e 0A46     	    mov r2,r1 // first term
+ 2023 10a0 00B5FFF7 	1:  _CALL next_token 
+ 2023      CFFE5DF8 
  2023      04EB
- 2024 10ae 0346     	    mov r3,r0 //  +|-
+ 2024 10aa 0346     	    mov r3,r0 //  +|-
 ARM GAS  tinyBasic.s 			page 55
 
 
- 2025 10b0 0728     	    cmp r0,#TK_PLUS 
- 2026 10b2 08D0     	    beq 3f 
- 2027 10b4 0828     	    cmp r0,#TK_MINUS  
- 2028 10b6 06D0     	    beq 3f
- 2029 10b8 D4F800A0 	    _UNGET_TOKEN 
+ 2025 10ac 0728     	    cmp r0,#TK_PLUS 
+ 2026 10ae 08D0     	    beq 3f 
+ 2027 10b0 0828     	    cmp r0,#TK_MINUS  
+ 2028 10b2 06D0     	    beq 3f
+ 2029 10b4 D4F800A0 	    _UNGET_TOKEN 
  2029      D4F808B0 
- 2030 10c0 4FF01B00 	    mov r0,#TK_INTGR
- 2031 10c4 0EE0     	    b 9f 
- 2032 10c6 00B5FFF7 	3:  _CALL term 
- 2032      A8FF5DF8 
+ 2030 10bc 4FF01B00 	    mov r0,#TK_INTGR
+ 2031 10c0 0EE0     	    b 9f 
+ 2032 10c2 00B5FFF7 	3:  _CALL term 
+ 2032      AAFF5DF8 
  2032      04EB
- 2033 10d0 1B28     	    cmp r0,#TK_INTGR 
- 2034 10d2 7FF4C1AC 	    bne syntax_error 
- 2035 10d6 072B     	    cmp r3,#TK_PLUS 
- 2036 10d8 02D0     	    beq 4f 
- 2037 10da A2EB0102 	    sub r2,r1 // term1-term2  
- 2038 10de E1E7     	    b 1b 
- 2039 10e0 0A44     	4:  add r2,r1 // term1+term2
- 2040 10e2 DFE7     	    b 1b
- 2041 10e4 1146     	9:  mov r1,r2 
- 2042 10e6 0CBC     	    pop {r2,r3}
- 2043 10e8 7047     	    _RET 
+ 2033 10cc 1B28     	    cmp r0,#TK_INTGR 
+ 2034 10ce 7FF4C3AC 	    bne syntax_error 
+ 2035 10d2 072B     	    cmp r3,#TK_PLUS 
+ 2036 10d4 02D0     	    beq 4f 
+ 2037 10d6 A2EB0102 	    sub r2,r1 // term1-term2  
+ 2038 10da E1E7     	    b 1b 
+ 2039 10dc 0A44     	4:  add r2,r1 // term1+term2
+ 2040 10de DFE7     	    b 1b
+ 2041 10e0 1146     	9:  mov r1,r2 
+ 2042 10e2 0CBC     	    pop {r2,r3}
+ 2043 10e4 7047     	    _RET 
  2044              	
  2045              	
  2046              	/**********************************************
@@ -3277,70 +3277,70 @@ ARM GAS  tinyBasic.s 			page 1
  2055              	        r2   first operand 
  2056              	        r3   relop   
  2057              	**********************************************/
- 2058 10ea 00BF     	    _FUNC relation 
- 2059 10ec 0CB4     	    push {r2,r3}
- 2060 10ee 00B5FFF7 	    _CALL expression 
+ 2058 10e6 00BF     	    _FUNC relation 
+ 2059 10e8 0CB4     	    push {r2,r3}
+ 2060 10ea 00B5FFF7 	    _CALL expression 
  2060      CEFF5DF8 
  2060      04EB
- 2061 10f8 1B28     	    cmp r0,#TK_INTGR 
- 2062 10fa 7FF4ADAC 	    bne syntax_error 
- 2063 10fe 0A46     	    mov r2,r1  // first operand  
- 2064 1100 00B5FFF7 	    _CALL next_token 
- 2064      9FFE5DF8 
+ 2061 10f4 1B28     	    cmp r0,#TK_INTGR 
+ 2062 10f6 7FF4AFAC 	    bne syntax_error 
+ 2063 10fa 0A46     	    mov r2,r1  // first operand  
+ 2064 10fc 00B5FFF7 	    _CALL next_token 
+ 2064      A1FE5DF8 
  2064      04EB
- 2065 110a A0F10D03 	    sub r3,r0,#TK_EQUAL  // relop  
- 2066 110e 0D28     	    cmp r0,#TK_EQUAL 
- 2067 1110 1DD4     	    bmi 8f 
- 2068 1112 1328     	    cmp r0,#TK_NE+1
- 2069 1114 1BD5     	    bpl 8f 
- 2070 1116 00B5FFF7 	    _CALL expression 
+ 2065 1106 A0F10D03 	    sub r3,r0,#TK_EQUAL  // relop  
+ 2066 110a 0D28     	    cmp r0,#TK_EQUAL 
+ 2067 110c 1DD4     	    bmi 8f 
+ 2068 110e 1328     	    cmp r0,#TK_NE+1
+ 2069 1110 1BD5     	    bpl 8f 
+ 2070 1112 00B5FFF7 	    _CALL expression 
  2070      BAFF5DF8 
  2070      04EB
- 2071 1120 1B28     	    cmp r0,#TK_INTGR 
- 2072 1122 7FF499AC 	    bne syntax_error 
+ 2071 111c 1B28     	    cmp r0,#TK_INTGR 
+ 2072 111e 7FF49BAC 	    bne syntax_error 
 ARM GAS  tinyBasic.s 			page 56
 
 
- 2073 1126 8A42     	    cmp r2,r1 // compare operands  
- 2074 1128 4FF0FF31 	    mov r1,#-1 
- 2075 112c 2D4A     	    ldr r2,=relop_jmp
- 2076 112e D2E803F0 	    tbb [r2,r3]    
+ 2073 1122 8A42     	    cmp r2,r1 // compare operands  
+ 2074 1124 4FF0FF31 	    mov r1,#-1 
+ 2075 1128 2D4A     	    ldr r2,=relop_jmp
+ 2076 112a D2E803F0 	    tbb [r2,r3]    
  2077              	rel_idx0:
  2078              	rel_eq:
- 2079 1132 11D0     	    beq 9f 
- 2080 1134 08E0     	    b rel_false
+ 2079 112e 11D0     	    beq 9f 
+ 2080 1130 08E0     	    b rel_false
  2081              	rel_gt:
- 2082 1136 0FDC     	    bgt 9f  
- 2083 1138 06E0     	    b rel_false  
+ 2082 1132 0FDC     	    bgt 9f  
+ 2083 1134 06E0     	    b rel_false  
  2084              	rel_ge:
- 2085 113a 0DDA     	    bge 9f  
- 2086 113c 04E0     	    b rel_false  
+ 2085 1136 0DDA     	    bge 9f  
+ 2086 1138 04E0     	    b rel_false  
  2087              	rel_lt: 
- 2088 113e 0BDB     	    blt 9f   
- 2089 1140 02E0     	    b rel_false 
+ 2088 113a 0BDB     	    blt 9f   
+ 2089 113c 02E0     	    b rel_false 
  2090              	rel_le:
- 2091 1142 09DD     	    ble 9f  
- 2092 1144 00E0     	    b rel_false 
+ 2091 113e 09DD     	    ble 9f  
+ 2092 1140 00E0     	    b rel_false 
  2093              	rel_ne:
- 2094 1146 07D1     	    bne 9f 
+ 2094 1142 07D1     	    bne 9f 
  2095              	rel_false:    
- 2096 1148 81EA0101 	    eor r1,r1  // false
- 2097 114c 04E0     	    b 9f  
- 2098 114e D4F800A0 	8:  _UNGET_TOKEN 
+ 2096 1144 81EA0101 	    eor r1,r1  // false
+ 2097 1148 04E0     	    b 9f  
+ 2098 114a D4F800A0 	8:  _UNGET_TOKEN 
  2098      D4F808B0 
- 2099 1156 1146     	    mov r1,r2    
- 2100 1158 4FF01B00 	9:  mov r0,#TK_INTGR
- 2101 115c 0CBC     	    pop {r2,r3}
- 2102 115e 7047     	    _RET 
+ 2099 1152 1146     	    mov r1,r2    
+ 2100 1154 4FF01B00 	9:  mov r0,#TK_INTGR
+ 2101 1158 0CBC     	    pop {r2,r3}
+ 2102 115a 7047     	    _RET 
  2103              	
  2104              	
  2105              	relop_jmp: 
- 2106 1160 00       	  .byte 0 // =  
- 2107 1161 02       	  .byte (rel_gt-rel_idx0)/2 // > 
- 2108 1162 06       	  .byte (rel_lt-rel_idx0)/2 // <
- 2109 1163 04       	  .byte (rel_ge-rel_idx0)/2 // >=
- 2110 1164 08       	  .byte (rel_le-rel_idx0)/2 // <=
- 2111 1165 0A       	  .byte (rel_ne-rel_idx0)/2 // <> 
+ 2106 115c 00       	  .byte 0 // =  
+ 2107 115d 02       	  .byte (rel_gt-rel_idx0)/2 // > 
+ 2108 115e 06       	  .byte (rel_lt-rel_idx0)/2 // <
+ 2109 115f 04       	  .byte (rel_ge-rel_idx0)/2 // >=
+ 2110 1160 08       	  .byte (rel_le-rel_idx0)/2 // <=
+ 2111 1161 0A       	  .byte (rel_ne-rel_idx0)/2 // <> 
  2112              	
  2113              	
  2114              	/***********************************
@@ -3352,16 +3352,16 @@ ARM GAS  tinyBasic.s 			page 1
  2120              	    r0   TK_INTGR
  2121              	    r1   value  
  2122              	************************************/
- 2123 1166 00BF     	    _FUNC get_array_element 
- 2124 1168 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
- 2125 116c 4FEA8000 	    lsl r0,#2 
- 2126 1170 C0EB0100 	    rsb r0,r1 
- 2127 1174 0168     	    ldr r1,[r0]
- 2128 1176 4FF01B00 	    mov r0,#TK_INTGR 
+ 2123 1162 00BF     	    _FUNC get_array_element 
+ 2124 1164 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
+ 2125 1168 4FEA8000 	    lsl r0,#2 
+ 2126 116c C0EB0100 	    rsb r0,r1 
+ 2127 1170 0168     	    ldr r1,[r0]
+ 2128 1172 4FF01B00 	    mov r0,#TK_INTGR 
 ARM GAS  tinyBasic.s 			page 57
 
 
- 2129 117a 7047     	    _RET 
+ 2129 1176 7047     	    _RET 
  2130              	
  2131              	
  2132              	/***********************************
@@ -3376,13 +3376,13 @@ ARM GAS  tinyBasic.s 			page 1
  2141              	    r2    array pointer 
  2142              	**********************************/
  2143              	    _FUNC set_array_element 
- 2144 117c 04B4     	    push {r2}
- 2145 117e D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
- 2146 1182 4FEA8000 	    lsl r0,#2 
- 2147 1186 A1EB0001 	    sub r1,r0 
- 2148 118a 0960     	    str r1,[r1]
- 2149 118c 04BC     	    pop {r2}
- 2150 118e 7047     	    _RET 
+ 2144 1178 04B4     	    push {r2}
+ 2145 117a D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
+ 2146 117e 4FEA8000 	    lsl r0,#2 
+ 2147 1182 A1EB0001 	    sub r1,r0 
+ 2148 1186 0960     	    str r1,[r1]
+ 2149 1188 04BC     	    pop {r2}
+ 2150 118a 7047     	    _RET 
  2151              	
  2152              	/***********************************
  2153              	   get_var 
@@ -3394,11 +3394,11 @@ ARM GAS  tinyBasic.s 			page 1
  2159              	     r1    value 
  2160              	**********************************/
  2161              	    _FUNC get_var 
- 2162 1190 04F16001 	    add r1,UPP,#VARS
- 2163 1194 4FEA8000 	    lsl r0,#2 
- 2164 1198 0958     	    ldr r1,[r1,r0]
- 2165 119a 4FF01B00 	    mov r0,#TK_INTGR
- 2166 119e 7047     	    _RET 
+ 2162 118c 04F16001 	    add r1,UPP,#VARS
+ 2163 1190 4FEA8000 	    lsl r0,#2 
+ 2164 1194 0958     	    ldr r1,[r1,r0]
+ 2165 1196 4FF01B00 	    mov r0,#TK_INTGR
+ 2166 119a 7047     	    _RET 
  2167              	
  2168              	/*********************************
  2169              	    set_var 
@@ -3412,12 +3412,12 @@ ARM GAS  tinyBasic.s 			page 1
  2177              	    r2   vars pointer 
  2178              	*********************************/
  2179              	    _FUNC set_var 
- 2180 11a0 04B4     	    push {r2}
- 2181 11a2 04F16002 	    add r2,UPP,#VARS
- 2182 11a6 4FEA8000 	    lsl r0,#2
- 2183 11aa 1150     	    str r1,[r2,r0]
- 2184 11ac 04BC     	    pop {r2}
- 2185 11ae 7047     	    _RET 
+ 2180 119c 04B4     	    push {r2}
+ 2181 119e 04F16002 	    add r2,UPP,#VARS
+ 2182 11a2 4FEA8000 	    lsl r0,#2
+ 2183 11a6 1150     	    str r1,[r2,r0]
+ 2184 11a8 04BC     	    pop {r2}
+ 2185 11aa 7047     	    _RET 
 ARM GAS  tinyBasic.s 			page 58
 
 
@@ -7266,7 +7266,7 @@ DEFINED SYMBOLS
          tinyBasic.s:317    .text:000000000000024c search_target
          tinyBasic.s:1769   .text:0000000000000e44 next_token
          tinyBasic.s:381    .text:00000000000002c4 search_label
-         tinyBasic.s:2016   .text:0000000000001090 expression
+         tinyBasic.s:2016   .text:000000000000108c expression
          tinyBasic.s:1323   .text:0000000000000a58 syntax_error
          tinyBasic.s:419    .text:00000000000002ec search_lineno
          tinyBasic.s:1338   .text:0000000000000a60 tb_error
@@ -7391,26 +7391,26 @@ DEFINED SYMBOLS
          tinyBasic.s:1844   .text:0000000000000ed8 func_args
          tinyBasic.s:1864   .text:0000000000000f04 arg_list
          tinyBasic.s:1896   .text:0000000000000f40 factor
-         tinyBasic.s:2123   .text:0000000000001168 get_array_element
+         tinyBasic.s:2123   .text:0000000000001164 get_array_element
 ARM GAS  tinyBasic.s 			page 125
 
 
-         tinyBasic.s:2161   .text:0000000000001190 get_var
+         tinyBasic.s:2161   .text:000000000000118c get_var
          tinyBasic.s:1964   .text:000000000000101c term
-         tinyBasic.s:2058   .text:00000000000010ec relation
-         tinyBasic.s:2105   .text:0000000000001160 relop_jmp
-         tinyBasic.s:2077   .text:0000000000001132 rel_idx0
-         tinyBasic.s:2078   .text:0000000000001132 rel_eq
-         tinyBasic.s:2095   .text:0000000000001148 rel_false
-         tinyBasic.s:2081   .text:0000000000001136 rel_gt
-         tinyBasic.s:2084   .text:000000000000113a rel_ge
-         tinyBasic.s:2087   .text:000000000000113e rel_lt
-         tinyBasic.s:2090   .text:0000000000001142 rel_le
-         tinyBasic.s:2093   .text:0000000000001146 rel_ne
-         tinyBasic.s:2106   .text:0000000000001160 $d
-         tinyBasic.s:2123   .text:0000000000001166 $t
-         tinyBasic.s:2143   .text:000000000000117c set_array_element
-         tinyBasic.s:2179   .text:00000000000011a0 set_var
+         tinyBasic.s:2058   .text:00000000000010e8 relation
+         tinyBasic.s:2105   .text:000000000000115c relop_jmp
+         tinyBasic.s:2077   .text:000000000000112e rel_idx0
+         tinyBasic.s:2078   .text:000000000000112e rel_eq
+         tinyBasic.s:2095   .text:0000000000001144 rel_false
+         tinyBasic.s:2081   .text:0000000000001132 rel_gt
+         tinyBasic.s:2084   .text:0000000000001136 rel_ge
+         tinyBasic.s:2087   .text:000000000000113a rel_lt
+         tinyBasic.s:2090   .text:000000000000113e rel_le
+         tinyBasic.s:2093   .text:0000000000001142 rel_ne
+         tinyBasic.s:2106   .text:000000000000115c $d
+         tinyBasic.s:2123   .text:0000000000001162 $t
+         tinyBasic.s:2143   .text:0000000000001178 set_array_element
+         tinyBasic.s:2179   .text:000000000000119c set_var
          tinyBasic.s:4548   .rodata.fs:0000000000000000 FILE_SYSTEM
          tinyBasic.s:2215   .rodata:0000000000000050 $d
          tinyBasic.s:2228   .rodata.dictionary:0000000000000000 kword_end
@@ -7568,7 +7568,7 @@ DEFINED SYMBOLS
          tinyBasic.s:4538   .rodata.user:0000000000000000 $d
          tinyBasic.s:4537   .text.basic:00000000000015be $d
          tinyBasic.s:4548   .text.basic:00000000000015c0 $d
-         tinyBasic.s:4548   .text:00000000000011b0 $d
+         tinyBasic.s:4548   .text:00000000000011ac $d
          tinyBasic.s:247    .text:0000000000000195 $d
          tinyBasic.s:247    .text:0000000000000196 $t
          tinyBasic.s:269    .text:00000000000001e9 $d

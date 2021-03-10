@@ -1,3 +1,11 @@
+À faire AUTORUN
+
+#### 2021-03-09
+
+* Travail sur manuel de référence. 
+
+* Corrigé bogue dans **term**. 
+
 #### 2021-03-07
 
 * Corrigé bogue dans **gpio_config**. 

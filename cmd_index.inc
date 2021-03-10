@@ -27,7 +27,8 @@
     .equ ADC_IDX,ANA_IDX+1
     .equ AND_IDX,ADC_IDX+1 // 
     .equ ASC_IDX,AND_IDX+1  // 
-    .equ AWU_IDX,ASC_IDX+1 //
+    .equ AUTORUN_IDX,ASC_IDX+1
+    .equ AWU_IDX,AUTORUN_IDX+1 //
     .equ BIT_IDX,AWU_IDX+1 //
     .equ BRES_IDX,BIT_IDX+1 // 
     .equ BSET_IDX,BRES_IDX+1 // 
