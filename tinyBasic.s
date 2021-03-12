@@ -2516,6 +2516,8 @@ adc_off:
 // configure IWDG
 // compute values for IWDG_PR and IWDG_RLR 
     _POP r2 // time_sleep in msec. 
+    mov r3,#0xffff
+    and r2,r3 
     mov r3,#10 // Flsi=40Khz but smallest divisor is 4 
     mul r2,r3 
     eor r3,r3

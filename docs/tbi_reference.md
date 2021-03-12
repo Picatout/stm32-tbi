@@ -3,7 +3,7 @@
 <a id="index-princ"></a>
 ## index principal 
 
-* [Types de données](#data)
+* [Types de données](#data-types)
 
 * [Variables](#variables)
 
@@ -29,7 +29,7 @@
 
 * [Code source](#sources)
 
-<a id="data"></a>
+<a id="data-types"></a>
 ### Type de données 
 
 Le seul type de donné numérique est l'entier 32 bits donc dans l'intervalle **-2147483650...2147483649**.  
@@ -323,21 +323,26 @@ On peut désactiver le convertisseur pour réduire la consommation du MCU.
 ### ANA(canal) {C,P}
 Lecture d'une des 17 entrées analogiques. L'argument **canal** détermine quel entrée est lue {0..17}. Le canal 16 correspond à la sonde de température interne. Le canal 17 est un voltage de référence interne au MCU utilisé par le convertisseur analogue/numérique. 
 ```
-5 REM  test du convertisseur ADC  
+5 REM TEST CONVERTISSEUR ANALOG/DIGITAL 
 10 CLS 
-20 ADC 1 ' activation du convertisseur
-30 LOCATE 1,1 ? "TEMP:", ANA(16);"VREF:",ANA(17)
-40 PAUSE 500 
-50 IF NOT QKEY THEN GOTO 30 
-60 K=ASC(KEY)
-70 CLS 
-80 LOCATE 1,1 ? "ANA0:",ANA(0),"   "
-90 PAUSE 500
-100 IF NOT QKEY THEN GOTO 80 
-110 K=ASC(KEY)
-120 ADC 0 
-130 END 
-
+20 ADC 1
+30 T=0 B=ANA(16) PAUSE 100 
+40 D=B
+50 T=ANA(16) LOCATE 1,1 ? "TEMP:", T ;"DELTA:",D,"    "
+60 D=ABS(T-B)
+70 B=T 
+80 PAUSE 500 
+90 IF NOT QKEY THEN GOTO 50 
+100 K=ASC(KEY)
+110 CLS 
+120 B=ANA(0)  D=0 PAUSE 100   
+130 A=ANA(0) LOCATE 1,1 ? "ANA0:",A,"   DELTA: ",D,"   "
+140 D=ABS(A-B) B=A 
+150 PAUSE 500
+160 IF NOT QKEY THEN GOTO 130 
+170 K=ASC(KEY)
+180 ADC 0 
+190 END 
 ```
 
 [index](#index)
@@ -370,85 +375,85 @@ La fonction **ascii** retourne la valeur ASCII du premier caractère de la chaî
 [index](#index)
 <a id="autorun"></a>
 ### AUTORUN *"file"*  {C}
-Cette commande définie un fichier programme à charger et exécuter au démarrage. Si le fichier n'existe pas il n'y a aucun message d'erreur, on se retrouve simplement sur la ligne de commande.
-Le nom du fichier est sauvegardé au début de la mémoire **EEPROM** qui est à l'adresse  **0x4000 (16384)**.  Il faut donc faire attention pour ne pas l'écraser avec la commande **WRITE**.
+Cette commande définie un fichier programme à charger et exécuter au démarrage. Si le fichier n'existe il y a message d'erreur *file not found* et on se retrouve simplement sur la ligne de commande. Le nom du fichier est sauvegardé au début de la mémoire **UFLASH**  .Il faut donc faire attention pour ne pas l'écraser avec la commande **STORE**.
 ```
->10 btogl $500a,32: pause 333:if not(qkey):goto 10
+LIST
+5 REM  CLIGNOTE LED VERTE DE LA CARTE BLUE PILL 
+10 BLINK 
+20 OUT GPIOC ,13 ,0 
+30 PAUSE 200 
+40 OUT GPIOC ,13 ,1 
+50 PAUSE 200 
+60 GOTO BLINK 
+READY
+SAVE "blink"
+file size: 137 bytes
 
->20 bres $500a,32
+READY
+autorun "blink" 
+READY
 
->li
-   10 BTOGL  20490 , 32 :PAUSE  333 :IF NOT (QKEY ):GOTO  10 
-   20 BRES  20490 , 32 
+user reboot!
 
->save "blink"
-  53
->autorun "blink"
+blue pill tiny BASIC, version 1.0
+file size: 137 bytes
 
->reboot
-
-
-Tiny BASIC for STM8
-Copyright, Jacques Deschenes 2019,2020
-version 1.0
-blink loaded and running
 ```
-Maintenant chaque fois que la carte est réinitialisée le progamme **blink** est chargé et exécuté. 
+Maintenant chaque fois que la carte est réinitialisée le progamme **blink** est chargé et exécuté. La grandeur du fichier chargé pour exécution est indiquée sur le terminal.
 
 [index](#index)
 <a id="awu"></a>
 ### AWU *expr*  {C,P}
-Cette commande arrête le MCU pour une durée déterminée. Son nom vient du périphérique utilisée **AWU** qui signifit  *Auto-WakeUp*.  Ce périphérique utilise l'oscillateur LSI de 128 Khz pour alimenter un compteur. Lorsque le compteur arrive à expiration une interruption est activée. Ce périphérique déclenché par l'instruction machine **HALT** qui arrête l'oscillateur interne **HSI** de sorte que le MCU et les périphériques internes à l'exception de celui-ci cessent de fonctionner. Ce mode réduit la consommation électrique au minimum. *expr* doit résutler en un entier dans l'interval {1..32720}. Cet entier correspond à la durée de la mise en sommeil en millisecondes.
+Cette commande arrête le MCU pour une durée déterminée. Son nom signifit  *Auto Wake up*.  Cette commande utilise l'oscillateur interne **LSI** ainsi que le **IWDG** *(Independant WatchDog timer)*. Lorsque le compteur arrive à expiration le MCU redémarre. Ce mode réduit la consommation électrique au minimum. *expr* doit résulter en un entier dans l'interval {0..65535}. Cet entier correspond à la durée de la mise en sommeil en millisecondes. La durée maximale est d'environ 26 secondes. Notez que la fréquence LSI nominale est de 40Khz mais elle peut varier entre 30Khz et 60Khz (selon les spécifications fournies par le fabricant, section 5.3.7 du datatsheet ). 
 ```
->awu 1  ' sommeil d'une milliseconde
+awu 1  ' sommeil de 0.2 millisecondes
 
->awu 30720 ' sommeil maximal de 30.7 secondes
+awu $ffff ' sommeil maximal d'environ 26 secondes
 
->
 ```
-
-L'Oscillateur **LSI** possède une précision de +/-12.5% sur l'étendu de l'échelle de température d'opération du MCU.  Il ne faut donc pas attendre une grande précision de cette commande. La commande **PAUSE**  est plus précise mais consomme plus de courant. **AWU** est surtout utile pour les applications fonctionnant sur piles pour prolonger la durée de celles-ci.
+ **AWU** est surtout utile pour les applications fonctionnant sur piles pour prolonger la durée de celles-ci.
 
 [index](#index)
 <a id="bit"></a>
 ### BIT(*expr*) {C,P}
-Cette fonction retourne 2^*expr*  (2 à la puissance n). *expr* doit-être entre {0..15} 
+Cette fonction retourne 2^*expr*  (2 à la puissance n). *expr* doit-être entre {0..31} 
 ```
->for i=0 to 15: ? bit(i),:next i
-   1   2   4   8  16  32  64 128 256 512 1024 2048 4096 8192 16384 -32768
-   
-> bset $500a,bit(5) ' allume LD2 sur la carte
-
+for i=0 to 31 : ? bit(i), next i
+1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 16777216 33554432 67108864 134217728 268435456 536870912 1073741824 -2147483648 
+READY
 ```
 [index](#index)
 <a id="bres"></a>
 ### BRES addr,mask {C,P}
 La commande **bit reset** met à **0** les bits de l'octet situé à *addr*. Seul les bits à **1** dans l'argument *mask* sont affectés. 
-
-    >bres $500a,32 
-
-Éteint la LED2 sur la carte en mettant le bit 5 à 0. **Notez** que les bits sont numérotés de **0..7**, **0** étant le bit le moins significatif. 
+```
+bres gpioc+$c,bit(13)
+READY
+```
+Allume la LED sur la carte en mettant le bit 13 à 0. **Notez** que les bits sont numérotés de **0..31**, **0** étant le bit le moins significatif. 
 
 [index](#index)
 <a id="bset"></a>
 ### BSET addr,mask  {C,P}
 La commande **bit set** met à **1** les bits de l'octet situé à *addr*. Seul les bits à **1** dans l'argument *mask* sont affectés. 
-
-    >bset $500a,&100000
-
-Allume la LED2 sur la carte en mettant le bit 5 à 1.
+```
+bset gpioc+$c,bit(13)
+READY
+```
+Éteint la LED sur la carte en mettant le bit 13 à 1.
 
 [index](#index)
 <a id="btest"></a>
 ### BTEST(addr,bit) {C,P}
 Cette fonction retourne l'état du *bit* à *addr*.  Permet entre autre de lire l'état d'une broche GPIO configurée en entrée.
-*bit* doit-être dans l'intervalle {0..7}. 
+*bit* doit-être dans l'intervalle {0..31}. 
 ```
->? btest($50f3,0)
-   1
-
->? btest($50f3,5)
-   0
+? btest(gpioc+$c,13)
+0 
+READY
+bset gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+1 
+READY
 ```
 
 [index](#index)
@@ -456,43 +461,52 @@ Cette fonction retourne l'état du *bit* à *addr*.  Permet entre autre de lire 
 ### BTOGL addr,mask  {C,P}
 La commande **bit toggle** inverse les bits de l'octet situé à *addr*. Seul les bits à **1** dans l'argument *mask* sont affectés. 
 ```
-    >btogl $500a,32
+btogl gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+1 
+READY
+btogl gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+0 
+READY
 ```
 
-Inverse l'état de la LED2 sur la carte. 
-
-[index](#index)
-<a id="bye"></a>
-### BYE  {C,P}
-Met le microcontrôleur en mode sommeil profond. Dans ce mode tous les oscilleurs sont arrêtés et la consommation électrique est minimale. Une interruption extérieure ou un *reset* redémarre le MCU. Sur la care **NUCLEO-8S208RB** il y a un bouton **RESET** et un bouton **USER**. Le bouton **USER** est connecté à l'interruption externe **INT4** donc permet de réveiller le MCU. Au réveil le MCU est réinitialisé.
+Inverse l'état de la LED sur la carte. 
 
 [index](#index)
 <a id="char"></a>
 ### CHAR(*expr*) {C,P}
 La fonction *character* retourne le caractère ASCII correspondant aux 7 bits les moins significatifs de l'expression utilisée en argument. Pour l'interpréteur cette fonction retourne un jeton de type **TK_CHAR** qui n'est reconnu que par les commandes **PRINT** et **ASC**.
-
-    >for a=32 to 126:? char(a),:next a 
-     !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-    > 
+```
+for a=32 to 126:? char(a),:next a
+ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+READY
+```
+[index](#index)
+<a id="cls"></a>
+### CLS {C,P}
+Efface l'écran du terminal. 
 
 [index](#index)
-<a id="chr"></a>
-### CRH {C,P}
-Cette fonction retourne l'index du registre **CR2** *(Control Register 2)* d'un port GPIO. En mode entrée ce registre active ou désactive l'interruption externe. En mode sortie il configure la vitesse du port. 
 
-[index](#index)
-<a id="crl"></a>
-### CRL (C,P)
-
-Cette fonction retourne l'index du registre **CR1** *(Control Register 1)* d'un port GPIO. En mode entrée ce registre active ou désactive le pull-up. En mode sortie il configure le mode push-pull ou open-drain. 
+<a id="const"></a>
+### CONST nom=expr [,nom=expr]*  {P}
+Cette commande permet de définir des constantes symboliques à l'intérieur d'un programme. Plus d'une constante peuvent-être définies dans la même commande. Ces symboles peuvent par la suite être utilisés dans les expressions arithmétiques ou comme argument de commandes ou fonctions. Les noms doivent avoir un maximum de 6 caractères constitué seulement de lettres et du symbole **'_'**.
+```
+LIST
+10 CONST CENTPI =314 
+20 REM  DEG TO RAD 
+30 PRINT 180 *2 *CENTPI /36000 
+READY
+RUN
+3 
+```
 
 [index](#index)
 <a id="data"></a>
 ### DATA {P}
 Cette directive permet de définir des données dans un programme. L'interpréteur ignore les lignes qui débute par **DATA**.  Ces lignes ne sont utilisées que par la commande **READ**.
 ```
->list
-    5 ' joue 4 mesures de l'hymne a la joie
+    5 ' haut-parleur sur broche B6.
+    7 TONE_INIT     
    10 RESTORE 
    20 DATA 440,250,440,250,466,250,523,250,523,250,466,250,440,250
    30 DATA 392,250,349,250,349,250,392,250,440,250,440,375,392,125
@@ -501,149 +515,99 @@ Cette directive permet de définir des données dans un programme. L'interpréte
 ```
 
 [index](#index)
-<a id="dataln"></a>
-### DATALN *expr* {P}
-Cette commande initialise le pointeur de données au début de la ligne **DATA** correspondant 
-au numéro de ligne fourni par *expr*. 
-```
->list
-    5 ' joue 4 mesures de l'hymne a la joie
-   10 DATALN 20  ' initialise le pointeur a la ligne 20 
-   20 DATA 440,250,440,250,466,250,523,250,523,250,466,250,440,250
-   30 DATA 392,250,349,250,349,250,392,250,440,250,440,375,392,125
-   40 DATA 392,500
-   50 FOR I =1TO 15:TONE READ ,READ :NEXT I 
-```
-Si le numéro de ligne fourni n'existe pas ou n'est pas une ligne de data l'exécution du programme s'arrête avec un message d'erreur. 
-```
->dataln 20
-invalid line number.
-    0 DATALN 20
-
->
-```
-
-[index](#index)
-<a id="ddr"></a>
-### DDR {C,P}
-Cette fonction retourne l'index du registre **DDR** *(Data Direction Register)* d'un périphérique GPIO. Ce registre permet de configurer les bits du port en entrée ou en sortie. Par défaut ils sont tous en entrée. 
-```
->bset gpio(2,ddr),32 ' LED2 en sortie
-
->
-```
-
-[index](#index)
 <a id="dec"></a>
 ### DEC {C,P}
 La commande *decimal* définie la base numérique pour l'affichage des entiers à la base décimale. C'est la base par défaut. Voir la commande **HEX**.
-
-    >HEX:?-10:DEC:?-10
-    $FFFFF6
-    -10
-
+```
+hex ?-10 dec ? -10
+$FFFFFFF6 
+-10 
+READY
+```
 [index](#index)
 <a id="dir"></a>
 ### DIR {C,P}
 La commande *directory*  affiche la liste des fichiers sauvegardés en mémoire flash.
+```
+5 REM  joue 15 notes
+6 TONE_INIT 
+10 RESTORE 
+20 DATA 440 ,250 ,440 ,250 ,466 ,250 ,523 ,250 ,523 ,250 ,466 ,250 ,440 ,250 
+30 DATA 392 ,250 ,349 ,250 ,349 ,250 ,392 ,250 ,440 ,250 ,440 ,375 ,392 ,125 
+40 DATA 392 ,500 
+50 FOR I =1 TO 15 :TONE READ ,READ :NEXT I 
+READY
+save "tone-test"
+file size: 284 bytes
 
-    >dir
-    table1   66
-    hello   21
-    blink   52
-    3 files
+READY
+dir
+tone-test      284 
 
+               1 files
+
+READY
+```
 [index](#index)
 <a id="do"></a>
 ### DO {C,P}
 Mot réservé qui débute une boucle **DO ... UNTIL** Les instructions entre  **DO** et **UNTIL**  s'exécutent en boucle aussi longtemps que l'expression qui suit **UNTIL** est fausse.  Voir **UNTIL**. 
 ```
->li
-   10 A = 1 
-   20 DO 
-   30 PRINT A ,
-   40 A =A + 1 
-   50 UNTIL A > 10 
-
->run
-   1   2   3   4   5   6   7   8   9  10
+list
+10 A =1 
+20 DO 
+30 PRINT A ,
+40 A =A +1 
+50 UNTIL A >10 
+READY
+run
+1 2 3 4 5 6 7 8 9 10 
+READY
 ``` 
-
 [index](#index)
-<a id="dread"></a>
-### DREAD *pin*
-Cette fonction permet de lire l'état d'une des broches **D0..D15** du connecteur **CN8** 
-Lorsqu'elle est configuré avec **PMODE** en mode entrée. Cette fonction retourne **0** si l'entrée est à zéro volt ou **1** si l'entrée est à Vdd. 
+
+<a id="drop"></a>
+### DROP n {C,P}
+Cette commande permet de jeter n entiers qui a été préalablement déposés sur la pile avec la commande **PUSH**. 
 ```
-10 PMODE 5,PINP 
-20 ? DREAD(5)
+push 1,2,3  ? get(0)+get(1)+get(2) drop 3
+6
+READY
+
 ```
 [index](#index)
-<a id="dwrite"></a>
-### DWRITE *pin*,*level* 
-Le connecteur **CN8**  de la carte **NUCLEO** indentifie les broches selon la convention *Arduino*. Ainsi les broches notées **D0...D15** peuvent-être utilisées en entrée ou sortie digitales, i.e. leur niveau est à 0 volt ou à Vdd.  **DWRITE** est une commande qui porte le même nom que la fonction Arduino et qui permet d'écrire **0|1** sur l'une de ces broche lorsqu'elle est configurée en mode sortie. *pin* est une numéro entre **0...15** et *level* est soit **PINP** ou **POUT**. Avant d'utiliser **DWRITE** sur une broche il faut utiliser **PMODE** pour configurée la broche en sortie. 
+<a id="dump"></a>
+### DUMP adr,n {C,P}
+Cette commande sert à examiner le contenu de la mémoire en affichant les octets en hexadécimal et en caractères ASCII. Il s'agit d'un outil de débogage.
 ```
-10 PMODE 10,POUT ' mettre D10 en sortie 
-20 DWRITE 10, 0  , Met la sortie D10 a zero.
+DUMP $20000210,63
+           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 
+===============================================================================
+$20000210  0A 00 11 17 0E 1A 09 52 57 06 0D 1B 3A 01 00 00   _______RW___:___
+$20000220  00 14 00 13 17 3C 20 44 45 47 20 54 4F 20 52 41   _____< DEG TO RA
+$20000230  44 20 00 00 1E 00 1D 17 37 1B B4 00 00 00 09 1B   D ______7_______
+$20000240  02 00 00 00 09 1A 09 52 57 06 0A 1B A0 8C 00 00   _______RW_______
+READY
 ```
-
-[index](#index)
-<a id="eeprom"></a>
-### EEPROM {C,P}
-Retourne l'adresse du début de la mémoire EEPROM.
-```
->?pe(ee) 'print peek(eeprom)
- $AA
-
->?ee,pe(ee)
- $4000 $AA
-
->?pe(ee+1)
-  $0
-
->wr ee+1,$55 'write 16385,85
-
->?pe(ee+1) ' verifie 
-  85
-
->
-```
-
 [index](#index)
 <a id="end"></a>
 ### END {C,P}
-Cette commande arrête l'exécution d'un programme et retourne le contrôle à la ligne de commande. Cette commande peut-être placée à plusieurs endroits dans un programme. Elle peut aussi être utlisée sur la ligne de commande pour interrompre un programme après l'invocation d'une commande STOP.
+Cette commande arrête l'exécution d'un programme et retourne le contrôle à la ligne de commande. Cette commande peut-être placée à plusieurs endroits dans un programme. Elle peut aussi être utlisée sur la ligne de commande pour terminer un programme interrompu par la commande **STOP**. 
 ```
->lis
-   10 a=1
-   20 a=a+1
-   30 ? a,: if a>100:end 'arrete lorsque A depasse 100
-   40 goto 20
-
->run
-   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54  55  56  57  58  59  60  61  62  63  64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95  96  97  98  99 100 101
->
+LIST
+10 A =0 
+20 A =A +1 
+30 PRINT A ,IF A >100 END 
+40 GOTO 20 
+READY
+RUN
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 
+READY
 ```
-
 [index](#index)
-<a id="fcpu"></a>
-### FCPU *integer*
-Cette commande sert à contrôler la fréquence d'horloge du CPU. Au démarrage le CPU fonctionne à la fréquence de l'oscillateur interner **HSI** qui est de 16 Mhz. Cette commande permet de réduire la fréquence par puissance de 2 à dans l'intervalle **0..7**. Fcpu=16Mhz/2^7.
-```
->fcpu 7 ' Fcpu=125 Khz
-
->t=ticks:for a=1to1000:ne a:?ticks-t
- 1890
-
->fcpu 0 ' Fcpu=16 Mhz 
-
->t=ticks:for a=1to1000:ne a:?ticks-t
-  12
-
->
-
-```
-Réduire la vitesse du CPU permet de réduire la consommation électrique. Notez que la fréquence de fonctionnement des périphériques demeure à 16Mhz.
+<a id="erase"></a>
+### ERASE adr {C,P}
+Efface la plage **UFLASH**. Un espace de 1Ko est réservé dans la mémoire flash pour conservé des données persistantes. Les 16 premiers octets sont réservés pour le nomm du programme **AUTORUN**. Les autres peuvent-être utilisés par les programmes BASIC. Cette commande supprime toutes les informations persistantes y compris le progamme **AUTORUN**. 
 
 [index](#index)
 <a id="for"></a>
