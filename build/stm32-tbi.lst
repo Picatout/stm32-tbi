@@ -673,96 +673,97 @@ ARM GAS  stm32-tbi.s 			page 1
   27              	    .equ ADC_IDX,ANA_IDX+1
   28              	    .equ AND_IDX,ADC_IDX+1 // 
   29              	    .equ ASC_IDX,AND_IDX+1  // 
-  30              	    .equ AWU_IDX,ASC_IDX+1 //
-  31              	    .equ BIT_IDX,AWU_IDX+1 //
-  32              	    .equ BRES_IDX,BIT_IDX+1 // 
-  33              	    .equ BSET_IDX,BRES_IDX+1 // 
-  34              	    .equ BTEST_IDX,BSET_IDX+1 // 
-  35              	    .equ BTOGL_IDX,BTEST_IDX+1 // 
-  36              	    .equ CHAR_IDX,BTOGL_IDX+1 // 
-  37              	    .equ CLS_IDX,CHAR_IDX+1 //
-  38              	    .equ CONST_IDX,CLS_IDX+1 //
-  39              	    .equ DATA_IDX,CONST_IDX+1 // 
-  40              	    .equ DEC_IDX,DATA_IDX+1 // 
-  41              	    .equ DIR_IDX,DEC_IDX+1 // 
-  42              	    .equ DO_IDX,DIR_IDX+1 // 
-  43              	    .equ DROP_IDX,DO_IDX+1
-  44              	    .equ DUMP_IDX, DROP_IDX+1 
-  45              	    .equ END_IDX,DUMP_IDX+1 // 
-  46              	    .equ ERASE_IDX,END_IDX+1 
-  47              	    .equ FOR_IDX, ERASE_IDX+1 // 
-  48              	    .equ FORGET_IDX, FOR_IDX+1 // 
-  49              	    .equ FREE_IDX, FORGET_IDX+1 // 
-  50              	    .equ GET_IDX,FREE_IDX+1
-  51              	    .equ GOSUB_IDX, GET_IDX+1 // 
-  52              	    .equ GOTO_IDX, GOSUB_IDX+1 //
-  53              	    .equ HEX_IDX, GOTO_IDX+1 // 
-  54              	    .equ IF_IDX, HEX_IDX+1 // 
-  55              	    .equ IN_IDX,IF_IDX+1
-  56              	    .equ INPUT_IDX, IN_IDX+1 // 
-  57              	    .equ INVERT_IDX, INPUT_IDX+1 // 
-  58              	    .equ KEY_IDX, INVERT_IDX+1 // 
-  59              	    .equ LET_IDX, KEY_IDX+1 // 
-  60              	    .equ LIST_IDX, LET_IDX+1 // 
-  61              	    .equ LOAD_IDX, LIST_IDX+1 // 
-  62              	    .equ LOCATE_IDX,LOAD_IDX+1 //
-  63              	    .equ LSHIFT_IDX, LOCATE_IDX+1 // 
-  64              	    .equ NEW_IDX, LSHIFT_IDX+1 // 
-  65              	    .equ NEXT_IDX, NEW_IDX+1 // 
-  66              	    .equ NOT_IDX, NEXT_IDX+1 // 
-  67              	    .equ OR_IDX, NOT_IDX+1 // 
-  68              	    .equ OUT_IDX,OR_IDX+1
-  69              	    .equ PAD_IDX, OUT_IDX+1 // 
-  70              	    .equ PAUSE_IDX, PAD_IDX+1 // 
-  71              	    .equ PMODE_IDX, PAUSE_IDX+1 // 
-  72              	    .equ PEEK8_IDX, PMODE_IDX+1 //
-  73              	    .equ PEEK16_IDX,  PEEK8_IDX+1
-  74              	    .equ PEEK32_IDX, PEEK16_IDX+1
+  30              	    .equ AUTORUN_IDX,ASC_IDX+1
+  31              	    .equ AWU_IDX,AUTORUN_IDX+1 //
+  32              	    .equ BIT_IDX,AWU_IDX+1 //
+  33              	    .equ BRES_IDX,BIT_IDX+1 // 
+  34              	    .equ BSET_IDX,BRES_IDX+1 // 
+  35              	    .equ BTEST_IDX,BSET_IDX+1 // 
+  36              	    .equ BTOGL_IDX,BTEST_IDX+1 // 
+  37              	    .equ CHAR_IDX,BTOGL_IDX+1 // 
+  38              	    .equ CLS_IDX,CHAR_IDX+1 //
+  39              	    .equ CONST_IDX,CLS_IDX+1 //
+  40              	    .equ DATA_IDX,CONST_IDX+1 // 
+  41              	    .equ DEC_IDX,DATA_IDX+1 // 
+  42              	    .equ DIR_IDX,DEC_IDX+1 // 
+  43              	    .equ DO_IDX,DIR_IDX+1 // 
+  44              	    .equ DROP_IDX,DO_IDX+1
+  45              	    .equ DUMP_IDX, DROP_IDX+1 
+  46              	    .equ END_IDX,DUMP_IDX+1 // 
+  47              	    .equ ERASE_IDX,END_IDX+1 
+  48              	    .equ FOR_IDX, ERASE_IDX+1 // 
+  49              	    .equ FORGET_IDX, FOR_IDX+1 // 
+  50              	    .equ FREE_IDX, FORGET_IDX+1 // 
+  51              	    .equ GET_IDX,FREE_IDX+1
+  52              	    .equ GOSUB_IDX, GET_IDX+1 // 
+  53              	    .equ GOTO_IDX, GOSUB_IDX+1 //
+  54              	    .equ HEX_IDX, GOTO_IDX+1 // 
+  55              	    .equ IF_IDX, HEX_IDX+1 // 
+  56              	    .equ IN_IDX,IF_IDX+1
+  57              	    .equ INPUT_IDX, IN_IDX+1 // 
+  58              	    .equ INVERT_IDX, INPUT_IDX+1 // 
+  59              	    .equ KEY_IDX, INVERT_IDX+1 // 
+  60              	    .equ LET_IDX, KEY_IDX+1 // 
+  61              	    .equ LIST_IDX, LET_IDX+1 // 
+  62              	    .equ LOAD_IDX, LIST_IDX+1 // 
+  63              	    .equ LOCATE_IDX,LOAD_IDX+1 //
+  64              	    .equ LSHIFT_IDX, LOCATE_IDX+1 // 
+  65              	    .equ NEW_IDX, LSHIFT_IDX+1 // 
+  66              	    .equ NEXT_IDX, NEW_IDX+1 // 
+  67              	    .equ NOT_IDX, NEXT_IDX+1 // 
+  68              	    .equ OR_IDX, NOT_IDX+1 // 
+  69              	    .equ OUT_IDX,OR_IDX+1
+  70              	    .equ PAD_IDX, OUT_IDX+1 // 
+  71              	    .equ PAUSE_IDX, PAD_IDX+1 // 
+  72              	    .equ PMODE_IDX, PAUSE_IDX+1 // 
+  73              	    .equ PEEK8_IDX, PMODE_IDX+1 //
+  74              	    .equ PEEK16_IDX,  PEEK8_IDX+1
 ARM GAS  stm32-tbi.s 			page 13
 
 
-  75              	    .equ POKE8_IDX, PEEK32_IDX+1 // 
-  76              	    .equ POKE16_IDX,POKE8_IDX+1 
-  77              	    .equ POKE32_IDX,POKE16_IDX+1
-  78              	    .equ POP_IDX,POKE32_IDX+1
-  79              	    .equ PRT_IDX, POP_IDX+1 //  //  PRINT commande index 
-  80              	    .equ PUSH_IDX,PRT_IDX+1
-  81              	    .equ PUT_IDX,PUSH_IDX+1
-  82              	    .equ QKEY_IDX, PUT_IDX+1 // 
-  83              	    .equ READ_IDX, QKEY_IDX+1 // 
-  84              	    .equ REM_IDX, READ_IDX+1  //  REMARK command index 
-  85              	    .equ REST_IDX, REM_IDX+1 //  RESTORE
-  86              	    .equ RET_IDX, REST_IDX+1   //  RETURN 
-  87              	    .equ RND_IDX, RET_IDX+1  //  RANDOM 
-  88              	    .equ RSHIFT_IDX, RND_IDX+1 // 
-  89              	    .equ RUN_IDX, RSHIFT_IDX+1 // 
-  90              	    .equ SAVE_IDX, RUN_IDX+1 // 
-  91              	    .equ SERVO_INIT_IDX,SAVE_IDX+1
-  92              	    .equ SERVO_OFF_IDX,SERVO_INIT_IDX+1
-  93              	    .equ SERVO_POS_IDX,SERVO_OFF_IDX+1
-  94              	    .equ SLEEP_IDX, SERVO_POS_IDX+1 // 
-  95              	    .equ SPC_IDX,SLEEP_IDX+1 //
-  96              	    .equ STEP_IDX, SPC_IDX+1 // 
-  97              	    .equ STOP_IDX, STEP_IDX+1 // 
-  98              	    .equ STORE_IDX,STOP_IDX+1
-  99              	    .equ TAB_IDX, STORE_IDX+1 //
- 100              	    .equ THEN_IDX,TAB_IDX+1
- 101              	    .equ TICKS_IDX, THEN_IDX+1 // 
- 102              	    .equ TIMER_IDX, TICKS_IDX+1 // 
- 103              	    .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
- 104              	    .equ TO_IDX, TMROUT_IDX+1 // 
- 105              	    .equ TONE_IDX,TO_IDX+1
- 106              	    .equ TONE_INIT_IDX,TONE_IDX+1 
- 107              	    .equ TRACE_IDX,TONE_INIT_IDX+1
- 108              	    .equ UBOUND_IDX, TRACE_IDX+1 // 
- 109              	    .equ UFLASH_IDX, UBOUND_IDX+1 // 
- 110              	    .equ UNTIL_IDX, UFLASH_IDX+1 // 
- 111              	    .equ WAIT_IDX, UNTIL_IDX+1 // 
- 112              	    .equ WORDS_IDX, WAIT_IDX+1 // 
- 113              	    .equ XOR_IDX, WORDS_IDX+1 //
- 114              	    .equ XPOS_IDX,XOR_IDX+1 //
- 115              	    .equ YPOS_IDX,XPOS_IDX+1 // 
- 116              	
+  75              	    .equ PEEK32_IDX, PEEK16_IDX+1
+  76              	    .equ POKE8_IDX, PEEK32_IDX+1 // 
+  77              	    .equ POKE16_IDX,POKE8_IDX+1 
+  78              	    .equ POKE32_IDX,POKE16_IDX+1
+  79              	    .equ POP_IDX,POKE32_IDX+1
+  80              	    .equ PRT_IDX, POP_IDX+1 //  //  PRINT commande index 
+  81              	    .equ PUSH_IDX,PRT_IDX+1
+  82              	    .equ PUT_IDX,PUSH_IDX+1
+  83              	    .equ QKEY_IDX, PUT_IDX+1 // 
+  84              	    .equ READ_IDX, QKEY_IDX+1 // 
+  85              	    .equ REM_IDX, READ_IDX+1  //  REMARK command index 
+  86              	    .equ REST_IDX, REM_IDX+1 //  RESTORE
+  87              	    .equ RET_IDX, REST_IDX+1   //  RETURN 
+  88              	    .equ RND_IDX, RET_IDX+1  //  RANDOM 
+  89              	    .equ RSHIFT_IDX, RND_IDX+1 // 
+  90              	    .equ RUN_IDX, RSHIFT_IDX+1 // 
+  91              	    .equ SAVE_IDX, RUN_IDX+1 // 
+  92              	    .equ SERVO_INIT_IDX,SAVE_IDX+1
+  93              	    .equ SERVO_OFF_IDX,SERVO_INIT_IDX+1
+  94              	    .equ SERVO_POS_IDX,SERVO_OFF_IDX+1
+  95              	    .equ SLEEP_IDX, SERVO_POS_IDX+1 // 
+  96              	    .equ SPC_IDX,SLEEP_IDX+1 //
+  97              	    .equ STEP_IDX, SPC_IDX+1 // 
+  98              	    .equ STOP_IDX, STEP_IDX+1 // 
+  99              	    .equ STORE_IDX,STOP_IDX+1
+ 100              	    .equ TAB_IDX, STORE_IDX+1 //
+ 101              	    .equ THEN_IDX,TAB_IDX+1
+ 102              	    .equ TICKS_IDX, THEN_IDX+1 // 
+ 103              	    .equ TIMER_IDX, TICKS_IDX+1 // 
+ 104              	    .equ TMROUT_IDX, TIMER_IDX+1   //  TIMEOUT
+ 105              	    .equ TO_IDX, TMROUT_IDX+1 // 
+ 106              	    .equ TONE_IDX,TO_IDX+1
+ 107              	    .equ TONE_INIT_IDX,TONE_IDX+1 
+ 108              	    .equ TRACE_IDX,TONE_INIT_IDX+1
+ 109              	    .equ UBOUND_IDX, TRACE_IDX+1 // 
+ 110              	    .equ UFLASH_IDX, UBOUND_IDX+1 // 
+ 111              	    .equ UNTIL_IDX, UFLASH_IDX+1 // 
+ 112              	    .equ WAIT_IDX, UNTIL_IDX+1 // 
+ 113              	    .equ WORDS_IDX, WAIT_IDX+1 // 
+ 114              	    .equ XOR_IDX, WORDS_IDX+1 //
+ 115              	    .equ XPOS_IDX,XOR_IDX+1 //
+ 116              	    .equ YPOS_IDX,XPOS_IDX+1 // 
+ 117              	
   42              	
   43              	/* blue pill specific constants */ 
   44              	  .equ LED_GPIO, GPIOC_BASE_ADR
@@ -777,10 +778,10 @@ ARM GAS  stm32-tbi.s 			page 1
   53              	  .type  isr_vectors, %object
   54              	
   55              	isr_vectors:
-  56 0000 00000000 	  .word    _mstack          /* main return stack address */
 ARM GAS  stm32-tbi.s 			page 14
 
 
+  56 0000 00000000 	  .word    _mstack          /* main return stack address */
   57 0004 00000000 	  .word    reset_handler    /* startup address */
   58              	/* core interrupts || exceptions */
   59 0008 00000000 	  .word    default_handler  /*  -14 NMI */
@@ -837,10 +838,10 @@ ARM GAS  stm32-tbi.s 			page 1
  110 00cc 00000000 	  .word      default_handler /* IRQ35, SPI1 */                   
  111 00d0 00000000 	  .word      default_handler /* IRQ36, SPI2 */                   
  112 00d4 00000000 	  .word      uart_rx_handler /* IRQ37, USART1 */                   
- 113 00d8 00000000 	  .word      default_handler /* IRQ38, USART2 */                   
 ARM GAS  stm32-tbi.s 			page 15
 
 
+ 113 00d8 00000000 	  .word      default_handler /* IRQ38, USART2 */                   
  114 00dc 00000000 	  .word      default_handler /* IRQ39, USART3 */                   
  115 00e0 00000000 	  .word      default_handler /* IRQ40, External Line[15:10]s */                          
  116 00e4 00000000 	  .word      default_handler /* IRQ41, RTC Alarm */                 
@@ -876,7 +877,7 @@ ARM GAS  stm32-tbi.s 			page 1
  146              	*****************************************************/
  147              	   .section  .text , "ax", %progbits 
  148              	    _GBL_FUNC default_handler 
- 149 0000 DFF84804 	    ldr r0,=exception_msg 
+ 149 0000 DFF89404 	    ldr r0,=exception_msg 
  150 0004 00B5FFF7 	    _CALL uart_puts 
  150      FEFF5DF8 
  150      04EB
@@ -884,7 +885,7 @@ ARM GAS  stm32-tbi.s 			page 1
  152 000e 4FF40040 	    mov r0,#0x8000
  153 0012 0138     	    1: subs r0,#1 
  154 0014 FDD1     	    bne 1b 
- 155 0016 3FE0     	    b reset_mcu    
+ 155 0016 42E0     	    b reset_mcu    
  156              	    .p2align 2 
  157              	exception_msg:
  158 0018 0A657865 	  	.asciz "\nexeption reboot!\n"
@@ -897,10 +898,10 @@ ARM GAS  stm32-tbi.s 			page 1
  161              		system milliseconds counter
  162              	*********************************/	
  163 002b 00       	    _GBL_FUNC systick_handler
- 164 002c E069     	  ldr r0,[UPP,#TICKS]  
 ARM GAS  stm32-tbi.s 			page 16
 
 
+ 164 002c E069     	  ldr r0,[UPP,#TICKS]  
  165 002e 00F10100 	  add r0,#1
  166 0032 E061     	  str r0,[UPP,#TICKS]
  167 0034 206A     	  ldr r0,[UPP,#TIMER]
@@ -935,121 +936,121 @@ ARM GAS  stm32-tbi.s 			page 1
  195 0070 00B5FFF7 	3:  _CALL uart_flush_queue
  195      FEFF5DF8 
  195      04EB
- 196 007a F548     	    ldr r0,=warm_start 
- 197 007c 40F00100 	    orr r0,#1 
- 198 0080 0690     	    str r0,[sp,#0x18]
- 199 0082 7047     	    _RET 
+ 196 007a DFF82004 	    ldr r0,=warm_start 
+ 197 007e 40F00100 	    orr r0,#1 
+ 198 0082 0690     	    str r0,[sp,#0x18]
+ 199 0084 7047     	    _RET 
  200              	
- 201              	    _GBL_FUNC user_reboot   
- 202 0084 F348     	    ldr r0,=user_reboot_msg
- 203 0086 00B5FFF7 	    _CALL uart_puts 
+ 201 0086 00BF     	    _GBL_FUNC user_reboot   
+ 202 0088 DFF81404 	    ldr r0,=user_reboot_msg
+ 203 008c 00B5FFF7 	    _CALL uart_puts 
  203      FEFF5DF8 
  203      04EB
  204              	// delay 
- 205 0090 4FF40040 	    mov r0,#0x8000
- 206 0094 0138     	1: subs r0,#1  
- 207 0096 FDD1     	    bne 1b 
+ 205 0096 4FF40040 	    mov r0,#0x8000
+ 206 009a 0138     	1: subs r0,#1  
+ 207 009c FDD1     	    bne 1b 
  208              	reset_mcu: 
- 209 0098 0348     	    ldr r0,scb_adr 
- 210 009a C168     	    ldr r1,[r0,#SCB_AIRCR]
- 211 009c 41F00401 	    orr r1,#(1<<2)
- 212 00a0 C0F2FA51 	    movt r1,#SCB_VECTKEY
- 213 00a4 C160     	    str r1,[r0,#SCB_AIRCR]
- 214 00a6 FEE7     	    b . 
- 215              	    .p2align 2 
- 216              	scb_adr:
+ 209 009e 0448     	    ldr r0,scb_adr 
+ 210 00a0 C168     	    ldr r1,[r0,#SCB_AIRCR]
+ 211 00a2 41F00401 	    orr r1,#(1<<2)
+ 212 00a6 C0F2FA51 	    movt r1,#SCB_VECTKEY
+ 213 00aa C160     	    str r1,[r0,#SCB_AIRCR]
+ 214 00ac FEE7     	    b . 
+ 215 00ae 00BF     	    .p2align 2 
 ARM GAS  stm32-tbi.s 			page 17
 
 
- 217 00a8 00ED00E0 	  	.word SCB_BASE_ADR 
+ 216              	scb_adr:
+ 217 00b0 00ED00E0 	  	.word SCB_BASE_ADR 
  218              	user_reboot_msg:
- 219 00ac 0A757365 		  .asciz "\nuser reboot!\n"
+ 219 00b4 0A757365 		  .asciz "\nuser reboot!\n"
  219      72207265 
  219      626F6F74 
  219      210A00
- 220 00bb 00       		  .p2align 2 
+ 220 00c3 00       		  .p2align 2 
  221              	
  222              	/**************************************
  223              	  reset_handler execute at MCU reset
  224              	***************************************/
  225              	    _GBL_FUNC reset_handler
- 226 00bc 4FF4A040 	    _MOV32 r0,RAM_END 
+ 226 00c4 4FF4A040 	    _MOV32 r0,RAM_END 
  226      C2F20000 
- 227 00c4 8546     	    mov sp,r0 
- 228 00c6 00F02FF8 	    bl remap  
- 229 00ca 00F045F8 	    bl	init_devices	 	/* RCC, GPIOs */
- 230 00ce 00F09DF8 	    bl  uart_init
- 231 00d2 FFF7FEFF 	    bl  cold_start  /* initialize BASIC SYSTEM */ 
- 232 00d6 00F001F8 	    bl  test 
- 233 00da FEE7     	    b .  
+ 227 00cc 8546     	    mov sp,r0 
+ 228 00ce 00F02FF8 	    bl remap  
+ 229 00d2 00F045F8 	    bl	init_devices	 	/* RCC, GPIOs */
+ 230 00d6 00F09DF8 	    bl  uart_init
+ 231 00da FFF7FEFF 	    bl  cold_start  /* initialize BASIC SYSTEM */ 
+ 232 00de 00F001F8 	    bl  test 
+ 233 00e2 FEE7     	    b .  
  234              	
  235              	    _FUNC test
- 236 00dc 4FF00004 	  _MOV32 UPP,RAM_ADR
+ 236 00e4 4FF00004 	  _MOV32 UPP,RAM_ADR
  236      C2F20004 
- 237 00e4 04F59874 	  add UPP,#0x130
- 238 00e8 00B5FFF7 	  _CALL get_curpos 
+ 237 00ec 04F59874 	  add UPP,#0x130
+ 238 00f0 00B5FFF7 	  _CALL get_curpos 
  238      FEFF5DF8 
  238      04EB
- 239 00f2 02B4     	  push {r1} 
- 240 00f4 4FF00A01 	  mov r1,#10 
- 241 00f8 00B5FFF7 	  _CALL print_int 
+ 239 00fa 02B4     	  push {r1} 
+ 240 00fc 4FF00A01 	  mov r1,#10 
+ 241 0100 00B5FFF7 	  _CALL print_int 
  241      FEFF5DF8 
  241      04EB
- 242 0102 4FF02C00 	  mov r0,#','
- 243 0106 00B5FFF7 	  _CALL uart_putc 
+ 242 010a 4FF02C00 	  mov r0,#','
+ 243 010e 00B5FFF7 	  _CALL uart_putc 
  243      FEFF5DF8 
  243      04EB
- 244 0110 01BC     	  pop {r0}
- 245 0112 4FF00A01 	  mov r1,#10  
- 246 0116 00B5FFF7 	  _CALL print_int 
+ 244 0118 01BC     	  pop {r0}
+ 245 011a 4FF00A01 	  mov r1,#10  
+ 246 011e 00B5FFF7 	  _CALL print_int 
  246      FEFF5DF8 
  246      04EB
- 247 0120 7047     	  _RET 
+ 247 0128 7047     	  _RET 
  248              	
  249              	  tib_addr: 
- 250 0122 00000000 	    .word _tib
+ 250 012a 00000000 	    .word _tib
  251              	
  252              	
  253              	// tranfert isr_vector to RAM at 0x20000000
- 254 0126 00BF     	    _FUNC remap 
- 255 0128 80EA0000 		eor r0,r0 // src 
- 256 012c 4FF00001 		_MOV32 r1,RAM_ADR // dest 
+ 254 012e 00BF     	    _FUNC remap 
+ 255 0130 80EA0000 		eor r0,r0 // src 
+ 256 0134 4FF00001 		_MOV32 r1,RAM_ADR // dest 
  256      C2F20001 
- 257 0134 4FF49872 		mov r2,#(isr_end-isr_vectors) // count 
- 258 0138 00B5FFF7 	  _CALL cmove  
- 258      FEFF5DF8 
+ 257 013c 4FF49872 		mov r2,#(isr_end-isr_vectors) // count 
+ 258 0140 00B5FFF7 	  _CALL cmove  
 ARM GAS  stm32-tbi.s 			page 18
 
 
+ 258      FEFF5DF8 
  258      04EB
  259              	// set new vector table address
- 260 0142 4FF46D40 		_MOV32 r0,SCB_BASE_ADR
+ 260 014a 4FF46D40 		_MOV32 r0,SCB_BASE_ADR
  260      CEF20000 
- 261 014a 4FF00001 		_MOV32 r1,RAM_ADR 
+ 261 0152 4FF00001 		_MOV32 r1,RAM_ADR 
  261      C2F20001 
- 262 0152 8160     		str r1,[r0,#SCB_VTOR]
- 263 0154 7047     	  _RET 
+ 262 015a 8160     		str r1,[r0,#SCB_VTOR]
+ 263 015c 7047     	  _RET 
  264              	
  265              	// initialize hardware devices 
- 266 0156 00BF     	  _FUNC init_devices
+ 266 015e 00BF     	  _FUNC init_devices
  267              	/* init clock to HSE 72 Mhz */
  268              	/* set 2 wait states in FLASH_ACR_LATENCY */
- 269 0158 4FF40050 	  _MOV32 R0,FLASH_BASE_ADR 
+ 269 0160 4FF40050 	  _MOV32 R0,FLASH_BASE_ADR 
  269      C4F20200 
- 270 0160 4FF01202 	  mov r2,#0x12
- 271 0164 0260     	  str r2,[r0,#FLASH_ACR]
+ 270 0168 4FF01202 	  mov r2,#0x12
+ 271 016c 0260     	  str r2,[r0,#FLASH_ACR]
  272              	/* configure clock for HSE, 8 Mhz crystal */
  273              	/* enable HSE in RCC_CR */
- 274 0166 4FF48050 	  _MOV32 R0,RCC_BASE_ADR 
+ 274 016e 4FF48050 	  _MOV32 R0,RCC_BASE_ADR 
  274      C4F20200 
- 275 016e 0168     	  ldr r1,[r0,#RCC_CR]
- 276 0170 41F48031 	  orr r1,r1,#(1<<16) /* HSEON bit */
- 277 0174 0160     	  str r1,[r0,#RCC_CR] /* enable HSE */
+ 275 0176 0168     	  ldr r1,[r0,#RCC_CR]
+ 276 0178 41F48031 	  orr r1,r1,#(1<<16) /* HSEON bit */
+ 277 017c 0160     	  str r1,[r0,#RCC_CR] /* enable HSE */
  278              	/* wait HSERDY loop */
  279              	wait_hserdy:
- 280 0176 0168     	  ldr r1,[r0,#RCC_CR]
- 281 0178 11F4003F 	  tst r1,#(1<<17)
- 282 017c FBD0     	  beq wait_hserdy
+ 280 017e 0168     	  ldr r1,[r0,#RCC_CR]
+ 281 0180 11F4003F 	  tst r1,#(1<<17)
+ 282 0184 FBD0     	  beq wait_hserdy
  283              	
  284              	/************************************************* 
  285              	   configure PLL mul factor and source 
@@ -1058,109 +1059,109 @@ ARM GAS  stm32-tbi.s 			page 1
  288              	   multiply frequency by 9 
  289              	   APB1 clock is limited to 36 Mhz so divide by 2 
  290              	****************************************************/
- 291 017e 4FF40441 	  mov r1,#(4<<8)+(2<<14) /* PLLMUL,7|PLLSCR,HSE|PPRE1=HCLK/2|ADCPRE=PCLK2/6 */
- 292 0182 C0F21D01 	  movt r1,#(7<<2)|1
- 293 0186 4160     	  str r1,[r0,#RCC_CFGR]
+ 291 0186 4FF40441 	  mov r1,#(4<<8)+(2<<14) /* PLLMUL,7|PLLSCR,HSE|PPRE1=HCLK/2|ADCPRE=PCLK2/6 */
+ 292 018a C0F21D01 	  movt r1,#(7<<2)|1
+ 293 018e 4160     	  str r1,[r0,#RCC_CFGR]
  294              	  /* enable PLL */
- 295 0188 0168     	  ldr r1,[r0,#RCC_CR]
- 296 018a 41F08071 	  orr r1, #1<<24 
- 297 018e 0160     	  str r1,[r0,#RCC_CR]
+ 295 0190 0168     	  ldr r1,[r0,#RCC_CR]
+ 296 0192 41F08071 	  orr r1, #1<<24 
+ 297 0196 0160     	  str r1,[r0,#RCC_CR]
  298              	/* wait for PLLRDY */
  299              	wait_pllrdy:
- 300 0190 0168     	  ldr r1,[r0,#RCC_CR]
- 301 0192 11F0007F 	  tst r1,#(1<<25)
- 302 0196 FBD0     	  beq wait_pllrdy 
+ 300 0198 0168     	  ldr r1,[r0,#RCC_CR]
+ 301 019a 11F0007F 	  tst r1,#(1<<25)
+ 302 019e FBD0     	  beq wait_pllrdy 
  303              	/* select PLL as sysclock */
- 304 0198 4168     	  ldr r1,[r0,#RCC_CFGR]
- 305 019a 4FF6FC72 	  _MOV32 r2,0xfffffffc
+ 304 01a0 4168     	  ldr r1,[r0,#RCC_CFGR]
+ 305 01a2 4FF6FC72 	  _MOV32 r2,0xfffffffc
  305      CFF6FF72 
- 306 01a2 01EA0201 	  and r1,r1,r2 
- 307 01a6 4FF00202 	  mov r2,#2
- 308 01aa 41EA0201 	  orr r1,r1,r2
- 309 01ae 4160     	  str r1,[r0,#RCC_CFGR] /* PLL selected as sysclock */
+ 306 01aa 01EA0201 	  and r1,r1,r2 
+ 307 01ae 4FF00202 	  mov r2,#2
+ 308 01b2 41EA0201 	  orr r1,r1,r2
 ARM GAS  stm32-tbi.s 			page 19
 
 
+ 309 01b6 4160     	  str r1,[r0,#RCC_CFGR] /* PLL selected as sysclock */
  310              	/* wait for SWS,,2 */
  311              	wait_sws:
- 312 01b0 4168     	  ldr r1,[r0,#RCC_CFGR]
- 313 01b2 11F0080F 	  tst r1,#(2<<2)
- 314 01b6 FBD0     	  beq wait_sws
+ 312 01b8 4168     	  ldr r1,[r0,#RCC_CFGR]
+ 313 01ba 11F0080F 	  tst r1,#(2<<2)
+ 314 01be FBD0     	  beq wait_sws
  315              	/* now sysclock is 72 Mhz */
  316              	
  317              	/* enable peripheral clock for GPIOs and USART1 */
- 318 01b8 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
+ 318 01c0 4FF48050 	  _MOV32 r0,RCC_BASE_ADR
  318      C4F20200 
- 319 01c0 45F67D61 	  mov	r1, #0x5e7d		/* all GPIO and USART1 */
- 320 01c4 8161     	  str	r1, [r0,#RCC_APB2ENR]
+ 319 01c8 45F67D61 	  mov	r1, #0x5e7d		/* all GPIO and USART1 */
+ 320 01cc 8161     	  str	r1, [r0,#RCC_APB2ENR]
  321              	
  322              	/* configure GPIOC:13 as output for user LED */
- 323 01c6 4FF48050 	  _MOV32 r0,GPIOC_BASE_ADR 
+ 323 01ce 4FF48050 	  _MOV32 r0,GPIOC_BASE_ADR 
  323      C4F20100 
- 324 01ce 4168     	  ldr r1,[r0,#GPIO_CRH]
- 325 01d0 6FF47002 	  mvn r2,#(15<<20)
- 326 01d4 01EA0201 	  and r1,r1,r2
- 327 01d8 4FF4C002 	  mov r2,#(6<<20)
- 328 01dc 41EA0201 	  orr r1,r1,r2
- 329 01e0 4160     	  str r1,[r0,#GPIO_CRH]
+ 324 01d6 4168     	  ldr r1,[r0,#GPIO_CRH]
+ 325 01d8 6FF47002 	  mvn r2,#(15<<20)
+ 326 01dc 01EA0201 	  and r1,r1,r2
+ 327 01e0 4FF4C002 	  mov r2,#(6<<20)
+ 328 01e4 41EA0201 	  orr r1,r1,r2
+ 329 01e8 4160     	  str r1,[r0,#GPIO_CRH]
  330              	/* turn off user LED */ 
- 331 01e2 4FF40051 	  mov r1,#(1<<13)
- 332 01e6 C160     	  str r1,[r0,#GPIO_ODR]
+ 331 01ea 4FF40051 	  mov r1,#(1<<13)
+ 332 01ee C160     	  str r1,[r0,#GPIO_ODR]
  333              	
  334              	/* disable JTDI,JTDO,JTRST */
- 335 01e8 4FF00000 	  _MOV32 r0,AFIO_BASE_ADR
+ 335 01f0 4FF00000 	  _MOV32 r0,AFIO_BASE_ADR
  335      C4F20100 
- 336 01f0 4FF00071 	  mov r1,#2<<24 
- 337 01f4 4160     	  str r1,[r0,#AFIO_MAPR]
+ 336 01f8 4FF00071 	  mov r1,#2<<24 
+ 337 01fc 4160     	  str r1,[r0,#AFIO_MAPR]
  338              	
  339              	/* configure systicks for 1msec ticks */
- 340 01f6 4EF21000 	  _MOV32 r0,STK_BASE_ADR 
+ 340 01fe 4EF21000 	  _MOV32 r0,STK_BASE_ADR 
  340      CEF20000 
- 341 01fe 42F22831 	  mov r1,#9000 /* reload value for 1msec */
- 342 0202 4160     	  str r1,[r0,#STK_LOAD]
- 343 0204 4FF00301 	  mov r1,#3
- 344 0208 0160     	  str r1,[r0,STK_CTL]
- 345 020a 7047     	  _RET  
+ 341 0206 42F22831 	  mov r1,#9000 /* reload value for 1msec */
+ 342 020a 4160     	  str r1,[r0,#STK_LOAD]
+ 343 020c 4FF00301 	  mov r1,#3
+ 344 0210 0160     	  str r1,[r0,STK_CTL]
+ 345 0212 7047     	  _RET  
  346              	
  347              	/*******************************
  348              	  initialize UART peripheral 
  349              	********************************/
  350              		  _FUNC uart_init
  351              	/* set GPIOA PIN 9, uart TX  */
- 352 020c 4FF40060 	    _MOV32 r0,GPIOA_BASE_ADR
+ 352 0214 4FF40060 	    _MOV32 r0,GPIOA_BASE_ADR
  352      C4F20100 
- 353 0214 4168     	    ldr r1,[r0,#GPIO_CRH]
- 354 0216 6FF0F002 	    mvn r2,#(15<<4)
- 355 021a 01EA0201 	    and r1,r1,r2
- 356 021e 4FF0A002 	    mov r2,#(0xA<<4)
- 357 0222 41EA0201 	    orr r1,r1,r2 
- 358 0226 4160     	    str r1,[r0,#GPIO_CRH]
+ 353 021c 4168     	    ldr r1,[r0,#GPIO_CRH]
+ 354 021e 6FF0F002 	    mvn r2,#(15<<4)
+ 355 0222 01EA0201 	    and r1,r1,r2
+ 356 0226 4FF0A002 	    mov r2,#(0xA<<4)
+ 357 022a 41EA0201 	    orr r1,r1,r2 
+ 358 022e 4160     	    str r1,[r0,#GPIO_CRH]
  359              	/* lock PA9,PA10 to block pins reconfiguration */
- 360 0228 4FF4C061 	    mov r1,#(1<<9)+(1<<10)
- 361 022c 4FF00402 	    mov r2,#4
+ 360 0230 4FF4C061 	    mov r1,#(1<<9)+(1<<10)
 ARM GAS  stm32-tbi.s 			page 20
 
 
- 362 0230 C0F20101 	    movt r1,#1
- 363 0234 8161     	1:  str r1,[r0,#GPIO_LCKR]
- 364 0236 81F48031 	    eor r1,#(1<<16) 
- 365 023a 013A     	    subs r2,#1 
- 366 023c FAD1     	    bne 1b 
+ 361 0234 4FF00402 	    mov r2,#4
+ 362 0238 C0F20101 	    movt r1,#1
+ 363 023c 8161     	1:  str r1,[r0,#GPIO_LCKR]
+ 364 023e 81F48031 	    eor r1,#(1<<16) 
+ 365 0242 013A     	    subs r2,#1 
+ 366 0244 FAD1     	    bne 1b 
  367              	/* configure usart */     
- 368 023e 4FF46050 	    _MOV32 r0,UART 
+ 368 0246 4FF46050 	    _MOV32 r0,UART 
  368      C4F20100 
  369              	/* BAUD rate */
- 370 0246 40F27121 	    mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
- 371 024a 8160     	    str r1,[r0,#USART_BRR]
- 372 024c 42F22C01 	    mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
- 373 0250 C160     	    str r1,[r0,#USART_CR1] /*enable usart*/
+ 370 024e 40F27121 	    mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
+ 371 0252 8160     	    str r1,[r0,#USART_BRR]
+ 372 0254 42F22C01 	    mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
+ 373 0258 C160     	    str r1,[r0,#USART_CR1] /*enable usart*/
  374              	/* enable interrupt in NVIC */
- 375 0252 4FF46140 	    _MOV32 r0,NVIC_BASE_ADR
+ 375 025a 4FF46140 	    _MOV32 r0,NVIC_BASE_ADR
  375      CEF20000 
- 376 025a 4168     	    ldr r1,[r0,#NVIC_ISER1]
- 377 025c 41F02001 	    orr r1,#32   
- 378 0260 4160     	    str r1,[r0,#NVIC_ISER1]
- 379 0262 7047     	    bx lr 
+ 376 0262 4168     	    ldr r1,[r0,#NVIC_ISER1]
+ 377 0264 41F02001 	    orr r1,#32   
+ 378 0268 4160     	    str r1,[r0,#NVIC_ISER1]
+ 379 026a 7047     	    bx lr 
  380              	
  381              	/***************************
  382              	    uart_flush_queue
@@ -1173,12 +1174,12 @@ ARM GAS  stm32-tbi.s 			page 1
  389              	    T1 temp
  390              	***************************/
  391              	    _GBL_FUNC uart_flush_queue
- 392 0264 4DF8048D 	    push {T1}
- 393 0268 88EA0808 	    eor T1,T1 
- 394 026c C4F84880 	    str T1,[UPP,#RX_HEAD]
- 395 0270 C4F84C80 	    str T1,[UPP,#RX_TAIL]
- 396 0274 5DF8048B 	    pop {T1}
- 397 0278 7047     	    _RET 
+ 392 026c 4DF8048D 	    push {T1}
+ 393 0270 88EA0808 	    eor T1,T1 
+ 394 0274 C4F84880 	    str T1,[UPP,#RX_HEAD]
+ 395 0278 C4F84C80 	    str T1,[UPP,#RX_TAIL]
+ 396 027c 5DF8048B 	    pop {T1}
+ 397 0280 7047     	    _RET 
  398              	
  399              	/****************************
  400              	    UART_PUTC
@@ -1189,20 +1190,20 @@ ARM GAS  stm32-tbi.s 			page 1
  405              	    T1 status  
  406              	    T2 UART address
  407              	*****************************/
- 408 027a 00BF     	    _GBL_FUNC uart_putc
- 409 027c 2DE90003 	    push {T1,T2}
- 410 0280 4FF46059 	    _MOV32 T2,UART
+ 408 0282 00BF     	    _GBL_FUNC uart_putc
+ 409 0284 2DE90003 	    push {T1,T2}
+ 410 0288 4FF46059 	    _MOV32 T2,UART
  410      C4F20109 
  411              	1: 
- 412 0288 D9F80080 	    ldr T1,[T2,#USART_SR]
- 413 028c 18F08008 	    ands T1,#0x80
- 414 0290 FAD0     	    beq 1b // UART_DR full,wait  
- 415 0292 89F80400 	    strb r0,[T2,#USART_DR]
+ 412 0290 D9F80080 	    ldr T1,[T2,#USART_SR]
+ 413 0294 18F08008 	    ands T1,#0x80
+ 414 0298 FAD0     	    beq 1b // UART_DR full,wait  
 ARM GAS  stm32-tbi.s 			page 21
 
 
- 416 0296 BDE80003 	    pop {T1,T2}
- 417 029a 7047     	    _RET  
+ 415 029a 89F80400 	    strb r0,[T2,#USART_DR]
+ 416 029e BDE80003 	    pop {T1,T2}
+ 417 02a2 7047     	    _RET  
  418              	
  419              	
  420              	/**********************************
@@ -1219,12 +1220,12 @@ ARM GAS  stm32-tbi.s 			page 1
  431              	    r1  RX_TAIL   
  432              	***********************************/
  433              	    _GBL_FUNC uart_qkey
- 434 029c 02B4     	    push {r1}
- 435 029e A06C     	    ldr r0,[UPP,#RX_HEAD]
- 436 02a0 E16C     	    ldr r1,[UPP,#RX_TAIL]
- 437 02a2 4840     	    eors r0,r1
- 438 02a4 02BC     	    pop {r1} 
- 439 02a6 7047     	    _RET 
+ 434 02a4 02B4     	    push {r1}
+ 435 02a6 A06C     	    ldr r0,[UPP,#RX_HEAD]
+ 436 02a8 E16C     	    ldr r1,[UPP,#RX_TAIL]
+ 437 02aa 4840     	    eors r0,r1
+ 438 02ac 02BC     	    pop {r1} 
+ 439 02ae 7047     	    _RET 
  440              	
  441              	/**********************************
  442              	  UART_GETC 
@@ -1238,29 +1239,29 @@ ARM GAS  stm32-tbi.s 			page 1
  450              	    T2  rx_head  
  451              	**********************************/
  452              	    _GBL_FUNC uart_getc
- 453 02a8 2DE90003 	    push {T1,T2}
+ 453 02b0 2DE90003 	    push {T1,T2}
  454              	1:
- 455 02ac 00B5FFF7 	    _CALL uart_qkey 
+ 455 02b4 00B5FFF7 	    _CALL uart_qkey 
  455      FEFF5DF8 
  455      04EB
- 456 02b6 F9D0     	    beq 1b  
- 457 02b8 04F15008 	    add T1,UPP,#RX_QUEUE
- 458 02bc D4F84890 	    ldr T2, [UPP,#RX_HEAD]
- 459 02c0 18F80900 	    ldrb r0,[T1,T2]
- 460 02c4 09F10109 	    add T2,#1
- 461 02c8 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
- 462 02cc C4F84890 	    str T2,[UPP,#RX_HEAD]
- 463 02d0 BDE80003 	    pop {T1,T2}
- 464 02d4 7047     	    _RET  
+ 456 02be F9D0     	    beq 1b  
+ 457 02c0 04F15008 	    add T1,UPP,#RX_QUEUE
+ 458 02c4 D4F84890 	    ldr T2, [UPP,#RX_HEAD]
+ 459 02c8 18F80900 	    ldrb r0,[T1,T2]
+ 460 02cc 09F10109 	    add T2,#1
+ 461 02d0 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
+ 462 02d4 C4F84890 	    str T2,[UPP,#RX_HEAD]
+ 463 02d8 BDE80003 	    pop {T1,T2}
+ 464 02dc 7047     	    _RET  
  465              	
  466              	
  467              	/***************************
  468              	  Flash memory interface
  469              	***************************/
- 470              	
 ARM GAS  stm32-tbi.s 			page 22
 
 
+ 470              	
  471              	/***********************************
  472              	  unlock 
  473              	  unlock flash memory for writing
@@ -1271,32 +1272,32 @@ ARM GAS  stm32-tbi.s 			page 1
  478              	  use: 
  479              	    r6     temp  
  480              	***********************************/
- 481 02d6 00BF     	    _GBL_FUNC unlock  
- 482 02d8 40B4     	    push {r6}
- 483 02da 0040     	    ands r0,r0 
- 484 02dc 15D0     	    beq lock 
- 485 02de 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 481 02de 00BF     	    _GBL_FUNC unlock  
+ 482 02e0 40B4     	    push {r6}
+ 483 02e2 0040     	    ands r0,r0 
+ 484 02e4 15D0     	    beq lock 
+ 485 02e6 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
  485      C4F20200 
- 486 02e6 4FF03406 	    mov r6,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
- 487 02ea C660     	    str r6,[r0,#FLASH_SR]
- 488 02ec 0669     	    ldr r6,[r0,#FLASH_CR]
- 489 02ee 16F0800F 	    tst r6,#(1<<7)
- 490 02f2 11D0     	    beq 9f
- 491 02f4 40F22316 	    _MOV32 r6,FLASH_KEY1  
+ 486 02ee 4FF03406 	    mov r6,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+ 487 02f2 C660     	    str r6,[r0,#FLASH_SR]
+ 488 02f4 0669     	    ldr r6,[r0,#FLASH_CR]
+ 489 02f6 16F0800F 	    tst r6,#(1<<7)
+ 490 02fa 11D0     	    beq 9f
+ 491 02fc 40F22316 	    _MOV32 r6,FLASH_KEY1  
  491      C4F26756 
- 492 02fc 4660     	    str	r6, [r0, #FLASH_KEYR]
- 493 02fe 48F6AB16 	    _MOV32 r6,FLASH_KEY2
+ 492 0304 4660     	    str	r6, [r0, #FLASH_KEYR]
+ 493 0306 48F6AB16 	    _MOV32 r6,FLASH_KEY2
  493      CCF6EF56 
- 494 0306 4660     	    str	r6, [r0, #FLASH_KEYR]
- 495 0308 06E0     	    b 9f 
+ 494 030e 4660     	    str	r6, [r0, #FLASH_KEYR]
+ 495 0310 06E0     	    b 9f 
  496              	// lock flash memory
  497              	lock: 
- 498 030a 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 498 0312 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
  498      C4F20200 
- 499 0312 4FF08006 	    mov r6,#(1<<7)
- 500 0316 0661     	    str r6,[r0,#FLASH_CR]
- 501 0318 40BC     	9:  pop {r6}
- 502 031a 7047     	  	_RET  
+ 499 031a 4FF08006 	    mov r6,#(1<<7)
+ 500 031e 0661     	    str r6,[r0,#FLASH_CR]
+ 501 0320 40BC     	9:  pop {r6}
+ 502 0322 7047     	  	_RET  
  503              	
  504              	
  505              	/*********************************
@@ -1311,18 +1312,18 @@ ARM GAS  stm32-tbi.s 			page 1
  514              	     r1    temp 
  515              	***********************************/
  516              	    _FUNC wait_busy 
- 517 031c 03B4     	    push {r0,r1}
- 518 031e 4FF40050 	    _MOV32	r0,FLASH_BASE_ADR
+ 517 0324 03B4     	    push {r0,r1}
+ 518 0326 4FF40050 	    _MOV32	r0,FLASH_BASE_ADR
  518      C4F20200 
  519              	1:
- 520 0326 C168     	    ldr	r1, [r0, #FLASH_SR]	//  FLASH_SR
- 521 0328 11F00101 	    ands r1, #0x1	//  BSY
- 522 032c FBD1     	    bne	1b 
+ 520 032e C168     	    ldr	r1, [r0, #FLASH_SR]	//  FLASH_SR
+ 521 0330 11F00101 	    ands r1, #0x1	//  BSY
 ARM GAS  stm32-tbi.s 			page 23
 
 
- 523 032e 03BC     	    pop {r0,r1}
- 524 0330 7047     	    _RET
+ 522 0334 FBD1     	    bne	1b 
+ 523 0336 03BC     	    pop {r0,r1}
+ 524 0338 7047     	    _RET
  525              	
  526              	/***************************************
  527              	   hword_write
@@ -1336,31 +1337,31 @@ ARM GAS  stm32-tbi.s 			page 1
  535              	     r6    flash control regs base address 
  536              	     r7    temp  
  537              	***************************************/
- 538 0332 00BF     	    _GBL_FUNC hword_write 
- 539 0334 C0B4     	    push {r6,r7}
- 540 0336 4FF40056 	    _MOV32 r6,FLASH_BASE_ADR
+ 538 033a 00BF     	    _GBL_FUNC hword_write 
+ 539 033c C0B4     	    push {r6,r7}
+ 540 033e 4FF40056 	    _MOV32 r6,FLASH_BASE_ADR
  540      C4F20206 
- 541 033e 4FF00107 	    mov r7,#1 // set PG 
- 542 0342 3761     	    str r7,[r6,#FLASH_CR]
- 543 0344 0880     	    strh r0,[r1] 
- 544 0346 00B5FFF7 	    _CALL wait_busy  
+ 541 0346 4FF00107 	    mov r7,#1 // set PG 
+ 542 034a 3761     	    str r7,[r6,#FLASH_CR]
+ 543 034c 0880     	    strh r0,[r1] 
+ 544 034e 00B5FFF7 	    _CALL wait_busy  
  544      E8FF5DF8 
  544      04EB
- 545 0350 F768     	    ldr r7,[r6,#FLASH_SR]
- 546 0352 17F01407 	    ands r7,r7,#(5<<2) 
- 547 0356 05D0     	    beq 9f
- 548 0358 3F48     	    ldr r0,=write_error
- 549 035a 00B5FFF7 	    _CALL uart_puts   
+ 545 0358 F768     	    ldr r7,[r6,#FLASH_SR]
+ 546 035a 17F01407 	    ands r7,r7,#(5<<2) 
+ 547 035e 05D0     	    beq 9f
+ 548 0360 5048     	    ldr r0,=write_error
+ 549 0362 00B5FFF7 	    _CALL uart_puts   
  549      FEFF5DF8 
  549      04EB
- 550 0364 C0BC     	9:	pop {r6,r7}
- 551 0366 7047     	    _RET  
+ 550 036c C0BC     	9:	pop {r6,r7}
+ 551 036e 7047     	    _RET  
  552              	write_error:	
- 553 0368 20777269 	    .asciz " write error!"
+ 553 0370 20777269 	    .asciz " write error!"
  553      74652065 
  553      72726F72 
  553      2100
- 554 0376 00BF     	    .p2align 2
+ 554 037e 00BF     	    .p2align 2
  555              	
  556              	/****************************************
  557              	    flash_store
@@ -1376,32 +1377,32 @@ ARM GAS  stm32-tbi.s 			page 1
  567              	      T2 adr 
  568              	*****************************************/ 
  569              	    _GBL_FUNC flash_store 
- 570 0378 2DE90003 	    push {T1,T2}
- 571 037c 8046     	    mov T1,r0
+ 570 0380 2DE90003 	    push {T1,T2}
 ARM GAS  stm32-tbi.s 			page 24
 
 
- 572 037e 8946     	    mov T2,r1  
- 573 0380 4FF00100 	    mov r0,#1
- 574 0384 00B5FFF7 	    _CALL unlock 
+ 571 0384 8046     	    mov T1,r0
+ 572 0386 8946     	    mov T2,r1  
+ 573 0388 4FF00100 	    mov r0,#1
+ 574 038c 00B5FFF7 	    _CALL unlock 
  574      FEFF5DF8 
  574      04EB
- 575 038e 4046     	    mov r0,T1 
- 576 0390 4946     	    mov r1,T2 
- 577 0392 00B5FFF7 	    _CALL hword_write
+ 575 0396 4046     	    mov r0,T1 
+ 576 0398 4946     	    mov r1,T2 
+ 577 039a 00B5FFF7 	    _CALL hword_write
  577      FEFF5DF8 
  577      04EB
- 578 039c 4FEA1840 	    mov r0,T1,lsr #16 
- 579 03a0 09F10201 	    add r1,T2,#2
- 580 03a4 00B5FFF7 	    _CALL hword_write
+ 578 03a4 4FEA1840 	    mov r0,T1,lsr #16 
+ 579 03a8 09F10201 	    add r1,T2,#2
+ 580 03ac 00B5FFF7 	    _CALL hword_write
  580      FEFF5DF8 
  580      04EB
- 581 03ae 80EA0000 	    eor r0,r0 
- 582 03b2 00B5FFF7 	    _CALL unlock  
+ 581 03b6 80EA0000 	    eor r0,r0 
+ 582 03ba 00B5FFF7 	    _CALL unlock  
  582      FEFF5DF8 
  582      04EB
- 583 03bc BDE80003 	    pop {T1,T2}
- 584 03c0 7047     	    _RET 
+ 583 03c4 BDE80003 	    pop {T1,T2}
+ 584 03c8 7047     	    _RET 
  585              	
  586              	/********************************************
  587              	    erase_page 
@@ -1414,69 +1415,107 @@ ARM GAS  stm32-tbi.s 			page 1
  594              	      T1    adr
  595              	      T2    temp   
  596              	**********************************************/
- 597 03c2 00BF     	    _GBL_FUNC erase_page 
- 598 03c4 2DE90003 	    push {T1,T2}
- 599 03c8 8046     	    mov T1,r0 
- 600 03ca 4FF00100 	    mov r0,#1 
- 601 03ce 00B5FFF7 	    _CALL unlock 
+ 597 03ca 00BF     	    _GBL_FUNC erase_page 
+ 598 03cc 2DE90003 	    push {T1,T2}
+ 599 03d0 8046     	    mov T1,r0 
+ 600 03d2 4FF00100 	    mov r0,#1 
+ 601 03d6 00B5FFF7 	    _CALL unlock 
  601      FEFF5DF8 
  601      04EB
- 602 03d8 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 602 03e0 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
  602      C4F20200 
- 603 03e0 4FF00209 	    mov T2,#2 // PER bit in FLASH_CR 
- 604 03e4 C0F81090 	    str T2,[r0,#FLASH_CR]
- 605 03e8 C0F81480 	    str T1,[r0,#FLASH_AR]
- 606 03ec 49F04009 	    orr T2,#0x40 
- 607 03f0 C0F81090 	    str T2,[r0,#FLASH_CR]
- 608 03f4 00B5FFF7 	    _CALL wait_busy
+ 603 03e8 4FF00209 	    mov T2,#2 // PER bit in FLASH_CR 
+ 604 03ec C0F81090 	    str T2,[r0,#FLASH_CR]
+ 605 03f0 C0F81480 	    str T1,[r0,#FLASH_AR]
+ 606 03f4 49F04009 	    orr T2,#0x40 
+ 607 03f8 C0F81090 	    str T2,[r0,#FLASH_CR]
+ 608 03fc 00B5FFF7 	    _CALL wait_busy
  608      91FF5DF8 
  608      04EB
- 609 03fe D0F80C90 	    ldr T2,[r0,#FLASH_SR]
- 610 0402 19F01409 	    ands T2,#(5<<2)
- 611 0406 05D0     	    beq 9f
- 612 0408 0748     	    ldr r0,erase_error
- 613 040a 00B5FFF7 	    _CALL uart_puts 
+ 609 0406 D0F80C90 	    ldr T2,[r0,#FLASH_SR]
+ 610 040a 19F01409 	    ands T2,#(5<<2)
+ 611 040e 05D0     	    beq 9f
+ 612 0410 0748     	    ldr r0,erase_error
+ 613 0412 00B5FFF7 	    _CALL uart_puts 
  613      FEFF5DF8 
- 613      04EB
 ARM GAS  stm32-tbi.s 			page 25
 
 
- 614 0414 80EA0000 	9:  eor r0,r0 
- 615 0418 00B5FFF7 	    _CALL unlock 
+ 613      04EB
+ 614 041c 80EA0000 	9:  eor r0,r0 
+ 615 0420 00B5FFF7 	    _CALL unlock 
  615      FEFF5DF8 
  615      04EB
- 616 0422 BDE80003 	    pop {T1,T2}
- 617 0426 7047     	    _RET 
+ 616 042a BDE80003 	    pop {T1,T2}
+ 617 042e 7047     	    _RET 
  618              	erase_error:
- 619 0428 20657261 	    .asciz " erase error!\r"
+ 619 0430 20657261 	    .asciz " erase error!\r"
  619      73652065 
  619      72726F72 
  619      210D00
- 620 0437 00       	    .p2align 2
+ 620 043f 00       	    .p2align 2
  621              	
- 622              	/**********************************************
- 623              	   page_align 
- 624              	   align address to FLASH page boundary 
- 625              	   input:
- 626              	     r0    address 
- 627              	   output:
- 628              	     r0    aligned 
- 629              	   use: 
- 630              	     r1  
- 631              	**********************************************/
- 632              	    _GBL_FUNC page_align 
- 633 0438 02B4     	    push {r1}
- 634 043a 40F2FF31 	    mov r1,#PAGE_SIZE-1
- 635 043e 0844     	    add r0,r1
- 636 0440 6FEA0101 	    mvn r1,r1 
- 637 0444 00EA0100 	    and r0,r1 
- 638 0448 02BC     	    pop {r1}
- 639 044a 7047     	    _RET 
- 640 044c 18000000 	
- 640      00000000 
- 640      AC000000 
- 640      68030000 
+ 622              	/*****************************************
+ 623              	    write_page 
+ 624              	    write a page buffer to flash memory 
+ 625              	    input:
+ 626              	      r0  *buffer 
+ 627              	      r1  flash_adr 
+ 628              	    output:
+ 629              	      none 
+ 630              	    use:
+ 631              	      r2  size counter
+ 632              	      T1  *buffer 
+ 633              	******************************************/
+ 634              	    _GBL_FUNC write_page
+ 635 0440 2DE90401 	    push {r2,T1}
+ 636 0444 8046     	    mov T1,r0
+ 637 0446 4FF00100 	    mov r0,#1 
+ 638 044a 00B5FFF7 	    _CALL unlock
+ 638      FEFF5DF8 
+ 638      04EB
+ 639 0454 4FF48062 	    mov r2,#PAGE_SIZE 
+ 640 0458 38F8020B 	1:  ldrh r0,[T1],#2 
+ 641 045c 00B5FFF7 	    _CALL hword_write 
+ 641      FEFF5DF8 
+ 641      04EB
+ 642 0466 01F10201 	    add r1,#2
+ 643 046a 023A     	    subs r2,#2 
+ 644 046c F4D1     	    bne 1b 
+ 645 046e 80EA0000 	    eor r0,r0 
+ 646 0472 00B5FFF7 	    _CALL unlock 
+ 646      FEFF5DF8 
+ 646      04EB
+ 647 047c BDE80401 	    pop {r2,T1}
+ 648 0480 7047     	    _RET 
+ 649              	
+ 650              	      
+ 651              	/**********************************************
+ 652              	   page_align 
+ 653              	   align address to FLASH page boundary 
+ 654              	   input:
+ 655              	     r0    address 
+ 656              	   output:
+ 657              	     r0    aligned 
+ 658              	   use: 
 ARM GAS  stm32-tbi.s 			page 26
+
+
+ 659              	     r1  
+ 660              	**********************************************/
+ 661 0482 00BF     	    _GBL_FUNC page_align 
+ 662 0484 02B4     	    push {r1}
+ 663 0486 40F2FF31 	    mov r1,#PAGE_SIZE-1
+ 664 048a 0844     	    add r0,r1
+ 665 048c 6FEA0101 	    mvn r1,r1 
+ 666 0490 00EA0100 	    and r0,r1 
+ 667 0494 02BC     	    pop {r1}
+ 668 0496 7047     	    _RET 
+ 669 0498 18000000 	
+ 669      00000000 
+ 669      B4000000 
+ 669      70030000 
+ARM GAS  stm32-tbi.s 			page 27
 
 
 DEFINED SYMBOLS
@@ -1536,7 +1575,7 @@ DEFINED SYMBOLS
        stm32f103.inc:83     *ABS*:0000000000000018 GPIO_LCKR
        stm32f103.inc:86     *ABS*:0000000040010000 AFIO_BASE_ADR
        stm32f103.inc:89     *ABS*:0000000000000000 AFIO_EVCR
-ARM GAS  stm32-tbi.s 			page 27
+ARM GAS  stm32-tbi.s 			page 28
 
 
        stm32f103.inc:90     *ABS*:0000000000000004 AFIO_MAPR
@@ -1596,7 +1635,7 @@ DEFINED SYMBOLS
        stm32f103.inc:158    *ABS*:0000000000000004 SCR_SLEEPDEEP
        stm32f103.inc:159    *ABS*:0000000000000010 SCR_SEVONPEND
        stm32f103.inc:162    *ABS*:0000000040007000 PWR_CR_ADR
-ARM GAS  stm32-tbi.s 			page 28
+ARM GAS  stm32-tbi.s 			page 29
 
 
        stm32f103.inc:163    *ABS*:0000000000000001 PWR_CR_LPDS
@@ -1656,7 +1695,7 @@ DEFINED SYMBOLS
        stm32f103.inc:228    *ABS*:0000000000000020 TIM_CCER
        stm32f103.inc:229    *ABS*:0000000000000024 TIM_CNT
        stm32f103.inc:230    *ABS*:0000000000000028 TIM_PSC
-ARM GAS  stm32-tbi.s 			page 29
+ARM GAS  stm32-tbi.s 			page 30
 
 
        stm32f103.inc:231    *ABS*:000000000000002c TIM_ARR
@@ -1716,7 +1755,7 @@ DEFINED SYMBOLS
            ascii.inc:73     *ABS*:0000000000000018 CAN
            ascii.inc:74     *ABS*:0000000000000019 CTRL_Y
            ascii.inc:75     *ABS*:0000000000000019 EM
-ARM GAS  stm32-tbi.s 			page 30
+ARM GAS  stm32-tbi.s 			page 31
 
 
            ascii.inc:76     *ABS*:000000000000001a CTRL_Z
@@ -1776,7 +1815,7 @@ DEFINED SYMBOLS
       tbi_macros.inc:76     *ABS*:0000000000000003 ERR_MATH_OVF
       tbi_macros.inc:77     *ABS*:0000000000000004 ERR_DIV0
       tbi_macros.inc:78     *ABS*:0000000000000005 ERR_NO_LINE
-ARM GAS  stm32-tbi.s 			page 31
+ARM GAS  stm32-tbi.s 			page 32
 
 
       tbi_macros.inc:79     *ABS*:0000000000000006 ERR_RUN_ONLY
@@ -1834,103 +1873,104 @@ DEFINED SYMBOLS
        cmd_index.inc:27     *ABS*:0000000000000002 ADC_IDX
        cmd_index.inc:28     *ABS*:0000000000000003 AND_IDX
        cmd_index.inc:29     *ABS*:0000000000000004 ASC_IDX
-       cmd_index.inc:30     *ABS*:0000000000000005 AWU_IDX
-       cmd_index.inc:31     *ABS*:0000000000000006 BIT_IDX
-ARM GAS  stm32-tbi.s 			page 32
-
-
-       cmd_index.inc:32     *ABS*:0000000000000007 BRES_IDX
-       cmd_index.inc:33     *ABS*:0000000000000008 BSET_IDX
-       cmd_index.inc:34     *ABS*:0000000000000009 BTEST_IDX
-       cmd_index.inc:35     *ABS*:000000000000000a BTOGL_IDX
-       cmd_index.inc:36     *ABS*:000000000000000b CHAR_IDX
-       cmd_index.inc:37     *ABS*:000000000000000c CLS_IDX
-       cmd_index.inc:38     *ABS*:000000000000000d CONST_IDX
-       cmd_index.inc:39     *ABS*:000000000000000e DATA_IDX
-       cmd_index.inc:40     *ABS*:000000000000000f DEC_IDX
-       cmd_index.inc:41     *ABS*:0000000000000010 DIR_IDX
-       cmd_index.inc:42     *ABS*:0000000000000011 DO_IDX
-       cmd_index.inc:43     *ABS*:0000000000000012 DROP_IDX
-       cmd_index.inc:44     *ABS*:0000000000000013 DUMP_IDX
-       cmd_index.inc:45     *ABS*:0000000000000014 END_IDX
-       cmd_index.inc:46     *ABS*:0000000000000015 ERASE_IDX
-       cmd_index.inc:47     *ABS*:0000000000000016 FOR_IDX
-       cmd_index.inc:48     *ABS*:0000000000000017 FORGET_IDX
-       cmd_index.inc:49     *ABS*:0000000000000018 FREE_IDX
-       cmd_index.inc:50     *ABS*:0000000000000019 GET_IDX
-       cmd_index.inc:51     *ABS*:000000000000001a GOSUB_IDX
-       cmd_index.inc:52     *ABS*:000000000000001b GOTO_IDX
-       cmd_index.inc:53     *ABS*:000000000000001c HEX_IDX
-       cmd_index.inc:54     *ABS*:000000000000001d IF_IDX
-       cmd_index.inc:55     *ABS*:000000000000001e IN_IDX
-       cmd_index.inc:56     *ABS*:000000000000001f INPUT_IDX
-       cmd_index.inc:57     *ABS*:0000000000000020 INVERT_IDX
-       cmd_index.inc:58     *ABS*:0000000000000021 KEY_IDX
-       cmd_index.inc:59     *ABS*:0000000000000022 LET_IDX
-       cmd_index.inc:60     *ABS*:0000000000000023 LIST_IDX
-       cmd_index.inc:61     *ABS*:0000000000000024 LOAD_IDX
-       cmd_index.inc:62     *ABS*:0000000000000025 LOCATE_IDX
-       cmd_index.inc:63     *ABS*:0000000000000026 LSHIFT_IDX
-       cmd_index.inc:64     *ABS*:0000000000000027 NEW_IDX
-       cmd_index.inc:65     *ABS*:0000000000000028 NEXT_IDX
-       cmd_index.inc:66     *ABS*:0000000000000029 NOT_IDX
-       cmd_index.inc:67     *ABS*:000000000000002a OR_IDX
-       cmd_index.inc:68     *ABS*:000000000000002b OUT_IDX
-       cmd_index.inc:69     *ABS*:000000000000002c PAD_IDX
-       cmd_index.inc:70     *ABS*:000000000000002d PAUSE_IDX
-       cmd_index.inc:71     *ABS*:000000000000002e PMODE_IDX
-       cmd_index.inc:72     *ABS*:000000000000002f PEEK8_IDX
-       cmd_index.inc:73     *ABS*:0000000000000030 PEEK16_IDX
-       cmd_index.inc:74     *ABS*:0000000000000031 PEEK32_IDX
-       cmd_index.inc:75     *ABS*:0000000000000032 POKE8_IDX
-       cmd_index.inc:76     *ABS*:0000000000000033 POKE16_IDX
-       cmd_index.inc:77     *ABS*:0000000000000034 POKE32_IDX
-       cmd_index.inc:78     *ABS*:0000000000000035 POP_IDX
-       cmd_index.inc:79     *ABS*:0000000000000036 PRT_IDX
-       cmd_index.inc:80     *ABS*:0000000000000037 PUSH_IDX
-       cmd_index.inc:81     *ABS*:0000000000000038 PUT_IDX
-       cmd_index.inc:82     *ABS*:0000000000000039 QKEY_IDX
-       cmd_index.inc:83     *ABS*:000000000000003a READ_IDX
-       cmd_index.inc:84     *ABS*:000000000000003b REM_IDX
-       cmd_index.inc:85     *ABS*:000000000000003c REST_IDX
-       cmd_index.inc:86     *ABS*:000000000000003d RET_IDX
-       cmd_index.inc:87     *ABS*:000000000000003e RND_IDX
-       cmd_index.inc:88     *ABS*:000000000000003f RSHIFT_IDX
+       cmd_index.inc:30     *ABS*:0000000000000005 AUTORUN_IDX
+       cmd_index.inc:31     *ABS*:0000000000000006 AWU_IDX
 ARM GAS  stm32-tbi.s 			page 33
 
 
-       cmd_index.inc:89     *ABS*:0000000000000040 RUN_IDX
-       cmd_index.inc:90     *ABS*:0000000000000041 SAVE_IDX
-       cmd_index.inc:91     *ABS*:0000000000000042 SERVO_INIT_IDX
-       cmd_index.inc:92     *ABS*:0000000000000043 SERVO_OFF_IDX
-       cmd_index.inc:93     *ABS*:0000000000000044 SERVO_POS_IDX
-       cmd_index.inc:94     *ABS*:0000000000000045 SLEEP_IDX
-       cmd_index.inc:95     *ABS*:0000000000000046 SPC_IDX
-       cmd_index.inc:96     *ABS*:0000000000000047 STEP_IDX
-       cmd_index.inc:97     *ABS*:0000000000000048 STOP_IDX
-       cmd_index.inc:98     *ABS*:0000000000000049 STORE_IDX
-       cmd_index.inc:99     *ABS*:000000000000004a TAB_IDX
-       cmd_index.inc:100    *ABS*:000000000000004b THEN_IDX
-       cmd_index.inc:101    *ABS*:000000000000004c TICKS_IDX
-       cmd_index.inc:102    *ABS*:000000000000004d TIMER_IDX
-       cmd_index.inc:103    *ABS*:000000000000004e TMROUT_IDX
-       cmd_index.inc:104    *ABS*:000000000000004f TO_IDX
-       cmd_index.inc:105    *ABS*:0000000000000050 TONE_IDX
-       cmd_index.inc:106    *ABS*:0000000000000051 TONE_INIT_IDX
-       cmd_index.inc:107    *ABS*:0000000000000052 TRACE_IDX
-       cmd_index.inc:108    *ABS*:0000000000000053 UBOUND_IDX
-       cmd_index.inc:109    *ABS*:0000000000000054 UFLASH_IDX
-       cmd_index.inc:110    *ABS*:0000000000000055 UNTIL_IDX
-       cmd_index.inc:111    *ABS*:0000000000000056 WAIT_IDX
-       cmd_index.inc:112    *ABS*:0000000000000057 WORDS_IDX
-       cmd_index.inc:113    *ABS*:0000000000000058 XOR_IDX
-       cmd_index.inc:114    *ABS*:0000000000000059 XPOS_IDX
-       cmd_index.inc:115    *ABS*:000000000000005a YPOS_IDX
+       cmd_index.inc:32     *ABS*:0000000000000007 BIT_IDX
+       cmd_index.inc:33     *ABS*:0000000000000008 BRES_IDX
+       cmd_index.inc:34     *ABS*:0000000000000009 BSET_IDX
+       cmd_index.inc:35     *ABS*:000000000000000a BTEST_IDX
+       cmd_index.inc:36     *ABS*:000000000000000b BTOGL_IDX
+       cmd_index.inc:37     *ABS*:000000000000000c CHAR_IDX
+       cmd_index.inc:38     *ABS*:000000000000000d CLS_IDX
+       cmd_index.inc:39     *ABS*:000000000000000e CONST_IDX
+       cmd_index.inc:40     *ABS*:000000000000000f DATA_IDX
+       cmd_index.inc:41     *ABS*:0000000000000010 DEC_IDX
+       cmd_index.inc:42     *ABS*:0000000000000011 DIR_IDX
+       cmd_index.inc:43     *ABS*:0000000000000012 DO_IDX
+       cmd_index.inc:44     *ABS*:0000000000000013 DROP_IDX
+       cmd_index.inc:45     *ABS*:0000000000000014 DUMP_IDX
+       cmd_index.inc:46     *ABS*:0000000000000015 END_IDX
+       cmd_index.inc:47     *ABS*:0000000000000016 ERASE_IDX
+       cmd_index.inc:48     *ABS*:0000000000000017 FOR_IDX
+       cmd_index.inc:49     *ABS*:0000000000000018 FORGET_IDX
+       cmd_index.inc:50     *ABS*:0000000000000019 FREE_IDX
+       cmd_index.inc:51     *ABS*:000000000000001a GET_IDX
+       cmd_index.inc:52     *ABS*:000000000000001b GOSUB_IDX
+       cmd_index.inc:53     *ABS*:000000000000001c GOTO_IDX
+       cmd_index.inc:54     *ABS*:000000000000001d HEX_IDX
+       cmd_index.inc:55     *ABS*:000000000000001e IF_IDX
+       cmd_index.inc:56     *ABS*:000000000000001f IN_IDX
+       cmd_index.inc:57     *ABS*:0000000000000020 INPUT_IDX
+       cmd_index.inc:58     *ABS*:0000000000000021 INVERT_IDX
+       cmd_index.inc:59     *ABS*:0000000000000022 KEY_IDX
+       cmd_index.inc:60     *ABS*:0000000000000023 LET_IDX
+       cmd_index.inc:61     *ABS*:0000000000000024 LIST_IDX
+       cmd_index.inc:62     *ABS*:0000000000000025 LOAD_IDX
+       cmd_index.inc:63     *ABS*:0000000000000026 LOCATE_IDX
+       cmd_index.inc:64     *ABS*:0000000000000027 LSHIFT_IDX
+       cmd_index.inc:65     *ABS*:0000000000000028 NEW_IDX
+       cmd_index.inc:66     *ABS*:0000000000000029 NEXT_IDX
+       cmd_index.inc:67     *ABS*:000000000000002a NOT_IDX
+       cmd_index.inc:68     *ABS*:000000000000002b OR_IDX
+       cmd_index.inc:69     *ABS*:000000000000002c OUT_IDX
+       cmd_index.inc:70     *ABS*:000000000000002d PAD_IDX
+       cmd_index.inc:71     *ABS*:000000000000002e PAUSE_IDX
+       cmd_index.inc:72     *ABS*:000000000000002f PMODE_IDX
+       cmd_index.inc:73     *ABS*:0000000000000030 PEEK8_IDX
+       cmd_index.inc:74     *ABS*:0000000000000031 PEEK16_IDX
+       cmd_index.inc:75     *ABS*:0000000000000032 PEEK32_IDX
+       cmd_index.inc:76     *ABS*:0000000000000033 POKE8_IDX
+       cmd_index.inc:77     *ABS*:0000000000000034 POKE16_IDX
+       cmd_index.inc:78     *ABS*:0000000000000035 POKE32_IDX
+       cmd_index.inc:79     *ABS*:0000000000000036 POP_IDX
+       cmd_index.inc:80     *ABS*:0000000000000037 PRT_IDX
+       cmd_index.inc:81     *ABS*:0000000000000038 PUSH_IDX
+       cmd_index.inc:82     *ABS*:0000000000000039 PUT_IDX
+       cmd_index.inc:83     *ABS*:000000000000003a QKEY_IDX
+       cmd_index.inc:84     *ABS*:000000000000003b READ_IDX
+       cmd_index.inc:85     *ABS*:000000000000003c REM_IDX
+       cmd_index.inc:86     *ABS*:000000000000003d REST_IDX
+       cmd_index.inc:87     *ABS*:000000000000003e RET_IDX
+       cmd_index.inc:88     *ABS*:000000000000003f RND_IDX
+ARM GAS  stm32-tbi.s 			page 34
+
+
+       cmd_index.inc:89     *ABS*:0000000000000040 RSHIFT_IDX
+       cmd_index.inc:90     *ABS*:0000000000000041 RUN_IDX
+       cmd_index.inc:91     *ABS*:0000000000000042 SAVE_IDX
+       cmd_index.inc:92     *ABS*:0000000000000043 SERVO_INIT_IDX
+       cmd_index.inc:93     *ABS*:0000000000000044 SERVO_OFF_IDX
+       cmd_index.inc:94     *ABS*:0000000000000045 SERVO_POS_IDX
+       cmd_index.inc:95     *ABS*:0000000000000046 SLEEP_IDX
+       cmd_index.inc:96     *ABS*:0000000000000047 SPC_IDX
+       cmd_index.inc:97     *ABS*:0000000000000048 STEP_IDX
+       cmd_index.inc:98     *ABS*:0000000000000049 STOP_IDX
+       cmd_index.inc:99     *ABS*:000000000000004a STORE_IDX
+       cmd_index.inc:100    *ABS*:000000000000004b TAB_IDX
+       cmd_index.inc:101    *ABS*:000000000000004c THEN_IDX
+       cmd_index.inc:102    *ABS*:000000000000004d TICKS_IDX
+       cmd_index.inc:103    *ABS*:000000000000004e TIMER_IDX
+       cmd_index.inc:104    *ABS*:000000000000004f TMROUT_IDX
+       cmd_index.inc:105    *ABS*:0000000000000050 TO_IDX
+       cmd_index.inc:106    *ABS*:0000000000000051 TONE_IDX
+       cmd_index.inc:107    *ABS*:0000000000000052 TONE_INIT_IDX
+       cmd_index.inc:108    *ABS*:0000000000000053 TRACE_IDX
+       cmd_index.inc:109    *ABS*:0000000000000054 UBOUND_IDX
+       cmd_index.inc:110    *ABS*:0000000000000055 UFLASH_IDX
+       cmd_index.inc:111    *ABS*:0000000000000056 UNTIL_IDX
+       cmd_index.inc:112    *ABS*:0000000000000057 WAIT_IDX
+       cmd_index.inc:113    *ABS*:0000000000000058 WORDS_IDX
+       cmd_index.inc:114    *ABS*:0000000000000059 XOR_IDX
+       cmd_index.inc:115    *ABS*:000000000000005a XPOS_IDX
+       cmd_index.inc:116    *ABS*:000000000000005b YPOS_IDX
          stm32-tbi.s:44     *ABS*:0000000040011000 LED_GPIO
          stm32-tbi.s:45     *ABS*:000000000000000d LED_PIN
          stm32-tbi.s:46     *ABS*:0000000040013800 UART
          stm32-tbi.s:55     .isr_vector:0000000000000000 isr_vectors
-         stm32-tbi.s:225    .text:00000000000000bc reset_handler
+         stm32-tbi.s:225    .text:00000000000000c4 reset_handler
          stm32-tbi.s:148    .text:0000000000000000 default_handler
          stm32-tbi.s:163    .text:000000000000002c systick_handler
          stm32-tbi.s:73     .isr_vector:0000000000000040 irq0
@@ -1939,48 +1979,49 @@ DEFINED SYMBOLS
          stm32-tbi.s:137    .isr_vector:0000000000000130 vectors_size
          stm32-tbi.s:148    .text:0000000000000000 $t
          stm32-tbi.s:157    .text:0000000000000018 exception_msg
-         stm32-tbi.s:208    .text:0000000000000098 reset_mcu
+         stm32-tbi.s:208    .text:000000000000009e reset_mcu
          stm32-tbi.s:158    .text:0000000000000018 $d
-         stm32-tbi.s:201    .text:0000000000000084 user_reboot
-         stm32-tbi.s:391    .text:0000000000000264 uart_flush_queue
-         stm32-tbi.s:218    .text:00000000000000ac user_reboot_msg
-         stm32-tbi.s:216    .text:00000000000000a8 scb_adr
-         stm32-tbi.s:217    .text:00000000000000a8 $d
-         stm32-tbi.s:254    .text:0000000000000128 remap
-         stm32-tbi.s:266    .text:0000000000000158 init_devices
-         stm32-tbi.s:350    .text:000000000000020c uart_init
-         stm32-tbi.s:235    .text:00000000000000dc test
-         stm32-tbi.s:408    .text:000000000000027c uart_putc
-         stm32-tbi.s:249    .text:0000000000000122 tib_addr
-         stm32-tbi.s:250    .text:0000000000000122 $d
-         stm32-tbi.s:254    .text:0000000000000126 $t
-         stm32-tbi.s:279    .text:0000000000000176 wait_hserdy
-         stm32-tbi.s:299    .text:0000000000000190 wait_pllrdy
-ARM GAS  stm32-tbi.s 			page 34
+         stm32-tbi.s:201    .text:0000000000000088 user_reboot
+         stm32-tbi.s:391    .text:000000000000026c uart_flush_queue
+         stm32-tbi.s:218    .text:00000000000000b4 user_reboot_msg
+         stm32-tbi.s:216    .text:00000000000000b0 scb_adr
+         stm32-tbi.s:217    .text:00000000000000b0 $d
+         stm32-tbi.s:254    .text:0000000000000130 remap
+         stm32-tbi.s:266    .text:0000000000000160 init_devices
+         stm32-tbi.s:350    .text:0000000000000214 uart_init
+         stm32-tbi.s:235    .text:00000000000000e4 test
+         stm32-tbi.s:408    .text:0000000000000284 uart_putc
+         stm32-tbi.s:249    .text:000000000000012a tib_addr
+         stm32-tbi.s:250    .text:000000000000012a $d
+         stm32-tbi.s:254    .text:000000000000012e $t
+         stm32-tbi.s:279    .text:000000000000017e wait_hserdy
+ARM GAS  stm32-tbi.s 			page 35
 
 
-         stm32-tbi.s:311    .text:00000000000001b0 wait_sws
-         stm32-tbi.s:433    .text:000000000000029c uart_qkey
-         stm32-tbi.s:452    .text:00000000000002a8 uart_getc
-         stm32-tbi.s:481    .text:00000000000002d8 unlock
-         stm32-tbi.s:497    .text:000000000000030a lock
-         stm32-tbi.s:516    .text:000000000000031c wait_busy
-         stm32-tbi.s:538    .text:0000000000000334 hword_write
-         stm32-tbi.s:552    .text:0000000000000368 write_error
-         stm32-tbi.s:553    .text:0000000000000368 $d
-         stm32-tbi.s:554    .text:0000000000000376 $t
-         stm32-tbi.s:569    .text:0000000000000378 flash_store
-         stm32-tbi.s:597    .text:00000000000003c4 erase_page
-         stm32-tbi.s:618    .text:0000000000000428 erase_error
-         stm32-tbi.s:619    .text:0000000000000428 $d
-         stm32-tbi.s:632    .text:0000000000000438 page_align
-         stm32-tbi.s:640    .text:000000000000044c $d
+         stm32-tbi.s:299    .text:0000000000000198 wait_pllrdy
+         stm32-tbi.s:311    .text:00000000000001b8 wait_sws
+         stm32-tbi.s:433    .text:00000000000002a4 uart_qkey
+         stm32-tbi.s:452    .text:00000000000002b0 uart_getc
+         stm32-tbi.s:481    .text:00000000000002e0 unlock
+         stm32-tbi.s:497    .text:0000000000000312 lock
+         stm32-tbi.s:516    .text:0000000000000324 wait_busy
+         stm32-tbi.s:538    .text:000000000000033c hword_write
+         stm32-tbi.s:552    .text:0000000000000370 write_error
+         stm32-tbi.s:553    .text:0000000000000370 $d
+         stm32-tbi.s:554    .text:000000000000037e $t
+         stm32-tbi.s:569    .text:0000000000000380 flash_store
+         stm32-tbi.s:597    .text:00000000000003cc erase_page
+         stm32-tbi.s:618    .text:0000000000000430 erase_error
+         stm32-tbi.s:619    .text:0000000000000430 $d
+         stm32-tbi.s:634    .text:0000000000000440 write_page
+         stm32-tbi.s:661    .text:0000000000000484 page_align
+         stm32-tbi.s:669    .text:0000000000000498 $d
          stm32-tbi.s:163    .text:000000000000002b $d
          stm32-tbi.s:163    .text:000000000000002c $t
-         stm32-tbi.s:220    .text:00000000000000bb $d
-         stm32-tbi.s:220    .text:00000000000000bc $t
-         stm32-tbi.s:620    .text:0000000000000437 $d
-         stm32-tbi.s:620    .text:0000000000000438 $t
+         stm32-tbi.s:220    .text:00000000000000c3 $d
+         stm32-tbi.s:220    .text:00000000000000c4 $t
+         stm32-tbi.s:620    .text:000000000000043f $d
+         stm32-tbi.s:620    .text:0000000000000440 $t
 
 UNDEFINED SYMBOLS
 _mstack

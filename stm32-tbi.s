@@ -619,6 +619,35 @@ erase_error:
     .asciz " erase error!\r"
     .p2align 2
 
+/*****************************************
+    write_page 
+    write a page buffer to flash memory 
+    input:
+      r0  *buffer 
+      r1  flash_adr 
+    output:
+      none 
+    use:
+      r2  size counter
+      T1  *buffer 
+******************************************/
+    _GBL_FUNC write_page
+    push {r2,T1}
+    mov T1,r0
+    mov r0,#1 
+    _CALL unlock
+    mov r2,#PAGE_SIZE 
+1:  ldrh r0,[T1],#2 
+    _CALL hword_write 
+    add r1,#2
+    subs r2,#2 
+    bne 1b 
+    eor r0,r0 
+    _CALL unlock 
+    pop {r2,T1}
+    _RET 
+
+      
 /**********************************************
    page_align 
    align address to FLASH page boundary 

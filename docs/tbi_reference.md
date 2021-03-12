@@ -321,8 +321,23 @@ On peut désactiver le convertisseur pour réduire la consommation du MCU.
 [index](#index)
 <a id="adcread"></a>
 ### ANA(canal) {C,P}
-Lecture d'une des 17 entrées analogiques reliées au connecteur CN4. L'argument **canal** détermine quel entrée est lue {0..17}. Cette fonction est l'équivalent de 
+Lecture d'une des 17 entrées analogiques. L'argument **canal** détermine quel entrée est lue {0..17}. Le canal 16 correspond à la sonde de température interne. Le canal 17 est un voltage de référence interne au MCU utilisé par le convertisseur analogue/numérique. 
 ```
+5 REM  test du convertisseur ADC  
+10 CLS 
+20 ADC 1 ' activation du convertisseur
+30 LOCATE 1,1 ? "TEMP:", ANA(16);"VREF:",ANA(17)
+40 PAUSE 500 
+50 IF NOT QKEY THEN GOTO 30 
+60 K=ASC(KEY)
+70 CLS 
+80 LOCATE 1,1 ? "ANA0:",ANA(0),"   "
+90 PAUSE 500
+100 IF NOT QKEY THEN GOTO 80 
+110 K=ASC(KEY)
+120 ADC 0 
+130 END 
+
 ```
 
 [index](#index)

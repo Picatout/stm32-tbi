@@ -1,4 +1,12 @@
-À faire AUTORUN
+#### 2021-03-12
+
+* Modification à **ADC** pour ajouter délais après activation et calibration.
+
+#### 2021-03-11
+
+* Modifié *prt_chars* pour que les caractères ASCII>126 s'affiche comme un **'_'**. 
+
+* Écris et testé commande  **AUTORUN**.
 
 #### 2021-03-09
 

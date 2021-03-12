@@ -297,13 +297,15 @@ main_stack:
     _FUNC prt_chars 
     push {r2}
     mov r2,r0
-1:  ldrb r0,[r2],#1 
+0:  ldrb r0,[r2],#1 
     cmp r0,#SPACE 
-    bpl 2f 
-    mov r0,#'_' 
+    bmi 1f 
+    cmp r0,#127 
+    bmi 2f 
+1:  mov r0,#'_' 
 2:  _CALL uart_putc
     subs r1,#1 
-    bne 1b 
+    bne 0b 
     mov r0,r2 
     pop {r2}
     _RET 
@@ -1546,7 +1548,8 @@ cold_start:
     _CALL prt_version
     _CALL clear_basic 
     _CALL search_free 
-    str r0,[UPP,#FSFREE] 
+    str r0,[UPP,#FSFREE]
+    _CALL exec_autorun  
     b warm_start    
 src_addr:
   .word uzero
@@ -2387,9 +2390,6 @@ fn_table:
 9:  mov r0,#TK_INTGR
    _RET 
 
-    _FUNC power_adc
-    _RET
-
 /*************************************
   BASIC: ANA(pin)
   read analog input 
@@ -2426,22 +2426,32 @@ adc_loop:
 1:  cbz r1,adc_off 
 adc_on:
     _MOV32 r1,RCC_BASE_ADR
-    ldr r0,[r1,RCC_APB2ENR]
+    ldr r0,[r1,#RCC_APB2ENR]
     orr r0,#(1<<9) //ADC1ON clock gating 
-    str r0,[r1,RCC_APB2ENR]
+    str r0,[r1,#RCC_APB2ENR]
     _MOV32 r1,ADC1_BASE_ADR
     _MOV32 r0,1+(1<<23)
-    str r0,[r1,ADC_CR2]
+    str r0,[r1,#ADC_CR2]
+    mov r0,#10000
+1:  subs r0,#1
+    bne 1b 
+    // calibration
+    ldr r0,[r1,#ADC_CR2]  
+    orr r0,#(1<<2) // CAL bit 
+    str r0,[r1,#ADC_CR2]
+1:  ldr r0,[r1,#ADC_CR2]
+    tst r0,#(1<<2)
+    bne 1b     
     _RET 
 adc_off:
     _MOV32 r1,ADC1_BASE_ADR 
     eor r0,r0 
-    str r0,[r1,ADC_CR2]
+    str r0,[r1,#ADC_CR2]
     _MOV32 r1,RCC_BASE_ADR 
-    ldr r0,[r1,RCC_APB2ENR]
+    ldr r0,[r1,#RCC_APB2ENR]
     mvn r2,#9 
     and r0,r2 //reset ADC1ON clock gating 
-    str r0,[r1,RCC_APB2ENR]
+    str r0,[r1,#RCC_APB2ENR]
     _RET 
 
 
@@ -3818,6 +3828,7 @@ fcount:  .asciz "files\n"
     cmp r0,#TK_QSTR 
     bne syntax_error 
     mov r0,r1 
+load_autorun:     
     _CALL search_file 
     cbnz r0, 1f 
     mov r0,#ERR_NOT_FILE
@@ -3939,18 +3950,80 @@ new_file:
     _CALL uart_puts  
     _RET 
 fsize: .asciz "file size: "
-data_bytes: .asciz "bytes"
+data_bytes: .asciz "bytes\n"
 
 
 /******************************
   BASIC: AUTORUN ["name"]
-  set a file name as the one to 
-  execute at boot up.
+  set a file name to 
+  execute at boot up or if no 
+  argument cancel autorun file.
+  use:
+    T1 *ram buffer 
 *********************************/
     _FUNC autorun
-
+    // copy user page in RAM
+    ldr T1,[UPP,#TXTEND]
+    mov r0,#3
+    add T1,r0 
+    mvn r0,r0 
+    and T1,r0 
+    ldr r0,pad_adr  
+    sub r0,T1 
+    cmp r0,#PAGE_SIZE 
+    bpl 1f 
+    mov r0,#ERR_MEM_FULL 
+    b tb_error 
+1:  ldr r0,=user
+    mov r1,T1 
+    mov r2,#PAGE_SIZE 
+    _CALL cmove 
+    // erase page 
+    ldr r0,=user 
+    _CALL erase_page
+    // check file name argument 
+    _CALL next_token 
+    cmp r0,#TK_QSTR 
+    beq 2f 
+    _UNGET_TOKEN
+    // erase first 16 byte of page
+    // this cancel any existing autorun 
+    mov r0,#-1
+    mov r2,T1
+    mov r1,#16 
+1:  str r0,[r2],#4
+    subs r1,#4
+    bne 1b 
+    b write_back 
+2:  mov r2,T1
+    ldr r0,arun_sign 
+    str r0,[r2],#4
+    mov r0,r1 
+    mov r1,r2 
+    _CALL strcpy 
+write_back:
+    mov r0,T1
+    ldr r1,=user 
+    _CALL write_page
     _RET 
+arun_sign: .ascii "ARUN" 
 
+/******************************
+    exec_autorun 
+    check for autorun file.
+    load and execute it.
+*****************************/
+    _FUNC exec_autorun
+    ldr r2,=user 
+    ldr r1,arun_sign 
+    ldr r0,[r2]
+    cmp r0,r1 
+    bne 9f 
+    add r0,r2,#4
+    _CALL load_autorun 
+    _CALL run
+    b interpreter  
+9:  _RET 
 
 /*******************************
   BASIC: FREE 
