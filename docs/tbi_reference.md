@@ -218,10 +218,10 @@ nom|abrévation
 [IF](#if)|IF
 [IN](#in)|IN
 [INPUT](#input)|INP
-[INPUT_ANA](#inputana)|INPUT_A
-[INPUT_FLOAT](#inputfloat)|INPUT_F
-[INPUT_PD](#inputpd)|INPUT_PD
-[INPUT_PU](#inputpu)|INPUT_PU
+[INPUT_ANA](#input-xxx)|INPUT_A
+[INPUT_FLOAT](#input-xxx)|INPUT_F
+[INPUT_PD](#input-xxx)|INPUT_PD
+[INPUT_PU](#input-xxx)|INPUT_PU
 [INVERT](#invert)|INV
 [KEY](#key)|KE
 [LET](#let)|LE
@@ -233,10 +233,10 @@ nom|abrévation
 [NOT](#not)|NO
 [OR](#or)|OR
 [OUT](#out)|OU
-[OUTPUT_AFOD](#outputafod)|OUTPUT_AF
-[OUTPUT_AFPP](#outputafpp)|OUTPUT_AFP
-[OUTPUT_OD](#outputod)|OUTPUT_O
-[OUTPUT_PP](#outputpp)|OUTPUT_P
+[OUTPUT_AFOD](#output-xxx)|OUTPUT_AF
+[OUTPUT_AFPP](#output-xxx)|OUTPUT_AFP
+[OUTPUT_OD](#output-xxx)|OUTPUT_O
+[OUTPUT_PP](#output-xxx)|OUTPUT_P
 [PAD](#pad)|PA
 [PAUSE](#pause)|PA
 [PEEKB](#peekb)|PE
@@ -608,6 +608,30 @@ READY
 <a id="erase"></a>
 ### ERASE adr {C,P}
 Efface la plage **UFLASH**. Un espace de 1Ko est réservé dans la mémoire flash pour conservé des données persistantes. Les 16 premiers octets sont réservés pour le nom du programme **AUTORUN**. Les autres peuvent-être utilisés par les programmes BASIC. Cette commande supprime toutes les informations persistantes y compris le progamme **AUTORUN**. 
+```
+list
+1 REM  exemple d'utilisation de la commande ERASE
+2 REM  Sauvegarde d'une valeur dans user flash 
+3 REM  tout en preservant les 16 premiers octets
+10 FOR I =0 TO 15 STEP 4 
+20 @(I )=PEEKW (UFLASH +I )
+30 NEXT I 
+40 ERASE 
+50 ADC 1 
+60 @(16 )=ANA (16 )REM temperature interne mcu 
+70 FOR I =0 TO 16 STEP 4 
+80 STORE UFLASH +I ,@(I )
+90 NEXT I 
+100 PRINT PEEKW (UFLASH +16 )
+110 END 
+READY
+dump uflash,16
+           00 01 02 03 04 05 0 07 08 09 0A 0B 0C 0D 0E 0F 
+===============================================================================
+$8004400   41 52 55 4E 74 65 73 74 00 FF FF FF FF FF FF FF   ARUNtest________
+$8004410   3C 05 00 00 FF FF FF FF FF FF FF FF FF FF FF FF   <_______________
+READY
+```
 
 [index](#index)
 <a id="for"></a>
@@ -831,51 +855,41 @@ sexe(1=M,2=F)? 1
 READY
 ? a,s
   24   1
-
->
+READY
 ```
+[index](#index)
+<a id="input-xxx></a>
+### INPUT_xxx  {C,P}
+Les constantes système suivantes sont définies pour être utilisées avec la commande [PMODE](#pmode) 
+
+* **INPUT_ANA**  broche configurée en entrée analogique.
+* **INPUT_FLOAT** broche configurée en entrée logique flottante.
+* **INPUT_PD** broche configurée en entrée logique avec *pull down*.
+* **INPUT_PP** broche configurée en entrée logique avec *pull up*.
+
+Il y a aussi 4 constantes systèmes [OUTPUT_xxx](#output-xxx) pour configurer les modes sortie logique. 
+
 [index](#index)
 <a id="invert"></a>
 ### INVERT(*expr*) {C,P}
 Cette fonciton retourne l'inverse binaire de *expr*. C'est à dire que la valeur de chaque bit de l'entier est inversé. 
 ```
-> ? invert(5)
-   -6
-> hex: ? invert(&101)
-   $FFFA   
+? invert(5)
+-6
+READY
+hex: ? invert(&101)
+$FFFA   
+READY 
 ```
-
-[index](#index)
-<a id="iwdgen"></a>
-### IWDGEN *expr* {C,P}
-Active l'*Independant WatchDog timer*. *expr* représente le délais de la minuterie en mulitiple de **62,5µsec** avant la réinialiation du MCU. Le compteur du **IWDG** doit-être rafraîchie avant la fin de ce délais sinon le MCU est réinitialisé. Un **WatchDog timer** sert à détecter les pannes matérielles ou logicielles. Une fois activé le **IWDG** ne peut-être désactivé que par une réiniatiliation du MCU.  La commande **IWDGREF**  doit-être utilisée en boucle pour empêcher une réinitialisation intempestive du MCU. *expr* doit-être dans l'interval {1..16383}.
-16383 représente un délais d'une seconde.
-
-```
-   10 IWDGEN 16383 ' activation de **IWDG** délais ~ 1 seconde 
-   20 IF QKEY :GOTO 40
-   30 IWDGREF ' réinitialise le compteur du **IWDG**
-   34 GOTO 20  
-   40 GOTO 40 ' la cart var réinitialiser après 1 seconde.
-
-
-```
-
-[index](#index)
-<a id="iwdgref"></a>
-### IWDGREF  {C,P}
-Cette commande sert à rafraîchir le compteur du **IWDG** avant l'expiration de son délais.
-Voir commande **IWDGEN**.
-
 [index](#index)
 <a id="key"></a>
 ### KEY {C,P}
-Attend qu'un caractère soit reçu de la console. Ce caractère est retourné sous la forme d'un entier et peut-être affecté à une variable.
+Attend qu'un caractère soit reçu du terminal. Ce caractère est retourné sous la forme d'un char et peut-être affecté à une variable par la fonction [ASC](#asc)().
 ```
->? "Press a key to continue...":k=key
+? "Press a key to continue...":k=asc(key)
 Press a key to continue...
+READY
 
->
 ```
 
 [index](#index)
@@ -883,149 +897,112 @@ Press a key to continue...
 ### LET *var*=*expr* {C,P}
 Affecte une valeur à une variable. En Tiny BASIC il n'y a que 26 variables représentées par les lettres de l'alphabet. Il y a aussi une variable tableau unidimensionnelle nommée **@**. **Notez** que le premier indice du tableau est **1**. 
 
-*expr* peut-être arithmétique ou relationnel ou une combinaison des deux. Le mot réservé **LET** est facultatif. 
+*expr* arithmétique indique l'indice du tableau. Le mot réservé **LET** est facultatif. 
 ```
->LET A=24*2+3:?a
+LET A=24*2+3:?a
   51
->b=3*(a>=51):?b
+READY   
+b=3*(a>=51):?b
    3
->c=-4*(a<51):?c
+READY   
+c=-4*(a<51):?c
    0
->@(3)=24*3
-
->?@(3)
+READY   
+@(3)=24*3
+READY
+?@(3)
   72
+READY
 
->
 ```
 
 [index](#index)
 <a id="list"></a>
-### LIST [*expr1*][,*expr2*] {C}
-Affiche le programme contenu dans la mémoire RAM à l'écran. Sans arguments toutes les lignes sont affichées. Avec un argument la liste débute à la ligne dont le numéro est **&gt;=expr1**. Avec 2 arguments la liste se termine au numéro **&lt;=expr2**. 
+### LIST [*expr1*][[-] *expr2*] {C}
+Affiche le programme contenu dans la mémoire RAM à l'écran du terminal. 
+*  **list**&nbsp;&nbsp; Le texte au complet est affichée.
+*  **list n**&nbsp;&nbsp; Seule la ligne *n* est affichée.
+*  **list n -**&nbsp;&nbsp;  La liste débute à la ligne *n* et se termine à la dernière.
+* **list -n**&nbsp;&nbsp; La liste commence à *n* et va jusqu'à la fin.    
 ```
->list
-   10 'Fibonacci
+list
+   10 REM Fibonacci
    20 A =1:B =1
    30 IF B >100:END 
    40 PRINT B ,
    50 C =A +B :A =B :B =C 
    60 GOTO 30
-
->run
+READY
+run
    1   2   3   5   8  13  21  34  55  89
->list 20,40
-
->
-
+READY
 ```
+[index](#index)
+<a id="locate"></a>
+### LOCATE ligne,colonne {C,P}
+Sert à déplacer le curseur du terminal à une position déterminée. Les numéro de ligne et colonnne débute à **1** et non **0**.
 
 [index](#index)
 <a id="load"></a>
 ### LOAD *string*  {C}
 Charge un fichier sauvegardé dans la mémoire flash vers la mémoire RAM dans le but de l'exécuter. *string* est le nom du fichier à charger.
 ```
->save "fibonacci"
-  86
->new
-
->li
-
->load "fibonacci"
-  86
->load "fibo"
- 100
->li
+save "fibonacci"
+  86 bytes
+READY
+new
+READY
+li
+READY
+load "fibonacci"
+  86 bytes
+READY 
+li
    10 'Fibonacci
    20 A =1:B =1
    30 IF B >100:END 
    40 PRINT B ,
    50 C =A +B :A =B :B =C 
    60 GOTO 30
-
->run
+READY
+run
    1   2   3   5   8  13  21  34  55  89
->
-```
-
-[index](#index)
-<a id="log"></a>
-### LOG(*expr*) {C,P}
-Cette fonction retourne le log en base 2 de *expr*. I
-```
-> for i=1 to 16380 step 0: ? log(i),: i=i*2: next i
-   0   1   2   3   4   5   6   7   8   9  10  11  12  13
->
-
+READY 
 ```
 
 [index](#index)
 <a id="lshift"></a>
 ### LSHIFT(*expr1*,*expr2*) {C,P}
-Cette fonction décale vers la gauche *expr1* par *expr2* bits. Le bit le plus faible est remplacé par **0**. 
+Cette fonction retourne la valeur de *expr1* décalée vers la gauche de **expr2** bits.
 ```
->? lshift(1,15)
- -32768
-
->?rshift(-32768,15)
-   1
-
+for i=0 to 15 ? lshift(1,i), next i
+1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 
+READY
 ```
 [index](#index)
-<a id="muldiv"></a>
-### MULDIV(*expr1*,*expr2*,*expr3*) {C,P}
-Cette fonction effectue une multiplication suive d'une division. Le résultat de la multiplication est conservé dans un entier de 32 bits pour éviter les erreurs de débordement possible lors de la multiplication. Le résultat est *expr1* * *expr2* / *expr3* 
-```
->? 5000*10/10 ' erreur débordement sur la multiplication 
--1554  ' mauvaise réponse.
+<a id="new"></a>
+### NEW  {C}
+Cette commande efface le contenu de la mémoire RAM et sert à préparer le système pour l'édition ou le chargement d'un autre programme.
 
->? muldiv(5000,10,10)
-5000  ' bonne réponse 
-
->? -5000*10/10 ' erreur débordement sur la multiplication 
-1553 ' mauvaise réponse
-
->? muldiv(-5000,10,10)
--5000  ' bonne réponse 
-
->? muldiv(32000,25,10)
-14464 ' mauvaise réponse car le quotient > INT16_MAX 
-
->? muldiv(32000,25,30)
-26666  ' bonne réponse car le quotient est < INT16_MAX 
-
->t=ticks:for a=1to10000:i=muldiv(5000,25,30):next a:? ticks-t
-1161 
-```
+[index](#index)
+<a id="next"></a>
+### NEXT {C,P}
+Ce mot réservé indique la fin d'une boucle **FOR...NEXT** pour plus d'information voir [FOR](#for)
 
 [index](#index)
 <a id="not"></a>
-### NOT(*expr*) {C,P}
-Cette fonction retourne le complément logique de la valeur de l'expression passée en argument. 
-Autrement dit, si *expr*=0 la fonction retourne **-1** et pour toute autre valeur retourne **0**.
+### NOT *relation* {C,P}
+Cette fonction retourne le complément logique de la valeur de la relation qui suit.
+Autrement dit si *relation* est vrai **NOT** retourn faux et vice-versa.
+Sert a inverser la valeur d'une relation après un [IF](#if) ou un [UNTIL](#until).
 ```
-> ? not(qkey)
--1
->
+READY
+a=1 if a>2 ? "vrai "
+READY
+if not a>2 ? "vrai "
+vrai 
+READY
 ```
-
-S'il n'y a aucun caractère de reçu **QKEY** retourne **0** donc la fonction **NOT** renvoie **-1** qui veut dire **vrai**. 
-
-[index](#index)
-<a id="odr"></a>
-### ODR {C,P}
-Renvoie l'index du registre **ODR** *(Output Data Register)* d'un périphérique **GPIO**. Ce registre est utilisé pour contrôler l'état des sorties du port GPIO. Considérez chaque GPIO comme un tableau à 5 valeurs, 
-qu'on définirait en 'C' par __uint8_t gpio[5]__. Les fonctions **ODR**,**IDR**,**DDR**,**CRL** et **CRH**  retourne l'index du tableau qui correspond à 1 des 5 registres du tableau. 
-
-```
->bset gpio(2,odr),32 ' allume LED2 
-
->bres gpio(2,odr),32 ' eteint LED2
-
->
-``` 
-Dans cette exemple la LED2 est allumée puis éteinte. La LED est branchée sur le bit 5 du port **C**. **32=(1&lt;&lt;5)** donc ce masque affecte seulement le bit 5.  
-
 [index](#index)
 <a id="or"></a>
 ### OR(*expr1*,*expr2*) {C,P}

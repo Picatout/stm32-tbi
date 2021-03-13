@@ -3813,7 +3813,7 @@ fcount:  .asciz "files\n"
     b 1b 
 9:  _CALL search_free
     pop {r3,T2} 
-    _RET 
+    _RET
 
 /**********************************
   BASIC LOAD "name" 

@@ -5877,7 +5877,7 @@ ARM GAS  tinyBasic.s 			page 1
  3814      4DFF5DF8 
  3814      04EB
  3815 0e4e BDE80802 	    pop {r3,T2} 
- 3816 0e52 7047     	    _RET 
+ 3816 0e52 7047     	    _RET
 ARM GAS  tinyBasic.s 			page 99
 
 
