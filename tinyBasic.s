@@ -3059,7 +3059,7 @@ target:
     T1   variable indice 
 ***************************************/
      _FUNC input_var
-    push {r2,T1}
+//    push {r2,T1}
 1:  _CALL next_token 
     cmp r0,#2
     bmi 8f 
@@ -3123,7 +3123,7 @@ target:
     cmp r0,#TK_COMMA 
     beq 1b 
 8:  _UNGET_TOKEN          
-9:  pop {r2,T1}       
+9:  // pop {r2,T1}       
     _RET 
 input_buffer: .word _tib 
 str_buffer: .word _pad 

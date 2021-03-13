@@ -1,5 +1,9 @@
 #### 2021-03-12
 
+* Travail sur manuel de référence.
+
+* Corrigé bogue dand **readln**.
+
 * Modification à la commande **AWU** contrôle de limite. 
 
 * Modification à **ADC** pour ajouter délais après activation et calibration.

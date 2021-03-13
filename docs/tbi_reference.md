@@ -211,9 +211,9 @@ nom|abrévation
 [GET](#get)|GE
 [GOSUB](#gosub)|GOS
 [GOTO](#goto)|GOT
-[GPIOA](#gpioa)|GPIOA
-[GPIOB](#gpiob)|GPIOB
-[GPIOC](#gpioc)|GPIOC
+[GPIOA](#gpio)|GPIOA
+[GPIOB](#gpio)|GPIOB
+[GPIOC](#gpio)|GPIOC
 [HEX](#hex)|HE
 [IF](#if)|IF
 [IN](#in)|IN
@@ -607,7 +607,7 @@ READY
 [index](#index)
 <a id="erase"></a>
 ### ERASE adr {C,P}
-Efface la plage **UFLASH**. Un espace de 1Ko est réservé dans la mémoire flash pour conservé des données persistantes. Les 16 premiers octets sont réservés pour le nomm du programme **AUTORUN**. Les autres peuvent-être utilisés par les programmes BASIC. Cette commande supprime toutes les informations persistantes y compris le progamme **AUTORUN**. 
+Efface la plage **UFLASH**. Un espace de 1Ko est réservé dans la mémoire flash pour conservé des données persistantes. Les 16 premiers octets sont réservés pour le nom du programme **AUTORUN**. Les autres peuvent-être utilisés par les programmes BASIC. Cette commande supprime toutes les informations persistantes y compris le progamme **AUTORUN**. 
 
 [index](#index)
 <a id="for"></a>
@@ -618,40 +618,35 @@ peuvent s'étaler sur plusieurs lignes à l'intérieur d'un programme. Mais sur 
 La boucle FOR...NEXT est excéutée au moins une fois même si la limite est déjà dépassée par la condition initiale de la variable de contrôle. Ceci est du au fait que l'incrément et la vérification de la limite est effectuée par la commande **NEXT** qui vient à la fin de la boucle.  
 
 ```
->for a=1to10:? a,:next a
+for a=1to10:? a,:next a
    1   2   3   4   5   6   7   8   9  10
->
+
 ``` 
 Exemple de boucle FOR...NEXT dans un programme.
 ```
->li
-    5 ' table de multiplication de 1 a 17
-   10 for a=1to17
-   20 for b=1to17
-   30 ?a*b,
-   40 next b:?
-   50 next a
+LLIST
+5 PRINT #5 
+10 FOR A =1 TO 12 
+20 FOR B =1 TO 12 
+30 PRINT A *B ;
+40 NEXT B PRINT 
+50 NEXT A 
+READY
+RUN
 
->run
-   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17
-   2   4   6   8  10  12  14  16  18  20  22  24  26  28  30  32  34
-   3   6   9  12  15  18  21  24  27  30  33  36  39  42  45  48  51
-   4   8  12  16  20  24  28  32  36  40  44  48  52  56  60  64  68
-   5  10  15  20  25  30  35  40  45  50  55  60  65  70  75  80  85
-   6  12  18  24  30  36  42  48  54  60  66  72  78  84  90  96 102
-   7  14  21  28  35  42  49  56  63  70  77  84  91  98 105 112 119
-   8  16  24  32  40  48  56  64  72  80  88  96 104 112 120 128 136
-   9  18  27  36  45  54  63  72  81  90  99 108 117 126 135 144 153
-  10  20  30  40  50  60  70  80  90 100 110 120 130 140 150 160 170
-  11  22  33  44  55  66  77  88  99 110 121 132 143 154 165 176 187
-  12  24  36  48  60  72  84  96 108 120 132 144 156 168 180 192 204
-  13  26  39  52  65  78  91 104 117 130 143 156 169 182 195 208 221
-  14  28  42  56  70  84  98 112 126 140 154 168 182 196 210 224 238
-  15  30  45  60  75  90 105 120 135 150 165 180 195 210 225 240 255
-  16  32  48  64  80  96 112 128 144 160 176 192 208 224 240 256 272
-  17  34  51  68  85 102 119 136 153 170 187 204 221 238 255 272 289
-
->
+1    2    3    4    5    6    7    8    9    10   11   12   
+2    4    6    8    10   12   14   16   18   20   22   24   
+3    6    9    12   15   18   21   24   27   30   33   36   
+4    8    12   16   20   24   28   32   36   40   44   48   
+5    10   15   20   25   30   35   40   45   50   55   60   
+6    12   18   24   30   36   42   48   54   60   66   72   
+7    14   21   28   35   42   49   56   63   70   77   84   
+8    16   24   32   40   48   56   64   72   80   88   96   
+9    18   27   36   45   54   63   72   81   90   99   108  
+10   20   30   40   50   60   70   80   90   100  110  120  
+11   22   33   44   55   66   77   88   99   110  121  132  
+12   24   36   48   60   72   84   96   108  120  132  144  
+READY
 ```
 
 [index](#index)
@@ -660,70 +655,116 @@ Exemple de boucle FOR...NEXT dans un programme.
 Cette commande sert à supprimer un fichier sauvegardé dans la mémoire flash. 
 **Tous les fichiers qui suivent celui nommé sont aussi supprimés. Si aucun fichier n'est nommé tous les fichiers sont supprimés.**
 ```
->dir
+dir
 table1   66
 hello   21
 blink   52
    3 files
-
->forget "blink"
-
->dir
+READY 
+forget "blink"
+READY
+dir
 table1   66
 hello   21
    2 files
-
->
+READY
+```
+[index](#index)
+<a id="free"></a>
+### FREE {C,P}
+ Cette commande retourne le nombre d'octets libres dans la mémoire RAM.
+```
+? free
+19276 
+READY
+new
+READY
+? free
+19360 
+READY
+```
+[index](#index)
+<a id="get"></a>
+### GET(expr) {C,P}
+Cette fonction fait parti du groupe de commandes et fonctions qui manipules la pile des arguments. Elle retourne la valeur qui se trouve sur la pile à la position désignée par *expr*. 
+<a id="etiquette"></a>
+```
+list
+10 REM  exemple d'utilisation de la pile 
+20 INPUT "nombre "N IF N=0 END 
+30 PUSH N GOSUB SQUARE PRINT POP 
+40 GOTO 20 
+50 SQUARE PUSH GET (0 )*POP 
+60 RETURN 
+READY
+run
+nombre =25
+625 
+nombre =64
+4096 
+nombre =256
+65536 
+nombre =-1024
+1048576 
+nombre =0
+READY
 ```
 
 [index](#index)
 <a id="gosub"></a>
-### GOSUB *expr* {P}
-Appel de sous-routine. *expr* doit résulté en un numéro de ligne existant sinon le programme arrête avec un message d'erreur.
+### GOSUB *expr*|étiquette {P}
+Appel de sous-routine. *expr* doit résulté en un numéro de ligne existant sinon le programme arrête avec un message d'erreur. À la place d'une expression arithmétique on peut utiliser une étiquette comme cible comme dans l'exemple [ci-haut](#etiquette) où **SQAURE** est utilisé comme nom d'une fonction et utilisé par le **GOSUB** de la ligne 30. Les appels vers les étiquettes sont plus rapides que les appels par numéro de ligne.
 ```
->li
-   10 a=0
-   20 gosub 1000
-   30 if a>20 : end 
-   40 goto 20
- 1000 ? a,
- 1010 a=a+1
- 1020 ret
-
->run
-   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
->
+LIST
+10 A =0 
+20 GOSUB 1000 
+30 IF A >20 END 
+40 GOTO 20 
+1000 PRINT A ,
+1010 A =A +1 
+1020 RETURN 
+READY
+RUN
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 
+READY
 ```
 
 [index](#index)
 <a id="goto"></a>
-### GOTO *expr* {P}
-Passe le contrôle à la ligne dont le numéro est déterminé par *expr*. *expr* doit résulté en un numéro de ligne existant sinon le programme s'arrête avec un message d'erreur. 
+### GOTO *expr*|étiquette {P}
+Passe le contrôle à la ligne dont le numéro est déterminé par *expr*. *expr* doit résulté en un numéro de ligne existant sinon le programme s'arrête avec un message d'erreur. Comme pour les **GOSUB** une étiquette peut-être utilisée à la place d'un numéro de ligne. 
 ```
->li
-   10 a=0
-   20 goto 1000
-   30 if a>20 : end 
-   40 goto 20
- 1000 ? a,
- 1010 a=a+1
- 1020 goto 30
-
->ru
-   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
->
+10 A =0 
+20 GOTO INCR 
+30 IF A >20 END 
+999 ' L'Étiquette se place immédiatement après le numéro de ligne.
+1000 INCR PRINT A ,
+1010 A =A +1 
+1020 GOTO 30 
+READY
+RUN
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 
+READY
 ```
-
 [index](#index)
+
 <a id="gpio"></a>
-### GPIO(*expr1*,*reg*) {C,P}
-Cette commande retourne l'adresse d'un des registre de contrôle d'un port GPIO. *expr1* doit indiqué un numéro de port valide dans l'ensemble **{0..8}**. Ces valeurs correspondent aux ports {A,B,C,D,E,F,G,H,I} du MCU. *reg* indique le registre. Chaque GPIO a 5 registres de contrôle: **ODR**, **IDR**, **DDR**, **CRL**, **CRH**. 
+### GPIOx {C,P}
+Il y a 3 constantes système de définies pour les adresses de base des GPIO disponibles sur les broches de la **blue pill**, **GPIOA**,**GPIOB** et **GPIOC**.
+L'exemple suivant fait clignoter la LED verte de la carte.
 ```
->bset gpio(2,odr),32 ' allume LD2 
+LIST
+5 REM  CLIGNOTE LED VERTE DE LA CARTE BLUE PILL 
+10 BLINK 
+20 OUT GPIOC ,13 ,0 
+30 PAUSE 200 
+40 OUT GPIOC ,13 ,1 
+50 PAUSE 200 
+60 GOTO BLINK 
+READY
+RUN
+READY
 
->bres gpio(2,odr),32 ' eteint LD2
-
->
 ``` 
 
 [index](#index)
@@ -731,35 +772,48 @@ Cette commande retourne l'adresse d'un des registre de contrôle d'un port GPIO.
 ### HEX {C,P}
 Sélectionne la base numérique hexadécimale pour l'affichage des entiers.
 Voir la commande **DEC**  pour revenir en décimale.
-
-    >HEX:?-10:DEC:?-10
-    $FFFFF6
-    -10
-
-[index](#index)
-<a id="idr"></a>
-### IDR {C,P}
-Cette fonction retourne l'index du registre GPIO **IDR** *(Input Data Register)*. Ce registre permet de lire les états d'entrée d'un port GPIO. 
 ```
->hext:?peek(gpio(4,idr))
- $F9
-
->
+HEX:?-10:DEC:?-10
+$FFFFF6
+-10
+READY 
 ```
-Dans cet exemple on fait la lecture du GPIO E et on constate que toutes les entrées sauf les bits 1 et 2 sont à l'état **1**. 
 
 [index](#index)
 <a id="if"></a>
-### IF *relation* : cmd [:cmd]* {C,P}
+### IF *relation* [THEN] cmd [cmd]* {C,P}
 Le **IF** permet d'exécuter les instructions qui suivent sur la même ligne si l'évalution de *relation* est vrai. Toute valeur différente de zéro est considérée comme vrai.  Si la résultat de *relation* est zéro les instructions qui suivent le **IF** sont ignorées.  Il n'y a pas de **ENDIF** ni de **ELSE**. Toutes les instructions à exécuter doivent-être sur la même ligne que le **IF**. 
 
 ```
->a=5%2:if a:?"vrai",a
-vrai   1
+A=5%2 IF A ?"vrai";a
+vrai    1 
+READY
+IF NOT A>2 ?"faux";a
+faux    1 
+READY
+```
+[index](#index)
+<a id="in"></a>
 
->if a>2 : ? "vrai",a
+### IN(GPIOx,pin) {C,P}
+Cette fonction retourne l'état d'une broche configurée en entrée niveau logique.
+```
+LIST
+10 PMODE GPIOA ,0 ,INPUT_FLOAT 
+20 PRINT "connect A0 to 3.3v,press a key when ready"
+30 DO UNTIL QKEY K =ASC (KEY )
+40 PRINT IN (GPIOA ,0 )
+50 PRINT "connect A0 to 0v, press a key when ready"
+60 DO UNTIL QKEY K =ASC (KEY )
+70 PRINT IN (GPIOA ,0 )
+READY
+RUN
+connect A0 to 3.3v,press a key when ready
+1 
+connect A0 to 0v, press a key when ready
+0 
+READY
 
->
 ```
 
 [index](#index)
@@ -769,13 +823,13 @@ Cette commande permet de saisir un entier fourni par l'utilisateur. Cet entier e
 Facultativement un message peut-être affiché à la place du nom de la variable. Cette chaîne précède le nom de la variable sans virgule de séparation entre les deux.
 
 ```
->10 input "age? "a,"sexe(1=M,2=F)? "s 
-
->run
+10 input "age? "a,"sexe(1=M,2=F)? "s 
+READY
+RUN
 age? 24
 sexe(1=M,2=F)? 1
-
->? a,s
+READY
+? a,s
   24   1
 
 >

@@ -820,7 +820,7 @@ character:
   _CALL cursor_x 
   b readln_loop 
 5: // cursor at eol, mode doesn't matter 
-   cmp r10,T2 
+   cmp r5,T2 
    bmi 6f 
    b readln_loop  // buffer full
 6: // only accept char>=32  

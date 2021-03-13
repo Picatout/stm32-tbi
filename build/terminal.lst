@@ -1627,7 +1627,7 @@ ARM GAS  terminal.s 			page 1
  820      04EB
  821 0664 C8E6     	  b readln_loop 
  822              	5: // cursor at eol, mode doesn't matter 
- 823 0666 CA45     	   cmp r10,T2 
+ 823 0666 4D45     	   cmp r5,T2 
  824 0668 00D4     	   bmi 6f 
  825 066a C5E6     	   b readln_loop  // buffer full
  826              	6: // only accept char>=32  
