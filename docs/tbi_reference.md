@@ -1,4 +1,4 @@
-# référence du langage Tiny BASIC pour STM8
+# référence du langage blue pill Tiny BASIC
 
 <a id="index-princ"></a>
 ## index principal 
@@ -80,7 +80,7 @@ Il y a 5 opérateurs arithmétiques par ordre de précédence:
 1.  __'*'__ mulitipliation, **'/'** division, **'%'** modulo 
 1. **'+'** addition, **'-'** soustraction.
 
-**NOTE:** La divison n'est pas arrondie. 
+**NOTE:** Le quotient de la divison n'est pas arrondie. 
 
 ### opérateurs relationnels.
 
@@ -100,7 +100,7 @@ Toute valeur non nulle est considérée comme vrai.
 
 Le code utilisé pour le texte est le code [ASCII](https://fr.wikipedia.org/wiki/American_Standard_Code_for_Information_Interchange).
 
-Un programme débute par un numéro de ligne suivit optionnellement d'une *étiquette cible* et d'une ou plusieurs commandes séparées par le caractère **':'**. Les lignes vides sont supprimées. 
+Un programme débute par un numéro de ligne suivit optionnellement d'une *étiquette cible* et d'une ou plusieurs commandes séparées par le caractère **':'**. Les lignes vides sont supprimées. Le séparateur de commande **':'** n'est pas obligatoire s'il n'y a pas d'ambiguité sur la fin de la commande précédente.
 
 Une commande est suivie de ses arguments séparés par une virgule. Les arguments des fonctions doivent-être mis entre parenthèses. Par fonction j'entends une sous-routine qui retourne une valeur. Cependant une fonction qui n'utilise pas d'arguments n'est pas suivie de parenthèses. Les commandes , c'est à dire les sous-routines qui ne retoune pas de valeur, reçoivent leur arguments sans parenthèses sauf pout **TAB** et **SPC**. 
 
@@ -109,9 +109,9 @@ Les *espaces* entre les *unitées lexicales* sont facultatifs sauf s'il y a ambi
 Les commandes peuvent-être entrées indifféremment en minuscule ou majuscule.
 L'analyseur lexical convertie les lettres en  majuscule sauf à l'intérieur d'une chaîne entre guillemets.
 
-Les commandes peuvent-être abrégées au plus court à 2 caractères à condition qu'il n'y est pas d'ambiguité entre 2 commandes. L'abréviation doit-être d'au moins 2 lettres pour éviter la confusion avec les variables. Par exemple **GOTO**peut-être abrégé **GOT** et **GOSUB** peut-être abrégé **GOS**.  Ces abréviations de sauve pas d'espaces mémoire et n'accélère aucunement l'exécution car chaque ligne est compilée en jetons à la fin de sa saisie.  Seule cette version compilée est sauvegardée. La commande **LIST** décompile le programme avant de l'affiché.
+Les commandes peuvent-être abrégées au plus court à 2 caractères à condition qu'il n'y est pas d'ambiguité entre 2 commandes. L'abréviation doit-être d'au moins 2 lettres pour éviter la confusion avec les variables. Par exemple **GOTO**peut-être abrégé **GOT** et **GOSUB** peut-être abrégé **GOS**.  Ces abréviations ne sauvent pas d'espaces mémoire et n'accélère aucunement l'exécution car chaque ligne est compilée en jetons à la fin de sa saisie.  Seule cette version compilée est sauvegardée. La commande **LIST** décompile le programme avant de l'afficher.
 
-Certaines commandes sont représentées facultativement par une caractère unique. Par exemple la commande **PRINT** peut-être remplacée par le caractère **'?'**. La commande **REM** peut-être remplacée par un apostrophe (**'**). 
+Certaines commandes sont représentées facultativement par une caractère unique. Par exemple la commande **PRINT** peut-être remplacée par le caractère **'?'**. La commande **REM** peut-être remplacée par un apostrophe (**'**). Cependant lors de la décompilation c'est le nom de la commande qui apparaît.
 
 Plusieurs commandes peuvent-être présentent sur la même ligne. Le caractère **':'** est utilisé pour indiqué la fin d'une commande. Son utilisation est facultif s'il n'y pas pas d'ambiguité. 
 ```
@@ -130,8 +130,8 @@ Les entiers peuvent-être indiqués en décimal,hexadécimal ou binaire. Cependa
 
 Forme lexicale des entiers. Dans la liste qui suit ce qui est entre **'['** et **']'** est facultatif. Le caractère **'+'** indique que le symbole apparaît au moins une fois. Un caractère entre apostrophes est écris tel quel *(symbole terminal)*. **::=** introduit la définition d'un symbole.
 
-*  digit::= ('0','1','2','3','4','5','6','7','8','9')
-*  hex_digit::= (digit,'A','B','C','D','E','F') 
+*  digit::= '0','1','2','3','4','5','6','7','8','9'
+*  hex_digit::= digit,'A','B','C','D','E','F' 
 *  entier décimaux::=  ['+'|'-']digit+
 *  entier hexadécimaux::= ['+'|'-']'$'hex_digit+
 *  entier binaire::= ['+'|'-']'&'('0'|'1')+   
@@ -145,14 +145,16 @@ examples d'entiers:
 [index principal](#index-princ)
 <a id="cli"></a>
 ## Ligne de commande et programmes 
- 
-Au démarrage l'information sur Tiny BASIC est affichée. Ensuite viens le texte **READY** sur la ligne suivante. Ce qui signifit que le terminal est prêt à recevoir des commandes. 
+
+La communication avec la carte **blue pill** se fait via le périphérique **UART1** et un adapteur de niveau. Du côté PC seul est requis un port sériel RS-232 et un émulateur de terminal VT100. Il n'y a pas d'application à installer sur le PC.
+
+Au démarrage l'information sur Tiny BASIC est affichée. Ensuite viens le texte **READY** sur la ligne suivante. Ce qui signifit que le système est prêt à recevoir des commandes. 
 ```
 blue pill tiny BASIC, version 1.0
 READY
 ```
 
-À partir de là l'utilisateur doit saisir une commande au clavier. Cette commande est considérée comme complétée lorsque la touche **ENTER** est enfoncée. La texte est d'abord compilé en *jetons*. Si il y a un numéro de ligne alors cette ligne est inséré dans l'espace mémoire réservé aux programmes sinon elle est exécutée immédiatement. 
+À partir de là l'utilisateur doit saisir une commande au clavier. Cette commande est considérée comme complétée lorsque la touche **ENTER** est enfoncée. Le texte est d'abord compilé en *jetons*. Si il y a un numéro de ligne alors cette ligne est inséré dans l'espace mémoire réservé aux programmes sinon elle est exécutée immédiatement. 
 
 * Un numéro de ligne doit-être dans l'intervalle {1...65535}.
 
@@ -164,7 +166,7 @@ READY
 
 Certaines commandes ne peuvent-être utilisées qu'à l'intérieur d'un programme et d'autres seulement en mode ligne de commande. L'exécution est interrompue et un message d'erreur est affiché si une commande est utilisée dans un contexte innaproprié. 
 
-Le programme en mémoire RAM est perdu à chaque réinitialiation du processeur sauf s'il a été sauvegardé comme fichier dans la mémoire flash. Les commandes de fichiers sont décrites dans la section référence.
+Le programme en mémoire RAM est perdu à chaque réinitialiation du processeur sauf s'il a été sauvegardé comme fichier dans la mémoire flash. Les commandes de fichiers sont décrites dans la section [référence des commandes](#reference).
 
 [index principal](#index-princ)
 <a id="fichiers"></a>
@@ -1691,78 +1693,97 @@ Retourne la ligne sur laquelle se trouve le curseur du terminal.
 <hr>
 
 <a id="install"></a>
-## Installation de Tiny BASIC sur la carte NUCLEO-8S208RB 
-À la ligne 36 du fichier [PABasic.asm](PABasic.asm) il y a une macro nommée **_dbg**. Cette macro ajoute du code supplémentaire lors du développement du système et doit-être mise en commentaire pour construire la version finale. construire Tiny BASIC et programmer la carte NUCLEO est très simple grâce la l'utilitaire **make**. Lorsque la carte est branchée et prête à être programmée faites la commande suivante:
+## Installation de Tiny BASIC sur la carte **blue pill**
+À partir du répertoire racine du projet
+. Lorsque la carte est branchée au programmeur STLINK-V2 et prête à être programmée faites la commande suivante:
 ```
-$ make && make flash
-
-***************
-cleaning files
-***************
-rm -f build/*
-
-**********************
-compiling PABasic       
-**********************
-sdasstm8 -g -l -o build/PABasic.rel PABasic.asm
-sdcc -mstm8 -lstm8 -L../lib/ -I../inc  -o build/PABasic.ihx  build/PABasic.rel
-
-***************
-flashing device
-***************
-stm8flash -c stlinkv21 -p stm8s208rb -w build/PABasic.ihx 
-Determine FLASH area
-Due to its file extension (or lack thereof), "build/PABasic.ihx" is considered as INTEL HEX format!
-7808 bytes at 0x8000... OK
-Bytes written: 7808
+picatout:~/github/stm32-tbi$ make build && make flash
+arm-none-eabi-as  -a=build/stm32-tbi.lst stm32-tbi.s -g -obuild/stm32-tbi.o 
+arm-none-eabi-as  -a=build/terminal.lst terminal.s -g -obuild/terminal.o 
+arm-none-eabi-as  -a=build/tinyBasic.lst tinyBasic.s -g -obuild/tinyBasic.o 
+arm-none-eabi-ld -T stm32f103c8t6.ld  -g build/stm32-tbi.o build/terminal.o build/tinyBasic.o  -o build/stm32-tbi.elf
+arm-none-eabi-objcopy -O binary build/stm32-tbi.elf build/stm32-tbi.bin 
+arm-none-eabi-objdump -D build/stm32-tbi.elf > build/stm32-tbi.dasm
+st-flash --serial=483f6e066772574857351967 erase 
+st-flash 1.6.0
+2021-03-14T11:15:56 INFO usb.c: -- exit_dfu_mode
+2021-03-14T11:15:56 INFO common.c: Loading device parameters....
+2021-03-14T11:15:56 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
+2021-03-14T11:15:56 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
+Mass erasing
+st-flash  --serial=483f6e066772574857351967  write build/stm32-tbi.bin 0x8000000
+st-flash 1.6.0
+2021-03-14T11:15:56 INFO common.c: Loading device parameters....
+2021-03-14T11:15:56 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
+2021-03-14T11:15:56 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
+2021-03-14T11:15:56 INFO common.c: Ignoring 1024 bytes of 0xff at end of file
+2021-03-14T11:15:56 INFO common.c: Attempting to write 17408 (0x4400) bytes to stm32 address: 134217728 (0x8000000)
+Flash page at addr: 0x08004000 erased
+2021-03-14T11:15:57 INFO common.c: Finished erasing 17 pages of 1024 (0x400) bytes
+2021-03-14T11:15:57 INFO common.c: Starting Flash write for VL/F0/F3/F1_XL core id
+2021-03-14T11:15:57 INFO flash_loader.c: Successfully loaded flash loader in sram
+ 17/17 pages written
+2021-03-14T11:15:58 INFO common.c: Starting verification of write complete
+2021-03-14T11:15:58 INFO common.c: Flash written and verified! jolly good!
+picatout:~/github/stm32-tbi$ 
 ```
+Si tout se passe comme prévue le système **blue pill tiny BASIC** est maintenant installé sur la carte et prêt à l'utilisation.
+
 [index principal](#index-princ)
 
 <a id="utilisation"></a>
-# Utilisation de TinyBASIC sur STM8
+# Utilisation de blue pill Tiny BASIC
 Vous trouverez dans le manuel de l'[utilisateur de tiny BASIC](manuel_util_tb.md) des exemples d'utilisation. 
 
 [index principal](#index-princ)
 
 <a id="xmodem"></a>
 # Transfert de fichiers
-Il est possible de transférer des programmes BASIC entre la carte et le PC ou entre 2 cartes sur lesquelles est installé **STM8 TinyBasic**. Voici une photo du branchement matériel requi entre la carte et le PC.
+Le projet comprend le sous-module **sendFile**. Ansi que le shell script [send](../send) qui permet de transmettre des progammes basic à la carte. Il s'agit d'un utilitaire de ligne de commandes qu'on lance à partir du répertoire racine du projet. le dossier **tb_progs** contient des exemples de programmes. Pour transmettre un programme à la carte il suffit de faire:
+```
+picatout:~/github/stm32-tbi$ ./send gpio-test.bas
+port=/dev/ttyS0, baud=115200,delay=50 
+Sending file tb_progs/gpio-test.bas
+12 lines sent
+```
+L'émulateur de terminal doit-être ouvert et branché à la carte avant de lancer cette commande. On voit alors les lignes du programme défilées sur l'écran du terminal. Une fois la transmission terminée le programme peut-être lancé avec la commande [RUN](#run) ou sauvegardé dans la mémoire flash avec la commande [SAVE](#save).
 
-![docs/images/connections-carte.png](docs/images/connections-carte.png)
-Le cable USB du programmeur STLINK de la carte est utilisé pour la console utilisateur. En ubuntu/linux ce lien apparaît comme un périphérique **ACM** sur le PC. sur mon poste de travail il s'agit du périphérique **/dev/ttyACM0** mais ça peut-être un autre chiffre dépendant de la configuration de votre PC. S'il y a 2 cartes de branchées au PC il y aura **ttyACM0** et **ttyACM1**. 
+[index principal](#index-princ)
 
-J'utilise **GTKTerm** comme console utilisateur configuré sur le port **/dev/ttyACM0** à 115200 BAUD 8N1. 
+# Éditeur de texte de Tiny BASIC
+Le système **blue pill tiny BASIC** est conçu pour fonctionner avec n'importe quel PC peut importe le système d'exploitation utilisé. Pour se faire l'édition et la compilation du texte BASIC s'effetuent entièrement sur la carte **blue pill**. 
 
-![docs/images/gtkTerm_config.png](docs/images/gtkTerm_config.png)
-
-![console](docs/images/console.png)
-
-Pour le transfert de fichiers il faut un deuxième lien. Ce deuxième lien est assuré par le périphérique **UART3** de la carte qui est relié au périphérique **/dev/ttyS0** sur le PC en Passant par un adapteur de niveau RS-232.  Puisque le transfert de fichier utilise le protocole **XMODEM** et que **GTKTerm** ne supporte pas ce protocole je dois utiliser un autre émulateur de terminal. En l'occurence j'utilise **minicom** relié au périphérique **/dev/ttyS0** avec la configuration 115200 8N1. 
-
-### Envoie d'un fichier vers le PC
-
-Le fichier à transmettre doit-être chargé en mémoire RAM. Le fichier est transmis sous sa forme exécutable (binaire) et non comme fichier source. Le protocole XMODEM est contrôlé par la partie qui reçoit le fichier donc pour transmettre le fichier vers le PC on doit d'abord lancer la commande [XTRMT](#xtrmt) à partir de la console de la carte. Ensuite on va sur la console de minicom pour initialiser la réception avec le protocole **XMODMEM**. 
-
-![Transmission XMODEM](docs/images/xtrmt.png)
-
-[Vidéo de la comamnde XTRMT](https://youtu.be/l-YkdHDM9o0)
-
-### réception d'un fichier
-Pour recevoir un fichier sur la carte il faut d'abord lancer la commande de transmission dans le terminal minicom puis passer au terminal console de la carte pour lancer la commande [xrcv](#xrcv). Le fichier est téléchargé dans la mémoire RAM et prêt à l'exécution. Il peut-être sauvegardé sur la carte avec la commande [save](#save)
-
-
-![réception XMODEM](docs/images/xrcv.png)
-
-[vidéo de la commande XRCV](https://youtu.be/OXjFfrBSkU8)
+Chaque ligne saisie au terminal est compilée et stockée en mémoire RAM dès que la touche &lt;ENTER&gt; est enfoncée. Si le texte saisie ne débute pas par un numéro de ligne il est considéré comme une commande immédiate et est exécuté plutôt que stocké. Les lignes de textes déjà saisie peuvent-être examinées à l'aide de la commande [LIST](#list). 
+## Possibilité de l'éditeur de texte
+* Modification d'une ligne déjà compilée, Numéro de ligne suivit de &lt;CTRL-E&gt;
+* Suppression d'une ligne déjà compilée, Numéro de ligne suivit de &lt;ENTER&gt;
+* Insertion d'une nouvelle ligne à n'importe quel point du programme. Les nouvelles lignes sont insérées à la bonne position selon l'ordre croissant des numuros de lignes.
+## Touches de contrôles de l'éditeur
+* **&lt;CTRL-D&gt;** Efface la ligne en cours d'édition au complet.
+* **&lt;CTRL-E&gt;** Après la saisie d'un numéro de ligne affiche cette ligne pour édition. 
+* **&lt;CTRL-I&gt;** L'éditeur passe en mode insertion, le curseur est une ligne verticale clognotante. 
+* **&lt;CTRL-O&gt;** L'éditeur passe en mode écrasement, le curseur est un bloc clignotant. 
+* **&lt;CTRL-R&gt;** Réaffiche la dernière ligne saisie. Permet de réexécuter une commande immédiate rapidement.
+* **&lt;HOME&gt;** Déplace le curseur au début de la ligne de texte.
+* **&lt;END&gt;** Déplace le curseur à la fin de la ligne de texte.
+* **&lt;BS&gt;** Efface le caractère à gauche du curseur.
+* **&lt;DEL&gt;** Efface le caractère sous le curseur.
+* **&lt;LEFT-ARROW&gt;** Déplace le curseur un caractère vers la gauche.
+* **&lt;RIGHT-ARROW&gt;** Déplace le curseur un caractère vers la droite. 
 
 [index principal](#index-princ)
 
 <a id="sources"></a>
 # code source 
-
-* [TinyBasic.asm](TinyBasic.asm)  Code source de l'interpréteur BASIC.
-* [tbi_macros.inc](tbi_macros.inc) constantes et macros utilisées par ce programme.
-* [terminal.asm](terminal.asm) interface utilisateur avec l'émulateur de terminal sur le PC.
-* [xmodem.asm](xmodem.asm) fonctions du protocole de transfert de fichier XMODEM.
+Le code source est entièrement écris en assembleur et comprend les fichiers suivants.
+* [stm32-tbi.s](../stm32-tbi.s)  Initialisation matérielle et interfaces de bas niveaux.
+* [tinyBasic.s](../tinyBasic.s) L'interpréteur BASIC.
+* [terminal.s](../terminal.s) Communication avec l'émulateur de terminal sur le PC.
+* [stm32f103.inc](../stm32f103.inc) Définitions matérielles spécifiques au MCU de la carte **blue pill**. 
+* [tbi_macros.inc](../tbi_macros.inc) Définitions de macros et constantes.
+* [cmd_index.inc](../cmd_index.inc) Constantes associés aux jetons des commandes et fonctions. 
+* [ascii.inc](../ascii.inc) Constantes du jeu de caractères ASCII.
+* [stm32f103c8t6.ld](../stm32f103c8t6.ld) Script du linker.
+* [Makefile](../Makefile) Script pour la commande make.
 
 [index principal](#index-princ)

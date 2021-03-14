@@ -5611,7 +5611,7 @@ ARM GAS  tinyBasic.s 			page 1
  3603 0c18 7047     	    _RET 
  3604              	
  3605              	/******************************************
- 3606              	  BASIC RANDOM(expr)
+ 3606              	  BASIC RND(expr)
  3607              	  generate random number between 0..expr-1
  3608              	******************************************/
  3609 0c1a 00BF     	    _FUNC random
