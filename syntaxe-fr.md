@@ -23,11 +23,13 @@ https://github.com/picatout/stm32-tbi
 line ::= number (label) statement  ((:) statement) CR | statement  ((:) statement) CR
  
     statement ::= PRINT expr-list
-                  IF expression relop expression THEN statement
+                  IF expression relop expression (THEN) statement ((:) statement) CR 
                   GOTO expression|label
                   INPUT var-list
                   (LET) var = expression
-                  GOSUB expression|label 
+                  GOSUB expression|label
+                  FOR var=expr to expr (STEP exp) (CR) statement ((:)statement) (CR) NEXT var (CR) 
+                  DO (CR) statement ((:) statement) UNTIL relation 
                   RETURN
                   NEW
                   LIST (number (- number))
