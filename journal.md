@@ -1,4 +1,12 @@
+<!-- 
+Copyright Jacques Deschênes, 2021
+Ce document fait parti du projet stm32-tbi
+https://github.com/picatout/stm32-tbi
+-->
+
 #### 2021-03-14
+
+* Complété le manuel de référence.
 
 #### 2021-03-13
 

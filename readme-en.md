@@ -3,30 +3,27 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[-&GT;English version](readme-en.md)
+[-&gt;version française](readme.md)
 #  Blue pill Tiny BASIC 
 
-Il s'agit de l'implémentation d'un timbre BASIC sur la carte blue pill. Ce BASIC est basé sur [tiny BASIC](https://en.wikipedia.org/wiki/Tiny_BASIC) mais avec des extensions.  
+This is an implementation of a BASIC stamp on blue pill board. This BASIC is based on original [tiny BASIC](https://en.wikipedia.org/wiki/Tiny_BASIC) but add extensions to it.  
 
-* Interface interactive via le terminal VT100. 
-* Éditeur de texte et compilateur sur la carte. 
-* Système de fichiers simple implémenté dans la mémoire FLASH excédentaire du MCU stm32f103 de la carte blue pill.
-* Requière seulement un émulateur de terminal VT100 sur le PC et un port sériel rs-232 pour la communication avec la carte **blue pill** .
+* REPL interface on stamp, to make it interactive. 
+* Editing source code facility and compiler on stamp. 
+* Simple file system to save programs in FLASH memory.
+* On PC require only a RS-232 serial port and VT100 terminal emulator to communicate with the **blue pill**.
 
+## material required
 
-## Matériel requis
+* blue pill board  ![blue pill](docs/board-view-2.jpg).
 
-* Carte blue pill ![blue pill](docs/board-view-2.jpg).
+* STLINK-V2 programmer  ![STLINK-V2](docs/stlink-v2.png).
 
-* programmeur STLINK-V2 ![STLINK-V2](docs/stlink-v2.png).
+* RS-232 Level adapter ![adapteur](docs/rs-232-level-adapter-assembly.png) to interface with PC serial port. 
+* On PC side any operating system with VT100 terminal emulator and serial port to connect to blue pill.
 
-* Adapteur de niveaux RS-232 ![adapteur](docs/rs-232-level-adapter-assembly.png) pour interfacer la carte au PC 
-
-* Sur le PC un port sériel RS-232 et un émulateur de terminal VT100.
-
-## Installation de Tiny BASIC sur la carte **blue pill**
-À partir du répertoire racine du projet
-. Lorsque la carte est branchée au programmeur STLINK-V2 et prête à être programmée faites la commande suivante: **make build && make flash**.
+## Install blue pill tiny BASIC
+Very simple. From root directory of project in bash shell type: **make build && make flash**. 
 ```
 picatout:~/github/stm32-tbi$ make build && make flash
 arm-none-eabi-as  -a=build/stm32-tbi.lst stm32-tbi.s -g -obuild/stm32-tbi.o 
@@ -58,21 +55,22 @@ Flash page at addr: 0x08004000 erased
 2021-03-14T11:15:58 INFO common.c: Flash written and verified! jolly good!
 picatout:~/github/stm32-tbi$ 
 ```
-Si tout se passe comme prévue le système **blue pill tiny BASIC** est maintenant installé sur la carte et prêt à l'utilisation.
+If there is no error the blue pill card is ready to be used. Serial communication is via UART1.
 
-La communication avec le PC se fait sur les broches
+* **A9** TX pin 
+* **A10** RX pin 
+* Any **G** pin for commun.
 
-* **A9**&nbsp;&nbsp; Pour UART1 TX.
-* **A10**&nbsp;&nbsp; Pour UART1 RX.
-* N'importe quelle broche marquée **G** sur la carte pour le commun.
-
-## Adapteur de niveau simple
-
-* schématique d'un adapteur de niveau simple à réaliser et économique.
+## A simple home made RS-232 level adaptor
+* Adaptor schematic, simple and cheap.
 ![adapteur de niveaux RS-232](docs/rs-232-level-adaptor-schematic.png)
 
-* Montage sur carte perforée de 1" carré.
+* Assembly on 1" square perforated board.
 ![montage](docs/rs-232-level-adapter-assembly.png)
 
-* Utilisation avec le PC
+* Connection to laptop.
 ![utilisation](docs/montage.jpg)
+
+
+
+

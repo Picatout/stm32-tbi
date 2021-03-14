@@ -1,6 +1,17 @@
-# Manuel de l'utilisateur de Tiny BASIC 
+<!-- 
+Copyright Jacques Deschênes, 2021
+Ce document fait parti du projet stm32-tbi
+https://github.com/picatout/stm32-tbi
+-->
+[English version](user-manual.md)
+# Manuel de l'utilisateur de blue pill Tiny BASIC 
 
-Tiny BASIC pour STM8 est un langage simple qui cependant permet de configurer et d'utiliser tous les périphériques du microcontrôleur. La seule limitation est que les interruptions ne sont pas utilisée. Tiny BASIC lui-même utilise l'interruption du TIMER4 et l'interruption externe 4 pour le bouton utilisateur qui est sur la carte. 
+Blue pill Tiny BASIC est un langage simple qui cependant permet de configurer et d'utiliser tous les périphériques du microcontrôleur. La seule limitation est que les interruptions ne sont pas utilisée. Tiny BASIC lui-même utilise 2 interruptions 
+
+* systick (-1) pour le compteur de millisecondes et la commande **TIMER**.
+* usart1 rx (IRQ37) Pour la réception des caractères reçus du terminal VT100.
+
+Le déclenchement de tout autre interruption a pour effet réinitialise le MCU. Cependant la table est vecteurs d'interruption est déplacé au début de la mémoire RAM à l'adresse **0x20000000**. De cette façon il est techniquement possible pour une application d'utiliser une interruption à condition de stocke du code machine pour la routine d'interruption quelque part en mémoire RAM. Une partie de mémoire RAM qui n'est pas utilisée par le programme BASIC pourrait être utilisée à cet effet.  
 
 L'objectif de ce manuel est de présenter les fonctionnalités du langage à travers des applications du microcontrôleur. Je n'ai pas définie toutes les constantes des registres du MCU dans le langage il est donc nécessaire de se réréfer au [feuillet de spécifications](docs/stm8s208rb.pdf) ainsi qu'au manuel de référence du [STM8S](docs/stm8s_reference.pdf). Le manuel d'utilisateur de la carte [NUCLEO-8S208RB](docs/nucleo-8s208rb_user_manual.pdf) est aussi utile.
 
