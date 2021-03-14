@@ -4279,7 +4279,7 @@ ARM GAS  tinyBasic.s 			page 1
  2534 01ac 8A60     	    str r2,[r1,#IWDG_RLR]
  2535 01ae 4CF6CC40 	    mov r0,#0xcccc // start IWDG 
  2536 01b2 0860     	    str r0,[r1,#IWDG_KR]
- 2537 01b4 01F09EB8 	    b sleep // place MCU in deep sleep
+ 2537 01b4 01F0A4B8 	    b sleep // place MCU in deep sleep
  2538 01b8 7047     	    _RET
  2539              	
  2540              	/********************************************
@@ -5555,13 +5555,13 @@ ARM GAS  tinyBasic.s 			page 1
  3563 0b90 4B29     	    cmp r1,#TAB_IDX 
  3564 0b92 05D1     	    bne 6f
  3565 0b94 00B500F0 	    _CALL tab 
- 3565      FBFB5DF8 
+ 3565      01FC5DF8 
  3565      04EB
  3566 0b9e 06E0     	    b 8f 
  3567 0ba0 4729     	6:  cmp r1,#SPC_IDX  
  3568 0ba2 1BD1     	    bne unget_exit
  3569 0ba4 00B500F0 	    _CALL spc   
- 3569      B5FB5DF8 
+ 3569      BBFB5DF8 
  3569      04EB
  3570 0bae 88EA0808 	8:  eor T1,T1  
  3571 0bb2 00B5FFF7 	    _CALL next_token
@@ -5619,1289 +5619,1293 @@ ARM GAS  tinyBasic.s 			page 1
  3610      FEFF5DF8 
  3610      04EB
  3611 0c26 0128     	    cmp r0,#1
- 3612 0c28 7FF4FEAF 	    bne syntax_error 
- 3613 0c2c 606A     	    ldr r0,[UPP,#SEED]
- 3614 0c2e 4FEA4031 	    lsl r1,r0,#13
- 3615 0c32 81EA0001 	    eor r1,r0
- 3616 0c36 4FEA5140 	    lsr r0,r1,#17
- 3617 0c3a 81EA0001 	    eor r1,r0
- 3618 0c3e 4FEA4110 	    lsl r0,r1,#5
- 3619 0c42 81EA0001 	    eor r1,r0
- 3620 0c46 6162     	    str r1,[UPP,#SEED]
- 3621 0c48 5CF8040B 	    _POP r0 
- 3622 0c4c B1FBF0F2 	    udiv r2,r1,r0  
- 3623 0c50 00FB02F2 	    mul r2,r0 
- 3624 0c54 A1EB0201 	    sub r1,r2 
- 3625 0c58 4FF01B00 	    mov r0,#TK_INTGR
- 3626 0c5c 7047     	    _RET 
- 3627              	
- 3628              	/****************************************
- 3629              	  BASIC: RSHIFT(expr1,expr2)
- 3630              	  shift left expr1 de expr2 bits 
+ 3612 0c28 7FF4FEAF 	    bne syntax_error
+ 3613 0c2c 11F0004F 	    tst r1,#(1<<31)
+ 3614 0c30 03D0     	    beq 1f 
+ 3615 0c32 4FF00A00 	    mov r0,#ERR_BAD_VALUE 
+ 3616 0c36 FFF7FEBF 	    b tb_error 
+ 3617 0c3a 606A     	1:  ldr r0,[UPP,#SEED]
+ 3618 0c3c 4FEA4031 	    lsl r1,r0,#13
+ 3619 0c40 81EA0001 	    eor r1,r0
+ 3620 0c44 4FEA5140 	    lsr r0,r1,#17
+ 3621 0c48 81EA0001 	    eor r1,r0
+ 3622 0c4c 4FEA4110 	    lsl r0,r1,#5
+ 3623 0c50 81EA0001 	    eor r1,r0
+ 3624 0c54 6162     	    str r1,[UPP,#SEED]
+ 3625 0c56 5CF8040B 	    _POP r0 
+ 3626 0c5a B1FBF0F2 	    udiv r2,r1,r0  
+ 3627 0c5e 00FB02F2 	    mul r2,r0 
+ 3628 0c62 A1EB0201 	    sub r1,r2 
+ 3629 0c66 4FF01B00 	    mov r0,#TK_INTGR
+ 3630 0c6a 7047     	    _RET 
 ARM GAS  tinyBasic.s 			page 95
 
 
- 3631              	****************************************/
- 3632 0c5e 00BF     	    _FUNC rshift
- 3633 0c60 00B5FFF7 	    _CALL func_args
- 3633      FEFF5DF8 
- 3633      04EB
- 3634 0c6a 0228     	    cmp r0,#2 
- 3635 0c6c 7FF4FEAF 	    bne syntax_error
- 3636 0c70 BCE80300 	    ldmia DP!,{r0,r1}
- 3637 0c74 21FA00F1 	    lsr r1,r0  
- 3638 0c78 4FF01B00 	    mov r0,#TK_INTGR
- 3639 0c7c 7047     	    _RET 
- 3640              	
- 3641              	/****************************
- 3642              	  BASIC: RUN 
- 3643              	  execute program in memory
- 3644              	****************************/
- 3645 0c7e 00BF     	    _FUNC run
- 3646 0c80 206C10F0 	    _CLO 
- 3646      010F03D0 
- 3646      4FF00700 
- 3646      FFF7FEBF 
- 3647 0c90 206B     	    ldr r0,[UPP,#TXTBGN]
- 3648 0c92 616B     	    ldr r1,[UPP,#TXTEND]
- 3649 0c94 C4F8D010 	    str r1,[UPP,#HERE]
- 3650 0c98 8842     	    cmp r0,r1
- 3651 0c9a 21D0     	    beq 9f
- 3652 0c9c 216C     	    ldr r1,[UPP,#FLAGS]
- 3653 0c9e 11F0080F 	    tst r1,#FSTOP
- 3654 0ca2 09D0     	    beq 1f
- 3655 0ca4 BCE8010C 	    ldmia DP!,{r0,IN,BPTR}
- 3656 0ca8 6060     	    str r0,[UPP,#COUNT]
- 3657 0caa 206C     	    ldr r0,[UPP,#FLAGS]
- 3658 0cac 4FF00901 	    mov r1,#FRUN+FSTOP
- 3659 0cb0 80EA0100 	    eor r0,r1
- 3660 0cb4 2064     	    str r0,[UPP,#FLAGS] 
- 3661 0cb6 13E0     	    b 9f  
- 3662 0cb8 8178     	1:  ldrb r1,[r0,#2]
- 3663 0cba 6160     	    str r1,[UPP,#COUNT]
- 3664 0cbc 8346     	    mov BPTR,r0 
- 3665 0cbe 4FF0030A 	    mov IN,#3
- 3666 0cc2 606B     	    ldr r0,[UPP,#TXTEND]
- 3667              	    // reset dataline pointers 
- 3668 0cc4 80EA0000 	    eor r0,r0 
- 3669 0cc8 E060     	    str r0,[UPP,#DATAPTR]
- 3670 0cca 2061     	    str r0,[UPP,#DATA]
- 3671 0ccc 6061     	    str r0,[UPP,#DATALEN] 
- 3672 0cce 206C     	    ldr r0,[UPP,#FLAGS]
- 3673 0cd0 40F00100 	    orr r0,#FRUN 
- 3674 0cd4 2064     	    str r0,[UPP,#FLAGS]
- 3675 0cd6 00B5FFF7 	    _CALL show_trace 
- 3675      FEFF5DF8 
- 3675      04EB
- 3676 0ce0 7047     	9:  _RET 
- 3677              	
- 3678              	/**********************************
- 3679              	        FILE SYSTEM 
- 3680              	**********************************/
+ 3631              	
+ 3632              	/****************************************
+ 3633              	  BASIC: RSHIFT(expr1,expr2)
+ 3634              	  shift left expr1 de expr2 bits 
+ 3635              	****************************************/
+ 3636              	    _FUNC rshift
+ 3637 0c6c 00B5FFF7 	    _CALL func_args
+ 3637      FEFF5DF8 
+ 3637      04EB
+ 3638 0c76 0228     	    cmp r0,#2 
+ 3639 0c78 7FF4FEAF 	    bne syntax_error
+ 3640 0c7c BCE80300 	    ldmia DP!,{r0,r1}
+ 3641 0c80 21FA00F1 	    lsr r1,r0  
+ 3642 0c84 4FF01B00 	    mov r0,#TK_INTGR
+ 3643 0c88 7047     	    _RET 
+ 3644              	
+ 3645              	/****************************
+ 3646              	  BASIC: RUN 
+ 3647              	  execute program in memory
+ 3648              	****************************/
+ 3649 0c8a 00BF     	    _FUNC run
+ 3650 0c8c 206C10F0 	    _CLO 
+ 3650      010F03D0 
+ 3650      4FF00700 
+ 3650      FFF7FEBF 
+ 3651 0c9c 206B     	    ldr r0,[UPP,#TXTBGN]
+ 3652 0c9e 616B     	    ldr r1,[UPP,#TXTEND]
+ 3653 0ca0 C4F8D010 	    str r1,[UPP,#HERE]
+ 3654 0ca4 8842     	    cmp r0,r1
+ 3655 0ca6 21D0     	    beq 9f
+ 3656 0ca8 216C     	    ldr r1,[UPP,#FLAGS]
+ 3657 0caa 11F0080F 	    tst r1,#FSTOP
+ 3658 0cae 09D0     	    beq 1f
+ 3659 0cb0 BCE8010C 	    ldmia DP!,{r0,IN,BPTR}
+ 3660 0cb4 6060     	    str r0,[UPP,#COUNT]
+ 3661 0cb6 206C     	    ldr r0,[UPP,#FLAGS]
+ 3662 0cb8 4FF00901 	    mov r1,#FRUN+FSTOP
+ 3663 0cbc 80EA0100 	    eor r0,r1
+ 3664 0cc0 2064     	    str r0,[UPP,#FLAGS] 
+ 3665 0cc2 13E0     	    b 9f  
+ 3666 0cc4 8178     	1:  ldrb r1,[r0,#2]
+ 3667 0cc6 6160     	    str r1,[UPP,#COUNT]
+ 3668 0cc8 8346     	    mov BPTR,r0 
+ 3669 0cca 4FF0030A 	    mov IN,#3
+ 3670 0cce 606B     	    ldr r0,[UPP,#TXTEND]
+ 3671              	    // reset dataline pointers 
+ 3672 0cd0 80EA0000 	    eor r0,r0 
+ 3673 0cd4 E060     	    str r0,[UPP,#DATAPTR]
+ 3674 0cd6 2061     	    str r0,[UPP,#DATA]
+ 3675 0cd8 6061     	    str r0,[UPP,#DATALEN] 
+ 3676 0cda 206C     	    ldr r0,[UPP,#FLAGS]
+ 3677 0cdc 40F00100 	    orr r0,#FRUN 
+ 3678 0ce0 2064     	    str r0,[UPP,#FLAGS]
+ 3679 0ce2 00B5FFF7 	    _CALL show_trace 
+ 3679      FEFF5DF8 
+ 3679      04EB
+ 3680 0cec 7047     	9:  _RET 
 ARM GAS  tinyBasic.s 			page 96
 
 
  3681              	
- 3682              	/*********************************
- 3683              	  search_free 
- 3684              	  search first free PAGE in fs
- 3685              	  a PAGE is free if first word is
- 3686              	  -1
- 3687              	  input:
- 3688              	    none 
- 3689              	  output:
- 3690              	    r0    addr|0
- 3691              	  use:
- 3692              	*********************************/
- 3693 0ce2 00BF     	    _FUNC search_free 
- 3694 0ce4 06B4     	    push {r1,r2}
- 3695 0ce6 DFF86410 	    ldr r1,fs_addr 
- 3696 0cea 4FF00002 	    _MOV32 r2,FLASH_HIDDEN_END
- 3696      C0F60202 
- 3697 0cf2 0868     	1:  ldr r0,[r1]
- 3698 0cf4 B0F1FF3F 	    cmp r0,#-1
- 3699 0cf8 03D0     	    beq 8f 
- 3700 0cfa 01F58061 	    add r1,#PAGE_SIZE
- 3701 0cfe 9142     	    cmp r1,r2 
- 3702 0d00 F7D4     	    bmi 1b 
- 3703 0d02 0846     	8:  mov r0,r1 
- 3704 0d04 06BC     	    pop {r1,r2}   
- 3705 0d06 7047     	    _RET 
- 3706              	
- 3707              	/*********************************
- 3708              	  search_file 
- 3709              	  search for a file name 
- 3710              	  in file system.
- 3711              	  input: 
- 3712              	    r0   .asciz target name
- 3713              	  output:
- 3714              	    r0    0 || address found 
- 3715              	  use:
- 3716              	   r0     temp 
- 3717              	   r1     *file_name 
- 3718              	   r2     *fs  
- 3719              	   r3     target   
- 3720              	**********************************/
- 3721              	    _FUNC search_file 
- 3722 0d08 0EB4     	    push {r1,r2,r3}
- 3723 0d0a DFF84020 	    ldr r2,fs_addr
- 3724 0d0e 0346     	    mov r3,r0  
- 3725              	cmp_loop:
- 3726 0d10 1068     	    ldr r0,[r2]
- 3727 0d12 B0F1FF3F 	    cmp r0,#-1
- 3728 0d16 80EA0000 	    eor r0,r0
- 3729 0d1a 15D0     	    beq 9f // reached end of fs 
- 3730 0d1c 1846     	1:  mov r0,r3
- 3731 0d1e 02F10201 	    add r1,r2,#2
- 3732 0d22 00B5FFF7 	    _CALL strcmp
- 3732      FEFF5DF8 
- 3732      04EB
- 3733 0d2c 08B9     	    cbnz r0,2f
- 3734 0d2e 1046     	    mov r0,r2 
+ 3682              	/**********************************
+ 3683              	        FILE SYSTEM 
+ 3684              	**********************************/
+ 3685              	
+ 3686              	/*********************************
+ 3687              	  search_free 
+ 3688              	  search first free PAGE in fs
+ 3689              	  a PAGE is free if first word is
+ 3690              	  -1
+ 3691              	  input:
+ 3692              	    none 
+ 3693              	  output:
+ 3694              	    r0    addr|0
+ 3695              	  use:
+ 3696              	*********************************/
+ 3697 0cee 00BF     	    _FUNC search_free 
+ 3698 0cf0 06B4     	    push {r1,r2}
+ 3699 0cf2 DFF86410 	    ldr r1,fs_addr 
+ 3700 0cf6 4FF00002 	    _MOV32 r2,FLASH_HIDDEN_END
+ 3700      C0F60202 
+ 3701 0cfe 0868     	1:  ldr r0,[r1]
+ 3702 0d00 B0F1FF3F 	    cmp r0,#-1
+ 3703 0d04 03D0     	    beq 8f 
+ 3704 0d06 01F58061 	    add r1,#PAGE_SIZE
+ 3705 0d0a 9142     	    cmp r1,r2 
+ 3706 0d0c F7D4     	    bmi 1b 
+ 3707 0d0e 0846     	8:  mov r0,r1 
+ 3708 0d10 06BC     	    pop {r1,r2}   
+ 3709 0d12 7047     	    _RET 
+ 3710              	
+ 3711              	/*********************************
+ 3712              	  search_file 
+ 3713              	  search for a file name 
+ 3714              	  in file system.
+ 3715              	  input: 
+ 3716              	    r0   .asciz target name
+ 3717              	  output:
+ 3718              	    r0    0 || address found 
+ 3719              	  use:
+ 3720              	   r0     temp 
+ 3721              	   r1     *file_name 
+ 3722              	   r2     *fs  
+ 3723              	   r3     target   
+ 3724              	**********************************/
+ 3725              	    _FUNC search_file 
+ 3726 0d14 0EB4     	    push {r1,r2,r3}
+ 3727 0d16 DFF84020 	    ldr r2,fs_addr
+ 3728 0d1a 0346     	    mov r3,r0  
+ 3729              	cmp_loop:
+ 3730 0d1c 1068     	    ldr r0,[r2]
+ 3731 0d1e B0F1FF3F 	    cmp r0,#-1
+ 3732 0d22 80EA0000 	    eor r0,r0
+ 3733 0d26 15D0     	    beq 9f // reached end of fs 
+ 3734 0d28 1846     	1:  mov r0,r3
+ 3735 0d2a 02F10201 	    add r1,r2,#2
+ 3736 0d2e 00B5FFF7 	    _CALL strcmp
 ARM GAS  tinyBasic.s 			page 97
 
 
- 3735 0d30 0AE0     	    b 9f   
- 3736 0d32 1088     	2:  ldrh r0,[r2] // name length
- 3737 0d34 0244     	    add r2,r0 
- 3738 0d36 1088     	    ldrh r0,[r2]
- 3739 0d38 1044     	    add r0,r2
- 3740 0d3a 00B5FFF7 	    _CALL page_align 
- 3740      FEFF5DF8 
- 3740      04EB
- 3741 0d44 0246     	    mov r2,r0   
- 3742 0d46 E3E7     	    b cmp_loop 
- 3743 0d48 0EBC     	9:  pop {r1,r2,r3}
- 3744 0d4a 7047     	    _RET 
- 3745              	
- 3746 0d4c 00000000 	fs_addr: .word FILE_SYSTEM
- 3747              	
- 3748              	/*************************************
- 3749              	  BASIC: DIR 
- 3750              	  list files stored in fs 
- 3751              	  use:
- 3752              	    r0  temp 
- 3753              	    r1  temp
- 3754              	    r2  file count
- 3755              	    r3  data size
- 3756              	    T1  *fs  
- 3757              	*************************************/
- 3758              	    _FUNC directory
- 3759 0d50 206C10F0 	    _CLO 
- 3759      010F03D0 
- 3759      4FF00700 
- 3759      FFF7FEBF 
- 3760 0d60 82EA0202 	    eor r2,r2 
- 3761 0d64 5FF81C80 	    ldr T1,fs_addr 
- 3762 0d68 D8F80000 	1:  ldr r0,[T1] // name length 
- 3763 0d6c B0F1FF3F 	    cmp r0,#-1
- 3764 0d70 2AD0     	    beq no_more_file
- 3765 0d72 00F00F03 	    and r3,r0,#15
- 3766 0d76 08F10200 	    add r0,T1,#2
- 3767 0d7a 00B5FFF7 	    _CALL uart_puts 
- 3767      FEFF5DF8 
- 3767      04EB
- 3768 0d84 4FF01000 	    mov r0,#16 
- 3769 0d88 00B5FFF7 	    _CALL cursor_x 
- 3769      FEFF5DF8 
- 3769      04EB
- 3770 0d92 9844     	    add T1,r3 
- 3771 0d94 B8F80030 	    ldrh r3,[T1]
- 3772 0d98 1846     	    mov r0,r3 
- 3773 0d9a 4FF00A01 	    mov r1,#10 
- 3774 0d9e 00B5FFF7 	    _CALL print_int
- 3774      FEFF5DF8 
- 3774      04EB
- 3775 0da8 00B5FFF7 	    _CALL cr  
- 3775      FEFF5DF8 
- 3775      04EB
- 3776 0db2 08EB0300 	    add r0,T1,r3 
- 3777 0db6 00B5FFF7 	    _CALL page_align
- 3777      FEFF5DF8 
+ 3736      FEFF5DF8 
+ 3736      04EB
+ 3737 0d38 08B9     	    cbnz r0,2f
+ 3738 0d3a 1046     	    mov r0,r2 
+ 3739 0d3c 0AE0     	    b 9f   
+ 3740 0d3e 1088     	2:  ldrh r0,[r2] // name length
+ 3741 0d40 0244     	    add r2,r0 
+ 3742 0d42 1088     	    ldrh r0,[r2]
+ 3743 0d44 1044     	    add r0,r2
+ 3744 0d46 00B5FFF7 	    _CALL page_align 
+ 3744      FEFF5DF8 
+ 3744      04EB
+ 3745 0d50 0246     	    mov r2,r0   
+ 3746 0d52 E3E7     	    b cmp_loop 
+ 3747 0d54 0EBC     	9:  pop {r1,r2,r3}
+ 3748 0d56 7047     	    _RET 
+ 3749              	
+ 3750 0d58 00000000 	fs_addr: .word FILE_SYSTEM
+ 3751              	
+ 3752              	/*************************************
+ 3753              	  BASIC: DIR 
+ 3754              	  list files stored in fs 
+ 3755              	  use:
+ 3756              	    r0  temp 
+ 3757              	    r1  temp
+ 3758              	    r2  file count
+ 3759              	    r3  data size
+ 3760              	    T1  *fs  
+ 3761              	*************************************/
+ 3762              	    _FUNC directory
+ 3763 0d5c 206C10F0 	    _CLO 
+ 3763      010F03D0 
+ 3763      4FF00700 
+ 3763      FFF7FEBF 
+ 3764 0d6c 82EA0202 	    eor r2,r2 
+ 3765 0d70 5FF81C80 	    ldr T1,fs_addr 
+ 3766 0d74 D8F80000 	1:  ldr r0,[T1] // name length 
+ 3767 0d78 B0F1FF3F 	    cmp r0,#-1
+ 3768 0d7c 2AD0     	    beq no_more_file
+ 3769 0d7e 00F00F03 	    and r3,r0,#15
+ 3770 0d82 08F10200 	    add r0,T1,#2
+ 3771 0d86 00B5FFF7 	    _CALL uart_puts 
+ 3771      FEFF5DF8 
+ 3771      04EB
+ 3772 0d90 4FF01000 	    mov r0,#16 
+ 3773 0d94 00B5FFF7 	    _CALL cursor_x 
+ 3773      FEFF5DF8 
+ 3773      04EB
+ 3774 0d9e 9844     	    add T1,r3 
+ 3775 0da0 B8F80030 	    ldrh r3,[T1]
+ 3776 0da4 1846     	    mov r0,r3 
+ 3777 0da6 4FF00A01 	    mov r1,#10 
+ 3778 0daa 00B5FFF7 	    _CALL print_int
+ 3778      FEFF5DF8 
+ 3778      04EB
+ 3779 0db4 00B5FFF7 	    _CALL cr  
+ 3779      FEFF5DF8 
 ARM GAS  tinyBasic.s 			page 98
 
 
- 3777      04EB
- 3778 0dc0 8046     	    mov T1,r0 
- 3779 0dc2 02F10102 	    add r2,#1 
- 3780 0dc6 CFE7     	    b 1b  
- 3781              	no_more_file:
- 3782 0dc8 00B5FFF7 	    _CALL cr
- 3782      FEFF5DF8 
- 3782      04EB
- 3783 0dd2 4FF01000 	    mov r0,#16
- 3784 0dd6 00B5FFF7 	    _CALL cursor_x  
- 3784      FEFF5DF8 
- 3784      04EB
- 3785 0de0 1046     	    mov r0,r2 
- 3786 0de2 4FF00A01 	    mov r1,#10 
- 3787 0de6 00B5FFF7 	    _CALL print_int 
- 3787      FEFF5DF8 
- 3787      04EB
- 3788 0df0 DFF8AC08 	    ldr r0,=fcount 
- 3789 0df4 00B5FFF7 	    _CALL uart_puts 
- 3789      FEFF5DF8 
- 3789      04EB
- 3790 0dfe 7047     	    _RET 
- 3791 0e00 66696C65 	fcount:  .asciz "files\n"
- 3791      730A00
- 3792              	
- 3793              	/*************************************
- 3794              	  BASIC: FORGET ["name"]
- 3795              	  delete file and all following 
- 3796              	  if no name given delete all files 
- 3797              	************************************/
- 3798 0e07 00       	    _FUNC forget
- 3799 0e08 2DE90802 	    push {r3,T2}
- 3800 0e0c 5FF8C490 	    ldr T2,fs_addr 
- 3801 0e10 E36A     	    ldr r3,[UPP,#FSFREE]
- 3802 0e12 00B5FFF7 	    _CALL next_token
- 3802      FEFF5DF8 
- 3802      04EB
- 3803 0e1c 38B1     	    cbz r0,1f // no name 
- 3804 0e1e 0846     	    mov r0,r1
- 3805 0e20 00B5FFF7 	    _CALL search_file
- 3805      71FF5DF8 
- 3805      04EB
- 3806 0e2a 58B1     	    cbz r0,9f 
- 3807 0e2c 8146     	    mov T2,r0 
- 3808 0e2e 9945     	1:  cmp T2,r3 
- 3809 0e30 08D5     	    bpl 9f 
- 3810 0e32 4846     	    mov r0,T2 
- 3811 0e34 00B5FFF7 	    _CALL erase_page
- 3811      FEFF5DF8 
- 3811      04EB
- 3812 0e3e 09F58069 	    add T2,#PAGE_SIZE
- 3813 0e42 F4E7     	    b 1b 
- 3814 0e44 00B5FFF7 	9:  _CALL search_free
- 3814      4DFF5DF8 
- 3814      04EB
- 3815 0e4e BDE80802 	    pop {r3,T2} 
- 3816 0e52 7047     	    _RET
+ 3779      04EB
+ 3780 0dbe 08EB0300 	    add r0,T1,r3 
+ 3781 0dc2 00B5FFF7 	    _CALL page_align
+ 3781      FEFF5DF8 
+ 3781      04EB
+ 3782 0dcc 8046     	    mov T1,r0 
+ 3783 0dce 02F10102 	    add r2,#1 
+ 3784 0dd2 CFE7     	    b 1b  
+ 3785              	no_more_file:
+ 3786 0dd4 00B5FFF7 	    _CALL cr
+ 3786      FEFF5DF8 
+ 3786      04EB
+ 3787 0dde 4FF01000 	    mov r0,#16
+ 3788 0de2 00B5FFF7 	    _CALL cursor_x  
+ 3788      FEFF5DF8 
+ 3788      04EB
+ 3789 0dec 1046     	    mov r0,r2 
+ 3790 0dee 4FF00A01 	    mov r1,#10 
+ 3791 0df2 00B5FFF7 	    _CALL print_int 
+ 3791      FEFF5DF8 
+ 3791      04EB
+ 3792 0dfc DFF8AC08 	    ldr r0,=fcount 
+ 3793 0e00 00B5FFF7 	    _CALL uart_puts 
+ 3793      FEFF5DF8 
+ 3793      04EB
+ 3794 0e0a 7047     	    _RET 
+ 3795 0e0c 66696C65 	fcount:  .asciz "files\n"
+ 3795      730A00
+ 3796              	
+ 3797              	/*************************************
+ 3798              	  BASIC: FORGET ["name"]
+ 3799              	  delete file and all following 
+ 3800              	  if no name given delete all files 
+ 3801              	************************************/
+ 3802 0e13 00       	    _FUNC forget
+ 3803 0e14 2DE90802 	    push {r3,T2}
+ 3804 0e18 5FF8C490 	    ldr T2,fs_addr 
+ 3805 0e1c E36A     	    ldr r3,[UPP,#FSFREE]
+ 3806 0e1e 00B5FFF7 	    _CALL next_token
+ 3806      FEFF5DF8 
+ 3806      04EB
+ 3807 0e28 38B1     	    cbz r0,1f // no name 
+ 3808 0e2a 0846     	    mov r0,r1
+ 3809 0e2c 00B5FFF7 	    _CALL search_file
+ 3809      71FF5DF8 
+ 3809      04EB
+ 3810 0e36 58B1     	    cbz r0,9f 
+ 3811 0e38 8146     	    mov T2,r0 
+ 3812 0e3a 9945     	1:  cmp T2,r3 
+ 3813 0e3c 08D5     	    bpl 9f 
+ 3814 0e3e 4846     	    mov r0,T2 
+ 3815 0e40 00B5FFF7 	    _CALL erase_page
+ 3815      FEFF5DF8 
+ 3815      04EB
+ 3816 0e4a 09F58069 	    add T2,#PAGE_SIZE
+ 3817 0e4e F4E7     	    b 1b 
+ 3818 0e50 00B5FFF7 	9:  _CALL search_free
 ARM GAS  tinyBasic.s 			page 99
 
 
- 3817              	
- 3818              	/**********************************
- 3819              	  BASIC LOAD "name" 
- 3820              	  load file in RAM for execution
- 3821              	  use:
- 3822              	    r0   temp
- 3823              	    r1   src
- 3824              	    r2   dest 
- 3825              	    r3   count 
- 3826              	**********************************/
- 3827              	    _FUNC load
- 3828 0e54 206C10F0 	    _CLO 
- 3828      010F03D0 
- 3828      4FF00700 
- 3828      FFF7FEBF 
- 3829 0e64 00B5FFF7 	    _CALL next_token 
- 3829      FEFF5DF8 
- 3829      04EB
- 3830 0e6e 1C28     	    cmp r0,#TK_QSTR 
- 3831 0e70 7FF4FEAF 	    bne syntax_error 
- 3832 0e74 0846     	    mov r0,r1 
- 3833              	load_autorun:     
- 3834 0e76 00B5FFF7 	    _CALL search_file 
- 3834      46FF5DF8 
- 3834      04EB
- 3835 0e80 18B9     	    cbnz r0, 1f 
- 3836 0e82 4FF00900 	    mov r0,#ERR_NOT_FILE
- 3837 0e86 FFF7FEBF 	    b tb_error 
- 3838 0e8a 0146     	1:  mov r1,r0 
- 3839 0e8c 0888     	    ldrh r0,[r1]
- 3840 0e8e 0144     	    add r1,r0 // data size field  
- 3841 0e90 31F8023B 	    ldrh r3,[r1],#2 // data size 
- 3842 0e94 226B     	    ldr r2,[UPP,#TXTBGN]
- 3843 0e96 02EB0300 	    add r0,r2,r3  
- 3844 0e9a 6063     	    str r0,[UPP,#TXTEND]
- 3845 0e9c 03F10103 	    add r3,#1
- 3846 0ea0 4FEA5303 	    lsr r3,#1
- 3847              	2:  // load file data 
- 3848 0ea4 31F8020B 	    ldrh r0,[r1],#2
- 3849 0ea8 22F8020B 	    strh r0,[r2],#2 
- 3850 0eac 013B     	    subs r3,#1 
- 3851 0eae F9D1     	    bne 2b 
- 3852              	// report file size 
- 3853 0eb0 DFF8F007 	    ldr r0,=fsize 
- 3854 0eb4 00B5FFF7 	    _CALL uart_puts
- 3854      FEFF5DF8 
- 3854      04EB
- 3855 0ebe 606B     	    ldr r0,[UPP,#TXTEND]
- 3856 0ec0 236B     	    ldr r3,[UPP,#TXTBGN]
- 3857 0ec2 A0EB0300 	    sub r0,r3 
- 3858 0ec6 4FF00A01 	    mov r1,#10 
- 3859 0eca 00B5FFF7 	    _CALL print_int 
- 3859      FEFF5DF8 
- 3859      04EB
- 3860 0ed4 DFF8D007 	    ldr r0,=data_bytes 
- 3861 0ed8 00B5FFF7 	    _CALL uart_puts      
- 3861      FEFF5DF8 
+ 3818      4DFF5DF8 
+ 3818      04EB
+ 3819 0e5a BDE80802 	    pop {r3,T2} 
+ 3820 0e5e 7047     	    _RET
+ 3821              	
+ 3822              	/**********************************
+ 3823              	  BASIC LOAD "name" 
+ 3824              	  load file in RAM for execution
+ 3825              	  use:
+ 3826              	    r0   temp
+ 3827              	    r1   src
+ 3828              	    r2   dest 
+ 3829              	    r3   count 
+ 3830              	**********************************/
+ 3831              	    _FUNC load
+ 3832 0e60 206C10F0 	    _CLO 
+ 3832      010F03D0 
+ 3832      4FF00700 
+ 3832      FFF7FEBF 
+ 3833 0e70 00B5FFF7 	    _CALL next_token 
+ 3833      FEFF5DF8 
+ 3833      04EB
+ 3834 0e7a 1C28     	    cmp r0,#TK_QSTR 
+ 3835 0e7c 7FF4FEAF 	    bne syntax_error 
+ 3836 0e80 0846     	    mov r0,r1 
+ 3837              	load_autorun:     
+ 3838 0e82 00B5FFF7 	    _CALL search_file 
+ 3838      46FF5DF8 
+ 3838      04EB
+ 3839 0e8c 18B9     	    cbnz r0, 1f 
+ 3840 0e8e 4FF00900 	    mov r0,#ERR_NOT_FILE
+ 3841 0e92 FFF7FEBF 	    b tb_error 
+ 3842 0e96 0146     	1:  mov r1,r0 
+ 3843 0e98 0888     	    ldrh r0,[r1]
+ 3844 0e9a 0144     	    add r1,r0 // data size field  
+ 3845 0e9c 31F8023B 	    ldrh r3,[r1],#2 // data size 
+ 3846 0ea0 226B     	    ldr r2,[UPP,#TXTBGN]
+ 3847 0ea2 02EB0300 	    add r0,r2,r3  
+ 3848 0ea6 6063     	    str r0,[UPP,#TXTEND]
+ 3849 0ea8 03F10103 	    add r3,#1
+ 3850 0eac 4FEA5303 	    lsr r3,#1
+ 3851              	2:  // load file data 
+ 3852 0eb0 31F8020B 	    ldrh r0,[r1],#2
+ 3853 0eb4 22F8020B 	    strh r0,[r2],#2 
+ 3854 0eb8 013B     	    subs r3,#1 
+ 3855 0eba F9D1     	    bne 2b 
+ 3856              	// report file size 
+ 3857 0ebc DFF8F007 	    ldr r0,=fsize 
+ 3858 0ec0 00B5FFF7 	    _CALL uart_puts
+ 3858      FEFF5DF8 
+ 3858      04EB
+ 3859 0eca 606B     	    ldr r0,[UPP,#TXTEND]
+ 3860 0ecc 236B     	    ldr r3,[UPP,#TXTBGN]
+ 3861 0ece A0EB0300 	    sub r0,r3 
+ 3862 0ed2 4FF00A01 	    mov r1,#10 
+ 3863 0ed6 00B5FFF7 	    _CALL print_int 
+ 3863      FEFF5DF8 
 ARM GAS  tinyBasic.s 			page 100
 
 
- 3861      04EB
- 3862 0ee2 7047     	    _RET 
- 3863              	
- 3864              	
- 3865              	/*********************************
- 3866              	  BASIC: SAVE "name" 
- 3867              	  save program in flash memory
- 3868              	  file structure:
- 3869              	    .hword name_length 
- 3870              	    .asciz name
- 3871              	    .palign 1  
- 3872              	    .hword data_length 
- 3873              	    .byte  file data (variable length)  
- 3874              	  use:
- 3875              	    r0  temp 
- 3876              	    r1  temp
- 3877              	    r2  *flash 
- 3878              	    r3  *ram  
- 3879              	    T1  temp   
- 3880              	********************************/
- 3881              	    _FUNC save
- 3882 0ee4 206C10F0 	    _CLO 
- 3882      010F03D0 
- 3882      4FF00700 
- 3882      FFF7FEBF 
- 3883 0ef4 606B     	    ldr r0,[UPP,#TXTEND]
- 3884 0ef6 216B     	    ldr r1,[UPP,#TXTBGN]
- 3885 0ef8 8842     	    cmp r0,r1
- 3886 0efa 03D1     	    bne 0f 
- 3887 0efc 4FF00D00 	    mov r0,#ERR_NO_PROG
- 3888 0f00 FFF7FEBF 	    b tb_error 
- 3889 0f04 00B5FFF7 	0:  _CALL next_token 
- 3889      FEFF5DF8 
- 3889      04EB
- 3890 0f0e 1C28     	    cmp r0,#TK_QSTR
- 3891 0f10 7FF4FEAF 	    bne syntax_error 
- 3892              	// check for existing 
- 3893 0f14 0B46     	    mov r3,r1 // save name 
- 3894 0f16 1846     	    mov r0,r3  
- 3895 0f18 00B5FFF7 	    _CALL search_file
- 3895      F5FE5DF8 
- 3895      04EB
- 3896 0f22 18B1     	    cbz r0,new_file 
- 3897 0f24 4FF00800 	    mov r0,#ERR_DUPLICATE
- 3898 0f28 FFF7FEBF 	    b tb_error 
- 3899              	new_file:
- 3900 0f2c 4FF00100 	    mov r0,#1 
- 3901 0f30 00B5FFF7 	    _CALL unlock 
- 3901      FEFF5DF8 
- 3901      04EB
- 3902 0f3a E26A     	    ldr r2,[UPP,#FSFREE] //*flash 
- 3903 0f3c 1846     	    mov r0,r3 // *name 
- 3904 0f3e 00B5FFF7 	    _CALL strlen 
- 3904      FEFF5DF8 
- 3904      04EB
- 3905 0f48 00F10400 	    add r0,#4  
- 3906 0f4c 20F00100 	    and r0,#-2 //even size
+ 3863      04EB
+ 3864 0ee0 DFF8D007 	    ldr r0,=data_bytes 
+ 3865 0ee4 00B5FFF7 	    _CALL uart_puts      
+ 3865      FEFF5DF8 
+ 3865      04EB
+ 3866 0eee 7047     	    _RET 
+ 3867              	
+ 3868              	
+ 3869              	/*********************************
+ 3870              	  BASIC: SAVE "name" 
+ 3871              	  save program in flash memory
+ 3872              	  file structure:
+ 3873              	    .hword name_length 
+ 3874              	    .asciz name
+ 3875              	    .palign 1  
+ 3876              	    .hword data_length 
+ 3877              	    .byte  file data (variable length)  
+ 3878              	  use:
+ 3879              	    r0  temp 
+ 3880              	    r1  temp
+ 3881              	    r2  *flash 
+ 3882              	    r3  *ram  
+ 3883              	    T1  temp   
+ 3884              	********************************/
+ 3885              	    _FUNC save
+ 3886 0ef0 206C10F0 	    _CLO 
+ 3886      010F03D0 
+ 3886      4FF00700 
+ 3886      FFF7FEBF 
+ 3887 0f00 606B     	    ldr r0,[UPP,#TXTEND]
+ 3888 0f02 216B     	    ldr r1,[UPP,#TXTBGN]
+ 3889 0f04 8842     	    cmp r0,r1
+ 3890 0f06 03D1     	    bne 0f 
+ 3891 0f08 4FF00D00 	    mov r0,#ERR_NO_PROG
+ 3892 0f0c FFF7FEBF 	    b tb_error 
+ 3893 0f10 00B5FFF7 	0:  _CALL next_token 
+ 3893      FEFF5DF8 
+ 3893      04EB
+ 3894 0f1a 1C28     	    cmp r0,#TK_QSTR
+ 3895 0f1c 7FF4FEAF 	    bne syntax_error 
+ 3896              	// check for existing 
+ 3897 0f20 0B46     	    mov r3,r1 // save name 
+ 3898 0f22 1846     	    mov r0,r3  
+ 3899 0f24 00B5FFF7 	    _CALL search_file
+ 3899      F5FE5DF8 
+ 3899      04EB
+ 3900 0f2e 18B1     	    cbz r0,new_file 
+ 3901 0f30 4FF00800 	    mov r0,#ERR_DUPLICATE
+ 3902 0f34 FFF7FEBF 	    b tb_error 
+ 3903              	new_file:
+ 3904 0f38 4FF00100 	    mov r0,#1 
+ 3905 0f3c 00B5FFF7 	    _CALL unlock 
+ 3905      FEFF5DF8 
+ 3905      04EB
+ 3906 0f46 E26A     	    ldr r2,[UPP,#FSFREE] //*flash 
+ 3907 0f48 1846     	    mov r0,r3 // *name 
+ 3908 0f4a 00B5FFF7 	    _CALL strlen 
 ARM GAS  tinyBasic.s 			page 101
 
 
- 3907 0f50 A0F10208 	    sub T1,r0,#2  // name length counter   
- 3908 0f54 1146     	1:  mov r1,r2  
- 3909 0f56 00B5FFF7 	    _CALL hword_write   
- 3909      FEFF5DF8 
- 3909      04EB
- 3910 0f60 02F10202 	    add r2,#2  
- 3911              	// write file name      
- 3912 0f64 33F8020B 	2:  ldrh r0,[r3],#2 
- 3913 0f68 1146     	    mov r1,r2 
- 3914 0f6a 00B5FFF7 	    _CALL hword_write
- 3914      FEFF5DF8 
- 3914      04EB
- 3915 0f74 02F10202 	    add r2,#2
- 3916 0f78 B8F10208 	    subs T1,#2
- 3917 0f7c F2D1     	    bne 2b
- 3918              	// write data size 
- 3919 0f7e 606B     	    ldr r0,[UPP,#TXTEND]
- 3920 0f80 236B     	    ldr r3,[UPP,#TXTBGN]
- 3921 0f82 A0EB0300 	    sub r0,r3
- 3922 0f86 8046     	    mov T1,r0
- 3923 0f88 1146     	    mov r1,r2 
- 3924 0f8a 00B5FFF7 	    _CALL hword_write
- 3924      FEFF5DF8 
- 3924      04EB
- 3925 0f94 02F10202 	    add r2,#2 
- 3926              	// write data 
- 3927 0f98 08F10108 	    add T1,#1 
- 3928 0f9c 4FEA5808 	    lsr T1,#1 // .hword to write 
- 3929 0fa0 33F8020B 	3:  ldrh r0,[r3],#2
- 3930 0fa4 1146     	    mov r1,r2
- 3931 0fa6 00B5FFF7 	    _CALL hword_write 
- 3931      FEFF5DF8 
- 3931      04EB
- 3932 0fb0 02F10202 	    add r2,#2 
- 3933 0fb4 B8F10108 	    subs T1,#1 
- 3934 0fb8 F2D1     	    bne 3b
- 3935 0fba 4FF00000 	    mov r0,#0 
- 3936 0fbe 00B5FFF7 	    _CALL unlock
- 3936      FEFF5DF8 
- 3936      04EB
- 3937              	// update FSFREE     
- 3938 0fc8 606B     	    ldr r0,[UPP,#TXTEND]
- 3939 0fca 216B     	    ldr r1,[UPP,#TXTBGN]
- 3940 0fcc A0EB0100 	    sub r0,r1 
- 3941 0fd0 8046     	    mov T1,r0 
- 3942 0fd2 E16A     	    ldr r1,[UPP,#FSFREE]
- 3943 0fd4 0844     	    add r0,r1 
- 3944 0fd6 00B5FFF7 	    _CALL page_align
- 3944      FEFF5DF8 
- 3944      04EB
- 3945 0fe0 E062     	    str r0,[UPP,#FSFREE]
- 3946 0fe2 DFF8C006 	    ldr r0,=fsize
- 3947 0fe6 00B5FFF7 	    _CALL uart_puts
- 3947      FEFF5DF8 
- 3947      04EB
- 3948 0ff0 4046     	    mov r0,T1 
- 3949 0ff2 4FF00A01 	    mov r1,#10 
+ 3908      FEFF5DF8 
+ 3908      04EB
+ 3909 0f54 00F10400 	    add r0,#4  
+ 3910 0f58 20F00100 	    and r0,#-2 //even size
+ 3911 0f5c A0F10208 	    sub T1,r0,#2  // name length counter   
+ 3912 0f60 1146     	1:  mov r1,r2  
+ 3913 0f62 00B5FFF7 	    _CALL hword_write   
+ 3913      FEFF5DF8 
+ 3913      04EB
+ 3914 0f6c 02F10202 	    add r2,#2  
+ 3915              	// write file name      
+ 3916 0f70 33F8020B 	2:  ldrh r0,[r3],#2 
+ 3917 0f74 1146     	    mov r1,r2 
+ 3918 0f76 00B5FFF7 	    _CALL hword_write
+ 3918      FEFF5DF8 
+ 3918      04EB
+ 3919 0f80 02F10202 	    add r2,#2
+ 3920 0f84 B8F10208 	    subs T1,#2
+ 3921 0f88 F2D1     	    bne 2b
+ 3922              	// write data size 
+ 3923 0f8a 606B     	    ldr r0,[UPP,#TXTEND]
+ 3924 0f8c 236B     	    ldr r3,[UPP,#TXTBGN]
+ 3925 0f8e A0EB0300 	    sub r0,r3
+ 3926 0f92 8046     	    mov T1,r0
+ 3927 0f94 1146     	    mov r1,r2 
+ 3928 0f96 00B5FFF7 	    _CALL hword_write
+ 3928      FEFF5DF8 
+ 3928      04EB
+ 3929 0fa0 02F10202 	    add r2,#2 
+ 3930              	// write data 
+ 3931 0fa4 08F10108 	    add T1,#1 
+ 3932 0fa8 4FEA5808 	    lsr T1,#1 // .hword to write 
+ 3933 0fac 33F8020B 	3:  ldrh r0,[r3],#2
+ 3934 0fb0 1146     	    mov r1,r2
+ 3935 0fb2 00B5FFF7 	    _CALL hword_write 
+ 3935      FEFF5DF8 
+ 3935      04EB
+ 3936 0fbc 02F10202 	    add r2,#2 
+ 3937 0fc0 B8F10108 	    subs T1,#1 
+ 3938 0fc4 F2D1     	    bne 3b
+ 3939 0fc6 4FF00000 	    mov r0,#0 
+ 3940 0fca 00B5FFF7 	    _CALL unlock
+ 3940      FEFF5DF8 
+ 3940      04EB
+ 3941              	// update FSFREE     
+ 3942 0fd4 606B     	    ldr r0,[UPP,#TXTEND]
+ 3943 0fd6 216B     	    ldr r1,[UPP,#TXTBGN]
+ 3944 0fd8 A0EB0100 	    sub r0,r1 
+ 3945 0fdc 8046     	    mov T1,r0 
+ 3946 0fde E16A     	    ldr r1,[UPP,#FSFREE]
+ 3947 0fe0 0844     	    add r0,r1 
+ 3948 0fe2 00B5FFF7 	    _CALL page_align
+ 3948      FEFF5DF8 
+ 3948      04EB
+ 3949 0fec E062     	    str r0,[UPP,#FSFREE]
+ 3950 0fee DFF8C006 	    ldr r0,=fsize
+ 3951 0ff2 00B5FFF7 	    _CALL uart_puts
 ARM GAS  tinyBasic.s 			page 102
 
 
- 3950 0ff6 00B5FFF7 	    _CALL print_int 
- 3950      FEFF5DF8 
- 3950      04EB
- 3951 1000 DFF8A406 	    ldr r0,=data_bytes 
- 3952 1004 00B5FFF7 	    _CALL uart_puts  
- 3952      FEFF5DF8 
- 3952      04EB
- 3953 100e 7047     	    _RET 
- 3954 1010 66696C65 	fsize: .asciz "file size: "
- 3954      2073697A 
- 3954      653A2000 
- 3955 101c 62797465 	data_bytes: .asciz "bytes\n"
- 3955      730A00
- 3956              	
- 3957              	
- 3958              	/******************************
- 3959              	  BASIC: AUTORUN ["name"]
- 3960              	  set a file name to 
- 3961              	  execute at boot up or if no 
- 3962              	  argument cancel autorun file.
- 3963              	  use:
- 3964              	    T1 *ram buffer 
- 3965              	*********************************/
- 3966 1023 00       	    _FUNC autorun
- 3967              	    // copy user page in RAM
- 3968 1024 D4F83480 	    ldr T1,[UPP,#TXTEND]
- 3969 1028 4FF00300 	    mov r0,#3
- 3970 102c 8044     	    add T1,r0 
- 3971 102e 6FEA0000 	    mvn r0,r0 
- 3972 1032 08EA0008 	    and T1,r0 
- 3973 1036 5FF86806 	    ldr r0,pad_adr  
- 3974 103a A0EB0800 	    sub r0,T1 
- 3975 103e B0F5806F 	    cmp r0,#PAGE_SIZE 
- 3976 1042 03D5     	    bpl 1f 
- 3977 1044 4FF00100 	    mov r0,#ERR_MEM_FULL 
- 3978 1048 FFF7FEBF 	    b tb_error 
- 3979 104c DFF85C06 	1:  ldr r0,=user
- 3980 1050 4146     	    mov r1,T1 
- 3981 1052 4FF48062 	    mov r2,#PAGE_SIZE 
- 3982 1056 00B5FFF7 	    _CALL cmove 
- 3982      FEFF5DF8 
- 3982      04EB
- 3983              	    // erase page 
- 3984 1060 DFF84806 	    ldr r0,=user 
- 3985 1064 00B5FFF7 	    _CALL erase_page
- 3985      FEFF5DF8 
- 3985      04EB
- 3986              	    // check file name argument 
- 3987 106e 00B5FFF7 	    _CALL next_token 
- 3987      FEFF5DF8 
- 3987      04EB
- 3988 1078 1C28     	    cmp r0,#TK_QSTR 
- 3989 107a 0DD0     	    beq 2f 
- 3990 107c D4F800A0 	    _UNGET_TOKEN
- 3990      D4F808B0 
- 3991              	    // erase first 16 byte of page
- 3992              	    // this cancel any existing autorun 
+ 3951      FEFF5DF8 
+ 3951      04EB
+ 3952 0ffc 4046     	    mov r0,T1 
+ 3953 0ffe 4FF00A01 	    mov r1,#10 
+ 3954 1002 00B5FFF7 	    _CALL print_int 
+ 3954      FEFF5DF8 
+ 3954      04EB
+ 3955 100c DFF8A406 	    ldr r0,=data_bytes 
+ 3956 1010 00B5FFF7 	    _CALL uart_puts  
+ 3956      FEFF5DF8 
+ 3956      04EB
+ 3957 101a 7047     	    _RET 
+ 3958 101c 66696C65 	fsize: .asciz "file size: "
+ 3958      2073697A 
+ 3958      653A2000 
+ 3959 1028 62797465 	data_bytes: .asciz "bytes\n"
+ 3959      730A00
+ 3960              	
+ 3961              	
+ 3962              	/******************************
+ 3963              	  BASIC: AUTORUN ["name"]
+ 3964              	  set a file name to 
+ 3965              	  execute at boot up or if no 
+ 3966              	  argument cancel autorun file.
+ 3967              	  use:
+ 3968              	    T1 *ram buffer 
+ 3969              	*********************************/
+ 3970 102f 00       	    _FUNC autorun
+ 3971              	    // copy user page in RAM
+ 3972 1030 D4F83480 	    ldr T1,[UPP,#TXTEND]
+ 3973 1034 4FF00300 	    mov r0,#3
+ 3974 1038 8044     	    add T1,r0 
+ 3975 103a 6FEA0000 	    mvn r0,r0 
+ 3976 103e 08EA0008 	    and T1,r0 
+ 3977 1042 5FF87406 	    ldr r0,pad_adr  
+ 3978 1046 A0EB0800 	    sub r0,T1 
+ 3979 104a B0F5806F 	    cmp r0,#PAGE_SIZE 
+ 3980 104e 03D5     	    bpl 1f 
+ 3981 1050 4FF00100 	    mov r0,#ERR_MEM_FULL 
+ 3982 1054 FFF7FEBF 	    b tb_error 
+ 3983 1058 DFF85C06 	1:  ldr r0,=user
+ 3984 105c 4146     	    mov r1,T1 
+ 3985 105e 4FF48062 	    mov r2,#PAGE_SIZE 
+ 3986 1062 00B5FFF7 	    _CALL cmove 
+ 3986      FEFF5DF8 
+ 3986      04EB
+ 3987              	    // erase page 
+ 3988 106c DFF84806 	    ldr r0,=user 
+ 3989 1070 00B5FFF7 	    _CALL erase_page
+ 3989      FEFF5DF8 
+ 3989      04EB
+ 3990              	    // check file name argument 
+ 3991 107a 00B5FFF7 	    _CALL next_token 
+ 3991      FEFF5DF8 
+ 3991      04EB
+ 3992 1084 1C28     	    cmp r0,#TK_QSTR 
+ 3993 1086 0DD0     	    beq 2f 
 ARM GAS  tinyBasic.s 			page 103
 
 
- 3993 1084 4FF0FF30 	    mov r0,#-1
- 3994 1088 4246     	    mov r2,T1
- 3995 108a 4FF01001 	    mov r1,#16 
- 3996 108e 42F8040B 	1:  str r0,[r2],#4
- 3997 1092 0439     	    subs r1,#4
- 3998 1094 FBD1     	    bne 1b 
- 3999 1096 0BE0     	    b write_back 
- 4000 1098 4246     	2:  mov r2,T1
- 4001 109a DFF82600 	    ldr r0,arun_sign 
- 4002 109e 42F8040B 	    str r0,[r2],#4
- 4003 10a2 0846     	    mov r0,r1 
- 4004 10a4 1146     	    mov r1,r2 
- 4005 10a6 00B5FFF7 	    _CALL strcpy 
- 4005      FEFF5DF8 
- 4005      04EB
- 4006              	write_back:
- 4007 10b0 4046     	    mov r0,T1
- 4008 10b2 DFF8F815 	    ldr r1,=user 
- 4009 10b6 00B5FFF7 	    _CALL write_page
+ 3994 1088 D4F800A0 	    _UNGET_TOKEN
+ 3994      D4F808B0 
+ 3995              	    // erase first 16 byte of page
+ 3996              	    // this cancel any existing autorun 
+ 3997 1090 4FF0FF30 	    mov r0,#-1
+ 3998 1094 4246     	    mov r2,T1
+ 3999 1096 4FF01001 	    mov r1,#16 
+ 4000 109a 42F8040B 	1:  str r0,[r2],#4
+ 4001 109e 0439     	    subs r1,#4
+ 4002 10a0 FBD1     	    bne 1b 
+ 4003 10a2 0BE0     	    b write_back 
+ 4004 10a4 4246     	2:  mov r2,T1
+ 4005 10a6 DFF82600 	    ldr r0,arun_sign 
+ 4006 10aa 42F8040B 	    str r0,[r2],#4
+ 4007 10ae 0846     	    mov r0,r1 
+ 4008 10b0 1146     	    mov r1,r2 
+ 4009 10b2 00B5FFF7 	    _CALL strcpy 
  4009      FEFF5DF8 
  4009      04EB
- 4010 10c0 7047     	    _RET 
- 4011 10c2 4152554E 	arun_sign: .ascii "ARUN" 
- 4012              	
- 4013              	/******************************
- 4014              	    exec_autorun 
- 4015              	    check for autorun file.
- 4016              	    load and execute it.
- 4017              	*****************************/
- 4018 10c6 00BF     	    _FUNC exec_autorun
- 4019 10c8 DFF8E025 	    ldr r2,=user 
- 4020 10cc 5FF80E10 	    ldr r1,arun_sign 
- 4021 10d0 1068     	    ldr r0,[r2]
- 4022 10d2 8842     	    cmp r0,r1 
- 4023 10d4 0DD1     	    bne 9f 
- 4024 10d6 02F10400 	    add r0,r2,#4
- 4025 10da 00B5FFF7 	    _CALL load_autorun 
- 4025      CBFE5DF8 
- 4025      04EB
- 4026 10e4 00B5FFF7 	    _CALL run
- 4026      CBFD5DF8 
- 4026      04EB
- 4027 10ee 00F004BF 	    b interpreter  
- 4028 10f2 7047     	9:  _RET 
- 4029              	
- 4030              	/*******************************
- 4031              	  BASIC: FREE 
- 4032              	  return RAM free bytes 
- 4033              	*******************************/
- 4034              	    _FUNC free
- 4035 10f4 D4F8D000 	    ldr r0,[UPP,#HERE]
- 4036 10f8 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
- 4037 10fc A1EB0001 	    sub r1,r0
- 4038 1100 4FF01B00 	    mov r0,#TK_INTGR
- 4039 1104 7047     	    _RET  
- 4040              	
- 4041              	/*********************************
+ 4010              	write_back:
+ 4011 10bc 4046     	    mov r0,T1
+ 4012 10be DFF8F815 	    ldr r1,=user 
+ 4013 10c2 00B5FFF7 	    _CALL write_page
+ 4013      FEFF5DF8 
+ 4013      04EB
+ 4014 10cc 7047     	    _RET 
+ 4015 10ce 4152554E 	arun_sign: .ascii "ARUN" 
+ 4016              	
+ 4017              	/******************************
+ 4018              	    exec_autorun 
+ 4019              	    check for autorun file.
+ 4020              	    load and execute it.
+ 4021              	*****************************/
+ 4022 10d2 00BF     	    _FUNC exec_autorun
+ 4023 10d4 DFF8E025 	    ldr r2,=user 
+ 4024 10d8 5FF80E10 	    ldr r1,arun_sign 
+ 4025 10dc 1068     	    ldr r0,[r2]
+ 4026 10de 8842     	    cmp r0,r1 
+ 4027 10e0 0DD1     	    bne 9f 
+ 4028 10e2 02F10400 	    add r0,r2,#4
+ 4029 10e6 00B5FFF7 	    _CALL load_autorun 
+ 4029      CBFE5DF8 
+ 4029      04EB
+ 4030 10f0 00B5FFF7 	    _CALL run
+ 4030      CBFD5DF8 
+ 4030      04EB
+ 4031 10fa 00F004BF 	    b interpreter  
+ 4032 10fe 7047     	9:  _RET 
+ 4033              	
+ 4034              	/*******************************
+ 4035              	  BASIC: FREE 
+ 4036              	  return RAM free bytes 
+ 4037              	*******************************/
+ 4038              	    _FUNC free
+ 4039 1100 D4F8D000 	    ldr r0,[UPP,#HERE]
+ 4040 1104 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
+ 4041 1108 A1EB0001 	    sub r1,r0
 ARM GAS  tinyBasic.s 			page 104
 
 
- 4042              	  BASIC: SERVO_INIT n 
- 4043              	  initialize servo motor 1,2,3,4
- 4044              	  1 -> PWM2/1 pin A15
- 4045              	  2 -> PWM2/2 pin B3 
- 4046              	  3 -> PWM3/1 pin B4 
- 4047              	  4 -> PWM3/2 pin B5
- 4048              	  TIMER parameters are for Fclk=72Mhz 
- 4049              	  period=20msec 
- 4050              	  default pos = 1500µSec 
- 4051              	************************************/
- 4052 1106 00BF     	    _FUNC servo_init 
- 4053 1108 00B5FFF7 	    _CALL expression 
- 4053      FEFF5DF8 
- 4053      04EB
- 4054 1112 1B28     	    cmp r0,#TK_INTGR  
- 4055 1114 7FF4FEAF 	    bne syntax_error 
- 4056 1118 0129     	    cmp r1,#1 
- 4057 111a 03D5     	    bpl 1f 
- 4058 111c 4FF00A00 	0:  mov r0,#ERR_BAD_VALUE
- 4059 1120 FFF7FEBF 	    b tb_error 
- 4060 1124 0529     	1:  cmp r1,#5
- 4061 1126 F9D5     	    bpl 0b
- 4062 1128 A1F10103 	    sub r3,r1,#1
- 4063              	1:  // configure port pin
- 4064 112c DFF88025 	    ldr r2,=servo_port
- 4065 1130 4FEAC301 	    lsl r1,r3,#3
- 4066 1134 0A44     	    add r2,r1  
- 4067 1136 52F8040B 	    ldr r0,[r2],#4 //GPIOx_BASE_ADR
- 4068 113a 1168     	    ldr r1,[r2]  // pin 
- 4069 113c 4FF00A02 	    mov r2,#0xa // OUTPUT_AFPP 
- 4070 1140 00B5FFF7 	    _CALL gpio_config 
- 4070      69FC5DF8 
- 4070      04EB
- 4071 114a 4FF48052 	    _MOV32 r2,RCC_BASE_ADR 
- 4071      C4F20202 
- 4072 1152 D069     	    ldr r0,[r2,#RCC_APB1ENR]
- 4073 1154 022B     	    cmp r3,#2
- 4074 1156 02D4     	    bmi 1f 
- 4075 1158 A3F10203 	    sub r3,#2
- 4076 115c 11E0     	    b setup_pwm3  
- 4077              	// setup pwm2 ch1|ch2
- 4078              	1:  // TIMER2 clock enable 
- 4079 115e 40F00100 	    orr r0,#1
- 4080 1162 D061     	    str r0,[r2,#RCC_APB1ENR]
- 4081              	    // TIMER2 OC remapping 
- 4082 1164 4FF00002 	    _MOV32 r2,AFIO_BASE_ADR
- 4082      C4F20102 
- 4083 116c 5068     	    ldr r0,[r2,#AFIO_MAPR]
- 4084 116e 4FF44071 	    mov r1,#(3<<8)
- 4085 1172 40EA0100 	    orr r0,r1
- 4086 1176 5060     	    str r0,[r2,#AFIO_MAPR]
- 4087 1178 4FF00002 	    _MOV32 r2,TIMER2_BASE_ADR
- 4087      C4F20002 
- 4088 1180 14E0     	    b 2f 
- 4089              	setup_pwm3: // ch1|ch2 
- 4090              	    // TIMER3 clock enable 
- 4091 1182 40F00200 	    orr r0,#2
+ 4042 110c 4FF01B00 	    mov r0,#TK_INTGR
+ 4043 1110 7047     	    _RET  
+ 4044              	
+ 4045              	/*********************************
+ 4046              	  BASIC: SERVO_INIT n 
+ 4047              	  initialize servo motor 1,2,3,4
+ 4048              	  1 -> PWM2/1 pin A15
+ 4049              	  2 -> PWM2/2 pin B3 
+ 4050              	  3 -> PWM3/1 pin B4 
+ 4051              	  4 -> PWM3/2 pin B5
+ 4052              	  TIMER parameters are for Fclk=72Mhz 
+ 4053              	  period=20msec 
+ 4054              	  default pos = 1500µSec 
+ 4055              	************************************/
+ 4056 1112 00BF     	    _FUNC servo_init 
+ 4057 1114 00B5FFF7 	    _CALL expression 
+ 4057      FEFF5DF8 
+ 4057      04EB
+ 4058 111e 1B28     	    cmp r0,#TK_INTGR  
+ 4059 1120 7FF4FEAF 	    bne syntax_error 
+ 4060 1124 0129     	    cmp r1,#1 
+ 4061 1126 03D5     	    bpl 1f 
+ 4062 1128 4FF00A00 	0:  mov r0,#ERR_BAD_VALUE
+ 4063 112c FFF7FEBF 	    b tb_error 
+ 4064 1130 0529     	1:  cmp r1,#5
+ 4065 1132 F9D5     	    bpl 0b
+ 4066 1134 A1F10103 	    sub r3,r1,#1
+ 4067              	1:  // configure port pin
+ 4068 1138 DFF88025 	    ldr r2,=servo_port
+ 4069 113c 4FEAC301 	    lsl r1,r3,#3
+ 4070 1140 0A44     	    add r2,r1  
+ 4071 1142 52F8040B 	    ldr r0,[r2],#4 //GPIOx_BASE_ADR
+ 4072 1146 1168     	    ldr r1,[r2]  // pin 
+ 4073 1148 4FF00A02 	    mov r2,#0xa // OUTPUT_AFPP 
+ 4074 114c 00B5FFF7 	    _CALL gpio_config 
+ 4074      63FC5DF8 
+ 4074      04EB
+ 4075 1156 4FF48052 	    _MOV32 r2,RCC_BASE_ADR 
+ 4075      C4F20202 
+ 4076 115e D069     	    ldr r0,[r2,#RCC_APB1ENR]
+ 4077 1160 022B     	    cmp r3,#2
+ 4078 1162 02D4     	    bmi 1f 
+ 4079 1164 A3F10203 	    sub r3,#2
+ 4080 1168 11E0     	    b setup_pwm3  
+ 4081              	// setup pwm2 ch1|ch2
+ 4082              	1:  // TIMER2 clock enable 
+ 4083 116a 40F00100 	    orr r0,#1
+ 4084 116e D061     	    str r0,[r2,#RCC_APB1ENR]
+ 4085              	    // TIMER2 OC remapping 
+ 4086 1170 4FF00002 	    _MOV32 r2,AFIO_BASE_ADR
+ 4086      C4F20102 
+ 4087 1178 5068     	    ldr r0,[r2,#AFIO_MAPR]
+ 4088 117a 4FF44071 	    mov r1,#(3<<8)
+ 4089 117e 40EA0100 	    orr r0,r1
+ 4090 1182 5060     	    str r0,[r2,#AFIO_MAPR]
+ 4091 1184 4FF00002 	    _MOV32 r2,TIMER2_BASE_ADR
+ 4091      C4F20002 
 ARM GAS  tinyBasic.s 			page 105
 
 
- 4092 1186 D061     	    str r0,[r2,#RCC_APB1ENR]
- 4093              	    // TIMER3 OC remapping 
- 4094 1188 4FF00002 	    _MOV32 r2,AFIO_BASE_ADR
- 4094      C4F20102 
- 4095 1190 5068     	    ldr r0,[r2,#AFIO_MAPR]
- 4096 1192 6FF44061 	    mvn r1,#3<<10 
- 4097 1196 00EA0100 	    and r0,r1 
- 4098 119a 4FF40061 	    mov r1,#2<<10
- 4099 119e 40EA0100 	    orr r0,r1 
- 4100 11a2 5060     	    str r0,[r2,#AFIO_MAPR]
- 4101 11a4 4FF48062 	    _MOV32 r2,TIMER3_BASE_ADR
- 4101      C4F20002 
- 4102              	2:  // PWM configuration 
- 4103              	    //set TIMER prescaler to 32
- 4104 11ac 4FF01F00 	    mov r0,#31 
- 4105 11b0 1085     	    strh r0,[r2,#TIM_PSC]
- 4106              	    // set autoreload value to 45000 (20msec period)
- 4107 11b2 4AF6C870 	    _MOV32 r0,45000
- 4107      C0F20000 
- 4108 11ba 9085     	    strh r0,[r2,#TIM_ARR]
- 4109              	    // set compare value for 1500µsec 
- 4110 11bc 40F62F50 	    mov r0,#3375
- 4111 11c0 0BB1     	    cbz r3,3f 
- 4112 11c2 1087     	    strh r0,[r2,#TIM_CCR2]
- 4113 11c4 00E0     	    b 4f 
- 4114 11c6 9086     	3:  strh r0,[r2,#TIM_CCR1]
- 4115              	    // set mode 
- 4116 11c8 4FF06800 	4:  mov r0,#(0xd<<3)
- 4117 11cc 4FF47F48 	    mov T1,#0xff00 
- 4118 11d0 1BB1     	    cbz r3,4f 
- 4119 11d2 4FEA0020 	    lsl r0,#8
- 4120 11d6 4FEA1828 	    lsr T1,#8  
- 4121 11da 118B     	4:  ldrh r1,[r2,#TIM_CCMR1]
- 4122 11dc 01EA0801 	    and r1,T1 
- 4123 11e0 41EA0001 	    orr r1,r0 
- 4124 11e4 1183     	    strh r1,[r2,#TIM_CCMR1]
- 4125              	    // enable OC output 
- 4126 11e6 4FF00100 	    mov r0,#1 
- 4127 11ea 0BB1     	    cbz r3,5f 
- 4128 11ec 4FEA0010 	    lsl r0,#4 
- 4129 11f0 118C     	5:  ldrh r1,[r2,#TIM_CCER]
- 4130 11f2 41EA0001 	    orr r1,r0 
- 4131 11f6 1184     	    strh r1,[r2,#TIM_CCER]
- 4132              	    // enable counter 
- 4133 11f8 4FF08100 	    mov r0,#1+(1<<7) // CE+ARPE  
- 4134 11fc 1188     	    ldrh r1,[r2,TIM_CR1]
- 4135 11fe 41EA0001 	    orr r1,r0
- 4136 1202 1180     	    strh r1,[r2,TIM_CR1]
- 4137              	    // generate a reload event 
- 4138 1204 4FF00100 	    mov r0,#1 
- 4139 1208 9082     	    strh r0,[r2,TIM_EGR]
- 4140 120a 7047     	    _RET 
- 4141              	
- 4142 120c 00080140 	servo_port: .word GPIOA_BASE_ADR,15
- 4142      0F000000 
- 4143 1214 000C0140 	            .word GPIOB_BASE_ADR,3
- 4143      03000000 
+ 4092 118c 14E0     	    b 2f 
+ 4093              	setup_pwm3: // ch1|ch2 
+ 4094              	    // TIMER3 clock enable 
+ 4095 118e 40F00200 	    orr r0,#2
+ 4096 1192 D061     	    str r0,[r2,#RCC_APB1ENR]
+ 4097              	    // TIMER3 OC remapping 
+ 4098 1194 4FF00002 	    _MOV32 r2,AFIO_BASE_ADR
+ 4098      C4F20102 
+ 4099 119c 5068     	    ldr r0,[r2,#AFIO_MAPR]
+ 4100 119e 6FF44061 	    mvn r1,#3<<10 
+ 4101 11a2 00EA0100 	    and r0,r1 
+ 4102 11a6 4FF40061 	    mov r1,#2<<10
+ 4103 11aa 40EA0100 	    orr r0,r1 
+ 4104 11ae 5060     	    str r0,[r2,#AFIO_MAPR]
+ 4105 11b0 4FF48062 	    _MOV32 r2,TIMER3_BASE_ADR
+ 4105      C4F20002 
+ 4106              	2:  // PWM configuration 
+ 4107              	    //set TIMER prescaler to 32
+ 4108 11b8 4FF01F00 	    mov r0,#31 
+ 4109 11bc 1085     	    strh r0,[r2,#TIM_PSC]
+ 4110              	    // set autoreload value to 45000 (20msec period)
+ 4111 11be 4AF6C870 	    _MOV32 r0,45000
+ 4111      C0F20000 
+ 4112 11c6 9085     	    strh r0,[r2,#TIM_ARR]
+ 4113              	    // set compare value for 1500µsec 
+ 4114 11c8 40F62F50 	    mov r0,#3375
+ 4115 11cc 0BB1     	    cbz r3,3f 
+ 4116 11ce 1087     	    strh r0,[r2,#TIM_CCR2]
+ 4117 11d0 00E0     	    b 4f 
+ 4118 11d2 9086     	3:  strh r0,[r2,#TIM_CCR1]
+ 4119              	    // set mode 
+ 4120 11d4 4FF06800 	4:  mov r0,#(0xd<<3)
+ 4121 11d8 4FF47F48 	    mov T1,#0xff00 
+ 4122 11dc 1BB1     	    cbz r3,4f 
+ 4123 11de 4FEA0020 	    lsl r0,#8
+ 4124 11e2 4FEA1828 	    lsr T1,#8  
+ 4125 11e6 118B     	4:  ldrh r1,[r2,#TIM_CCMR1]
+ 4126 11e8 01EA0801 	    and r1,T1 
+ 4127 11ec 41EA0001 	    orr r1,r0 
+ 4128 11f0 1183     	    strh r1,[r2,#TIM_CCMR1]
+ 4129              	    // enable OC output 
+ 4130 11f2 4FF00100 	    mov r0,#1 
+ 4131 11f6 0BB1     	    cbz r3,5f 
+ 4132 11f8 4FEA0010 	    lsl r0,#4 
+ 4133 11fc 118C     	5:  ldrh r1,[r2,#TIM_CCER]
+ 4134 11fe 41EA0001 	    orr r1,r0 
+ 4135 1202 1184     	    strh r1,[r2,#TIM_CCER]
+ 4136              	    // enable counter 
+ 4137 1204 4FF08100 	    mov r0,#1+(1<<7) // CE+ARPE  
+ 4138 1208 1188     	    ldrh r1,[r2,TIM_CR1]
+ 4139 120a 41EA0001 	    orr r1,r0
+ 4140 120e 1180     	    strh r1,[r2,TIM_CR1]
+ 4141              	    // generate a reload event 
+ 4142 1210 4FF00100 	    mov r0,#1 
+ 4143 1214 9082     	    strh r0,[r2,TIM_EGR]
+ 4144 1216 7047     	    _RET 
+ 4145              	
 ARM GAS  tinyBasic.s 			page 106
 
 
- 4144 121c 000C0140 	            .word GPIOB_BASE_ADR,4
- 4144      04000000 
- 4145 1224 000C0140 	            .word GPIOB_BASE_ADR,5
- 4145      05000000 
- 4146              	
- 4147              	
- 4148              	/*********************************
- 4149              	  BASIC: SERVO_OFF expr 
- 4150              	  disable servomotor channel
- 4151              	*********************************/
- 4152              	    _FUNC servo_off 
- 4153 122c 00B5FFF7 	    _CALL expression 
- 4153      FEFF5DF8 
- 4153      04EB
- 4154 1236 1B28     	    cmp r0,#TK_INTGR
- 4155 1238 7FF4FEAF 	    bne syntax_error
- 4156 123c 0129     	    cmp r1,#1
- 4157 123e 03D5     	    bpl 1f 
- 4158 1240 4FF00A00 	0:  mov r0,#ERR_BAD_VALUE
- 4159 1244 FFF7FEBF 	    b tb_error 
- 4160 1248 0529     	1:  cmp r1,#5
- 4161 124a F9D5     	    bpl 0b 
- 4162 124c A1F10103 	    sub r3,r1,#1
- 4163 1250 DFF85C24 	    ldr r2,=servo_port 
- 4164 1254 4FEAC301 	    lsl r1,r3,#3
- 4165              	    // reconfigure GPIO 
- 4166 1258 52F8040B 	    ldr r0,[r2],#4
- 4167 125c 1168     	    ldr r1,[r2]
- 4168 125e 4FF01002 	    mov r2,#16 // INPUT_PD 
- 4169 1262 00B5FFF7 	    _CALL gpio_config
- 4169      D8FB5DF8 
- 4169      04EB
- 4170 126c 4FF00002 	    _MOV32 r2, TIMER2_BASE_ADR  
- 4170      C4F20002 
- 4171 1274 022B     	    cmp r3,#2
- 4172 1276 05D4     	    bmi 2f
- 4173 1278 A3F10203 	    sub r3,#2 
- 4174 127c 4FF48062 	    _MOV32 r2,TIMER3_BASE_ADR
+ 4146 1218 00080140 	servo_port: .word GPIOA_BASE_ADR,15
+ 4146      0F000000 
+ 4147 1220 000C0140 	            .word GPIOB_BASE_ADR,3
+ 4147      03000000 
+ 4148 1228 000C0140 	            .word GPIOB_BASE_ADR,4
+ 4148      04000000 
+ 4149 1230 000C0140 	            .word GPIOB_BASE_ADR,5
+ 4149      05000000 
+ 4150              	
+ 4151              	
+ 4152              	/*********************************
+ 4153              	  BASIC: SERVO_OFF expr 
+ 4154              	  disable servomotor channel
+ 4155              	*********************************/
+ 4156              	    _FUNC servo_off 
+ 4157 1238 00B5FFF7 	    _CALL expression 
+ 4157      FEFF5DF8 
+ 4157      04EB
+ 4158 1242 1B28     	    cmp r0,#TK_INTGR
+ 4159 1244 7FF4FEAF 	    bne syntax_error
+ 4160 1248 0129     	    cmp r1,#1
+ 4161 124a 03D5     	    bpl 1f 
+ 4162 124c 4FF00A00 	0:  mov r0,#ERR_BAD_VALUE
+ 4163 1250 FFF7FEBF 	    b tb_error 
+ 4164 1254 0529     	1:  cmp r1,#5
+ 4165 1256 F9D5     	    bpl 0b 
+ 4166 1258 A1F10103 	    sub r3,r1,#1
+ 4167 125c DFF85C24 	    ldr r2,=servo_port 
+ 4168 1260 4FEAC301 	    lsl r1,r3,#3
+ 4169              	    // reconfigure GPIO 
+ 4170 1264 52F8040B 	    ldr r0,[r2],#4
+ 4171 1268 1168     	    ldr r1,[r2]
+ 4172 126a 4FF01002 	    mov r2,#16 // INPUT_PD 
+ 4173 126e 00B5FFF7 	    _CALL gpio_config
+ 4173      D2FB5DF8 
+ 4173      04EB
+ 4174 1278 4FF00002 	    _MOV32 r2, TIMER2_BASE_ADR  
  4174      C4F20002 
- 4175 1284 4FF00100 	2:  mov r0,#1 
- 4176 1288 0BB1     	    cbz r3,3f 
- 4177 128a 4FEA0010 	    lsl r0,#4 
- 4178 128e 118C     	3:  ldrh r1,[r2,TIM_CCER]
- 4179 1290 81EA0001 	    eor r1,r0 
- 4180 1294 1184     	    strh r1,[r2,TIM_CCER] 
- 4181 1296 7047     	    _RET 
- 4182              	
- 4183              	
- 4184              	/*********************************
- 4185              	  BASIC: SERVO_POS {1..4},expr 
- 4186              	  set servo position 
- 4187              	*********************************/
- 4188              	    _FUNC servo_pos 
- 4189 1298 00B5FFF7 	    _CALL arg_list 
- 4189      FEFF5DF8 
- 4189      04EB
- 4190 12a2 0228     	    cmp r0,#2
+ 4175 1280 022B     	    cmp r3,#2
+ 4176 1282 05D4     	    bmi 2f
+ 4177 1284 A3F10203 	    sub r3,#2 
+ 4178 1288 4FF48062 	    _MOV32 r2,TIMER3_BASE_ADR
+ 4178      C4F20002 
+ 4179 1290 4FF00100 	2:  mov r0,#1 
+ 4180 1294 0BB1     	    cbz r3,3f 
+ 4181 1296 4FEA0010 	    lsl r0,#4 
+ 4182 129a 118C     	3:  ldrh r1,[r2,TIM_CCER]
+ 4183 129c 81EA0001 	    eor r1,r0 
+ 4184 12a0 1184     	    strh r1,[r2,TIM_CCER] 
+ 4185 12a2 7047     	    _RET 
+ 4186              	
+ 4187              	
+ 4188              	/*********************************
+ 4189              	  BASIC: SERVO_POS {1..4},expr 
+ 4190              	  set servo position 
+ 4191              	*********************************/
+ 4192              	    _FUNC servo_pos 
 ARM GAS  tinyBasic.s 			page 107
 
 
- 4191 12a4 7FF4FEAF 	    bne syntax_error 
- 4192 12a8 BCE80600 	    ldmia DP!,{r1,r2} // value, channel 
- 4193 12ac A2F10102 	    sub r2,#1 
- 4194 12b0 022A     	    cmp r2,#2 
- 4195 12b2 04D5     	    bpl 3f // timer 3 channels 
- 4196              	// timer 2 channels 
- 4197 12b4 4FF00003 	    _MOV32 r3,TIMER2_BASE_ADR
- 4197      C4F20003 
- 4198 12bc 05E0     	    b 4f 
- 4199 12be 4FF48063 	3:  _MOV32 r3,TIMER3_BASE_ADR
- 4199      C4F20003 
- 4200 12c6 A2F10202 	    sub r2,#2 
- 4201 12ca 4AF6C870 	4:  _MOV32 r0,45000
- 4201      C0F20000 
- 4202 12d2 01FB00F0 	    mul r0,r1 
- 4203 12d6 44F62061 	    _MOV32 r1,20000
- 4203      C0F20001 
- 4204 12de B0FBF1F0 	    udiv r0,r1 
- 4205 12e2 0AB1     	    cbz r2,6f 
- 4206 12e4 1887     	    strh r0,[r3,#TIM_CCR2]
- 4207 12e6 00E0     	    b 7f 
- 4208 12e8 9886     	6:  strh r0,[r3,#TIM_CCR1]
- 4209 12ea 4FF00600 	7:  mov r0,#6 
- 4210 12ee 9882     	    strh r0,[r3,#TIM_EGR]
- 4211 12f0 7047     	    _RET 
- 4212              	
- 4213              	
- 4214              	/*********************************
- 4215              	  BASIC: SLEEP 
- 4216              	  place MCU lowest power mode 
- 4217              	  wait for external interrpt or
- 4218              	  reset.
- 4219              	*********************************/
- 4220 12f2 00BF     	    _FUNC sleep
- 4221 12f4 4EF61050 	    _MOV32 r0,SCR_BASE_ADR
- 4221      CEF20000 
- 4222 12fc 4FF00401 	    mov r1,#SCR_SLEEPDEEP
- 4223 1300 0160     	    str r1,[r0]
- 4224 1302 4FF4E040 	    _MOV32 r0,PWR_CR_ADR
- 4224      C4F20000 
- 4225 130a 4FF00601 	    mov r1,#PWR_CR_PDDS+PWR_CR_CWUF
- 4226 130e 0160     	    str r1,[r0]
- 4227 1310 20BF     	    wfe 
- 4228 1312 7047     	    _RET 
- 4229              	
- 4230              	/************************************
- 4231              	  BASIC: SPC(expr)
- 4232              	  mov cursor right expr spaces 
- 4233              	***********************************/
- 4234              	    _FUNC spc 
- 4235 1314 00B5FFF7 	    _CALL func_args 
- 4235      FEFF5DF8 
- 4235      04EB
- 4236 131e 0128     	    cmp r0,#1
- 4237 1320 7FF4FEAF 	    bne syntax_error 
- 4238 1324 206C     	    ldr r0,[UPP,#FLAGS]
- 4239 1326 10F0800F 	    tst r0,#FPRINT 
+ 4193 12a4 00B5FFF7 	    _CALL arg_list 
+ 4193      FEFF5DF8 
+ 4193      04EB
+ 4194 12ae 0228     	    cmp r0,#2
+ 4195 12b0 7FF4FEAF 	    bne syntax_error 
+ 4196 12b4 BCE80600 	    ldmia DP!,{r1,r2} // value, channel 
+ 4197 12b8 A2F10102 	    sub r2,#1 
+ 4198 12bc 022A     	    cmp r2,#2 
+ 4199 12be 04D5     	    bpl 3f // timer 3 channels 
+ 4200              	// timer 2 channels 
+ 4201 12c0 4FF00003 	    _MOV32 r3,TIMER2_BASE_ADR
+ 4201      C4F20003 
+ 4202 12c8 05E0     	    b 4f 
+ 4203 12ca 4FF48063 	3:  _MOV32 r3,TIMER3_BASE_ADR
+ 4203      C4F20003 
+ 4204 12d2 A2F10202 	    sub r2,#2 
+ 4205 12d6 4AF6C870 	4:  _MOV32 r0,45000
+ 4205      C0F20000 
+ 4206 12de 01FB00F0 	    mul r0,r1 
+ 4207 12e2 44F62061 	    _MOV32 r1,20000
+ 4207      C0F20001 
+ 4208 12ea B0FBF1F0 	    udiv r0,r1 
+ 4209 12ee 0AB1     	    cbz r2,6f 
+ 4210 12f0 1887     	    strh r0,[r3,#TIM_CCR2]
+ 4211 12f2 00E0     	    b 7f 
+ 4212 12f4 9886     	6:  strh r0,[r3,#TIM_CCR1]
+ 4213 12f6 4FF00600 	7:  mov r0,#6 
+ 4214 12fa 9882     	    strh r0,[r3,#TIM_EGR]
+ 4215 12fc 7047     	    _RET 
+ 4216              	
+ 4217              	
+ 4218              	/*********************************
+ 4219              	  BASIC: SLEEP 
+ 4220              	  place MCU lowest power mode 
+ 4221              	  wait for external interrpt or
+ 4222              	  reset.
+ 4223              	*********************************/
+ 4224 12fe 00BF     	    _FUNC sleep
+ 4225 1300 4EF61050 	    _MOV32 r0,SCR_BASE_ADR
+ 4225      CEF20000 
+ 4226 1308 4FF00401 	    mov r1,#SCR_SLEEPDEEP
+ 4227 130c 0160     	    str r1,[r0]
+ 4228 130e 4FF4E040 	    _MOV32 r0,PWR_CR_ADR
+ 4228      C4F20000 
+ 4229 1316 4FF00601 	    mov r1,#PWR_CR_PDDS+PWR_CR_CWUF
+ 4230 131a 0160     	    str r1,[r0]
+ 4231 131c 20BF     	    wfe 
+ 4232 131e 7047     	    _RET 
+ 4233              	
+ 4234              	/************************************
+ 4235              	  BASIC: SPC(expr)
+ 4236              	  mov cursor right expr spaces 
+ 4237              	***********************************/
+ 4238              	    _FUNC spc 
+ 4239 1320 00B5FFF7 	    _CALL func_args 
+ 4239      FEFF5DF8 
+ 4239      04EB
 ARM GAS  tinyBasic.s 			page 108
 
 
- 4240 132a 5CF8040B 	    _POP r0 
- 4241 132e 04D0     	    beq 9f 
- 4242 1330 00B5FFF7 	    _CALL spaces 
- 4242      FEFF5DF8 
- 4242      04EB
- 4243 133a 7047     	9:  _RET 
- 4244              	
- 4245              	    _FUNC spi_read
- 4246 133c 7047     	    _RET 
- 4247              	
- 4248 133e 00BF     	    _FUNC spi_enable
- 4249 1340 7047     	    _RET 
- 4250              	
- 4251 1342 00BF     	    _FUNC spi_select
- 4252 1344 7047     	    _RET 
- 4253              	
- 4254 1346 00BF     	    _FUNC spi_write
- 4255 1348 7047     	    _RET 
- 4256              	
- 4257              	/******************************
- 4258              	  BASIC: STOP 
- 4259              	  stop program executre but 
- 4260              	  keep execution state for 
- 4261              	  resume 
- 4262              	******************************/
- 4263 134a 00BF     	    _FUNC stop
- 4264 134c 206C10F0 	    _RTO 
- 4264      010F03D1 
- 4264      4FF00700 
- 4264      FFF7FEBF 
- 4265 135c 6068     	    ldr r0,[UPP,#COUNT]
- 4266 135e 2CE9010C 	    stmdb DP!,{r0,IN,BPTR}
- 4267 1362 206C     	    ldr r0,[UPP,#FLAGS]
- 4268 1364 4FF00901 	    mov r1,#FRUN+FSTOP
- 4269 1368 80EA0100 	    eor r0,r1
- 4270 136c 2064     	    str r0,[UPP,#FLAGS]
- 4271 136e 8AEA0A0A 	    eor IN,IN 
- 4272 1372 8BEA0B0B 	    eor BPTR,BPTR 
- 4273 1376 C4F804A0 	    str IN,[UPP,#COUNT]
- 4274 137a C4F800A0 	    str IN,[UPP,#IN_SAVED]
- 4275 137e C4F808A0 	    str IN,[UPP,#BASICPTR]
- 4276 1382 4FF4A040 	    _MOV32 r0,RAM_END
- 4276      C2F20000 
- 4277 138a 8546     	    mov sp,r0
- 4278 138c FFF7FEBF 	    b cmd_line 
- 4279              	
- 4280              	
- 4281              	/**************************
- 4282              	  BASIC: TAB(expr)
- 4283              	  move cursor column expr 
- 4284              	**************************/
- 4285              	    _FUNC tab 
- 4286 1390 00B5FFF7 	    _CALL func_args  
- 4286      FEFF5DF8 
- 4286      04EB
- 4287 139a 0128     	    cmp r0,#1 
- 4288 139c 7FF4FEAF 	    bne syntax_error 
+ 4240 132a 0128     	    cmp r0,#1
+ 4241 132c 7FF4FEAF 	    bne syntax_error 
+ 4242 1330 206C     	    ldr r0,[UPP,#FLAGS]
+ 4243 1332 10F0800F 	    tst r0,#FPRINT 
+ 4244 1336 5CF8040B 	    _POP r0 
+ 4245 133a 04D0     	    beq 9f 
+ 4246 133c 00B5FFF7 	    _CALL spaces 
+ 4246      FEFF5DF8 
+ 4246      04EB
+ 4247 1346 7047     	9:  _RET 
+ 4248              	
+ 4249              	    _FUNC spi_read
+ 4250 1348 7047     	    _RET 
+ 4251              	
+ 4252 134a 00BF     	    _FUNC spi_enable
+ 4253 134c 7047     	    _RET 
+ 4254              	
+ 4255 134e 00BF     	    _FUNC spi_select
+ 4256 1350 7047     	    _RET 
+ 4257              	
+ 4258 1352 00BF     	    _FUNC spi_write
+ 4259 1354 7047     	    _RET 
+ 4260              	
+ 4261              	/******************************
+ 4262              	  BASIC: STOP 
+ 4263              	  stop program executre but 
+ 4264              	  keep execution state for 
+ 4265              	  resume 
+ 4266              	******************************/
+ 4267 1356 00BF     	    _FUNC stop
+ 4268 1358 206C10F0 	    _RTO 
+ 4268      010F03D1 
+ 4268      4FF00700 
+ 4268      FFF7FEBF 
+ 4269 1368 6068     	    ldr r0,[UPP,#COUNT]
+ 4270 136a 2CE9010C 	    stmdb DP!,{r0,IN,BPTR}
+ 4271 136e 206C     	    ldr r0,[UPP,#FLAGS]
+ 4272 1370 4FF00901 	    mov r1,#FRUN+FSTOP
+ 4273 1374 80EA0100 	    eor r0,r1
+ 4274 1378 2064     	    str r0,[UPP,#FLAGS]
+ 4275 137a 8AEA0A0A 	    eor IN,IN 
+ 4276 137e 8BEA0B0B 	    eor BPTR,BPTR 
+ 4277 1382 C4F804A0 	    str IN,[UPP,#COUNT]
+ 4278 1386 C4F800A0 	    str IN,[UPP,#IN_SAVED]
+ 4279 138a C4F808A0 	    str IN,[UPP,#BASICPTR]
+ 4280 138e 4FF4A040 	    _MOV32 r0,RAM_END
+ 4280      C2F20000 
+ 4281 1396 8546     	    mov sp,r0
+ 4282 1398 FFF7FEBF 	    b cmd_line 
+ 4283              	
+ 4284              	
+ 4285              	/**************************
+ 4286              	  BASIC: TAB(expr)
+ 4287              	  move cursor column expr 
+ 4288              	**************************/
+ 4289              	    _FUNC tab 
+ 4290 139c 00B5FFF7 	    _CALL func_args  
 ARM GAS  tinyBasic.s 			page 109
 
 
- 4289 13a0 206C     	    ldr r0,[UPP,#FLAGS]
- 4290 13a2 10F0800F 	    tst r0,#FPRINT
- 4291 13a6 5CF8040B 	    _POP r0 
- 4292 13aa 04D0     	    beq 9f 
- 4293 13ac 00B5FFF7 	    _CALL cursor_x 
- 4293      FEFF5DF8 
- 4293      04EB
- 4294 13b6 7047     	9:  _RET 
- 4295              	
- 4296              	
- 4297              	/**************************
- 4298              	  BASIC: TICKS 
- 4299              	  return msec counter
- 4300              	**************************/  
- 4301              	    _FUNC get_ticks
- 4302 13b8 E169     	    ldr r1,[UPP,#TICKS]
- 4303 13ba 4FF01B00 	    mov r0,#TK_INTGR
- 4304 13be 7047     	    _RET  
- 4305              	
- 4306              	/*************************
- 4307              	  BASIC: TIMER expr 
- 4308              	  set countdown timer 
- 4309              	************************/
- 4310              	    _FUNC set_timer
- 4311 13c0 00B5FFF7 	    _CALL expression 
- 4311      FEFF5DF8 
- 4311      04EB
- 4312 13ca 1B28     	    cmp r0,#TK_INTGR
- 4313 13cc 7FF4FEAF 	    bne syntax_error 
- 4314 13d0 2162     	    str r1,[UPP,#TIMER]
- 4315 13d2 7047     	    _RET 
- 4316              	
- 4317              	/***************************
- 4318              	  BASIC: TIMEOUT
- 4319              	  check for timer expiration 
- 4320              	  return -1 true || 0 false
- 4321              	****************************/
- 4322              	    _FUNC timeout
- 4323 13d4 81EA0101 	    eor r1,r1 
- 4324 13d8 206A     	    ldr r0,[UPP,#TIMER]
- 4325 13da 08B9     	    cbnz r0,9f 
- 4326 13dc 6FEA0101 	    mvn r1,r1 
- 4327 13e0 4FF01B00 	9:  mov r0,#TK_INTGR    
- 4328 13e4 7047     	    _RET 
- 4329              	
- 4330              	/****************************************
- 4331              	  BASIC:  TONE freq, duration 
- 4332              	  play a tone with frequency freq and duration
- 4333              	  in milliseconds
- 4334              	***********************************************/
- 4335 13e6 00BF     	    _FUNC tone
- 4336 13e8 00B5FFF7 	    _CALL arg_list 
- 4336      FEFF5DF8 
- 4336      04EB
- 4337 13f2 0228     	    cmp r0,#2 
- 4338 13f4 7FF4FEAF 	    bne syntax_error
- 4339 13f8 4FF40062 	    _MOV32 r2,TIMER4_BASE_ADR
+ 4290      FEFF5DF8 
+ 4290      04EB
+ 4291 13a6 0128     	    cmp r0,#1 
+ 4292 13a8 7FF4FEAF 	    bne syntax_error 
+ 4293 13ac 206C     	    ldr r0,[UPP,#FLAGS]
+ 4294 13ae 10F0800F 	    tst r0,#FPRINT
+ 4295 13b2 5CF8040B 	    _POP r0 
+ 4296 13b6 04D0     	    beq 9f 
+ 4297 13b8 00B5FFF7 	    _CALL cursor_x 
+ 4297      FEFF5DF8 
+ 4297      04EB
+ 4298 13c2 7047     	9:  _RET 
+ 4299              	
+ 4300              	
+ 4301              	/**************************
+ 4302              	  BASIC: TICKS 
+ 4303              	  return msec counter
+ 4304              	**************************/  
+ 4305              	    _FUNC get_ticks
+ 4306 13c4 E169     	    ldr r1,[UPP,#TICKS]
+ 4307 13c6 4FF01B00 	    mov r0,#TK_INTGR
+ 4308 13ca 7047     	    _RET  
+ 4309              	
+ 4310              	/*************************
+ 4311              	  BASIC: TIMER expr 
+ 4312              	  set countdown timer 
+ 4313              	************************/
+ 4314              	    _FUNC set_timer
+ 4315 13cc 00B5FFF7 	    _CALL expression 
+ 4315      FEFF5DF8 
+ 4315      04EB
+ 4316 13d6 1B28     	    cmp r0,#TK_INTGR
+ 4317 13d8 7FF4FEAF 	    bne syntax_error 
+ 4318 13dc 2162     	    str r1,[UPP,#TIMER]
+ 4319 13de 7047     	    _RET 
+ 4320              	
+ 4321              	/***************************
+ 4322              	  BASIC: TIMEOUT
+ 4323              	  check for timer expiration 
+ 4324              	  return -1 true || 0 false
+ 4325              	****************************/
+ 4326              	    _FUNC timeout
+ 4327 13e0 81EA0101 	    eor r1,r1 
+ 4328 13e4 206A     	    ldr r0,[UPP,#TIMER]
+ 4329 13e6 08B9     	    cbnz r0,9f 
+ 4330 13e8 6FEA0101 	    mvn r1,r1 
+ 4331 13ec 4FF01B00 	9:  mov r0,#TK_INTGR    
+ 4332 13f0 7047     	    _RET 
+ 4333              	
+ 4334              	/****************************************
+ 4335              	  BASIC:  TONE freq, duration 
+ 4336              	  play a tone with frequency freq and duration
+ 4337              	  in milliseconds
+ 4338              	***********************************************/
+ 4339 13f2 00BF     	    _FUNC tone
+ 4340 13f4 00B5FFF7 	    _CALL arg_list 
+ 4340      FEFF5DF8 
 ARM GAS  tinyBasic.s 			page 110
 
 
- 4339      C4F20002 
- 4340 1400 DCF80400 	    ldr r0,[DP,#4] // freq
- 4341 1404 4AF62021 	    _MOV32 r1,4500000
- 4341      C0F24401 
- 4342 140c B1FBF0F1 	    udiv r1,r0 
- 4343 1410 9185     	    strh r1,[r2,#TIM_ARR]
- 4344 1412 4FEA5101 	    lsr r1,#1 
- 4345 1416 9186     	    strh r1,[r2,#TIM_CCR1]
- 4346 1418 4FF00100 	    mov r0,#1
- 4347 141c 1084     	    strh r0,[r2,#TIM_CCER]
- 4348 141e 1080     	    strh r0,[r2,#TIM_CR1]
- 4349 1420 908A     	    ldrh r0,[r2,#TIM_EGR]
- 4350 1422 40F00200 	    orr r0,#2 
- 4351 1426 9082     	    strh r0,[r2,#TIM_EGR] 
- 4352 1428 BCE80300 	    ldmia DP!,{r0,r1}
- 4353              	    // pause duration  
- 4354 142c E169     	    ldr r1,[UPP,#TICKS]
- 4355 142e 0844     	    add r0,r1 
- 4356 1430 E169     	1:  ldr r1,[UPP,#TICKS]
- 4357 1432 8142     	    cmp r1,r0 
- 4358 1434 FCD4     	    bmi 1b 
- 4359              	    // stop tone 
- 4360 1436 1088     	    ldrh r0,[R2,#TIM_CR1]
- 4361 1438 80F00100 	    eor r0,#1 
- 4362 143c 1080     	    strh r0,[R2,#TIM_CR1]     
- 4363 143e 7047     	    _RET 
- 4364              	
- 4365              	/************************************
- 4366              	  BASIC: TONE_INIT 
- 4367              	  initialize tone_generator
- 4368              	  output on GPIOB:6 
- 4369              	************************************/
- 4370              	    _FUNC tone_init 
- 4371              	    // configure pin 
- 4372 1440 4FF44060 	    _MOV32 r0,GPIOB_BASE_ADR
- 4372      C4F20100 
- 4373 1448 4FF00601 	    mov r1,#6 // gpio pin 
- 4374 144c 4FF00A02 	    mov r2,#0xa // OUTPUT_AFPP 
- 4375 1450 00B5FFF7 	    _CALL gpio_config
- 4375      E1FA5DF8 
- 4375      04EB
- 4376              	    // enable timer4 clock 
- 4377 145a 4FF48052 	    _MOV32 r2,RCC_BASE_ADR
- 4377      C4F20202 
- 4378 1462 4FF00400 	    mov r0,#(1<<2)
- 4379 1466 D169     	    ldr r1,[R2,#RCC_APB1ENR]
- 4380 1468 40EA0100 	    orr r0,r1 
- 4381 146c D061     	    str r0,[R2,#RCC_APB1ENR]
- 4382              	    // configure TIMER4 in PWM mode 
- 4383 146e 4FF40062 	    _MOV32 r2,TIMER4_BASE_ADR
- 4383      C4F20002 
- 4384              	    // prescale divisor 16 
- 4385 1476 4FF00F00 	    mov r0,#15 
- 4386 147a 9062     	    str r0,[r2,#TIM_PSC]
- 4387              	    // pwm mode 6
- 4388 147c 138B     	    ldrh r3,[r2,#TIM_CCMR1]
- 4389 147e 4FF0FF00 	    mov r0,#255
+ 4340      04EB
+ 4341 13fe 0228     	    cmp r0,#2 
+ 4342 1400 7FF4FEAF 	    bne syntax_error
+ 4343 1404 4FF40062 	    _MOV32 r2,TIMER4_BASE_ADR
+ 4343      C4F20002 
+ 4344 140c DCF80400 	    ldr r0,[DP,#4] // freq
+ 4345 1410 4AF62021 	    _MOV32 r1,4500000
+ 4345      C0F24401 
+ 4346 1418 B1FBF0F1 	    udiv r1,r0 
+ 4347 141c 9185     	    strh r1,[r2,#TIM_ARR]
+ 4348 141e 4FEA5101 	    lsr r1,#1 
+ 4349 1422 9186     	    strh r1,[r2,#TIM_CCR1]
+ 4350 1424 4FF00100 	    mov r0,#1
+ 4351 1428 1084     	    strh r0,[r2,#TIM_CCER]
+ 4352 142a 1080     	    strh r0,[r2,#TIM_CR1]
+ 4353 142c 908A     	    ldrh r0,[r2,#TIM_EGR]
+ 4354 142e 40F00200 	    orr r0,#2 
+ 4355 1432 9082     	    strh r0,[r2,#TIM_EGR] 
+ 4356 1434 BCE80300 	    ldmia DP!,{r0,r1}
+ 4357              	    // pause duration  
+ 4358 1438 E169     	    ldr r1,[UPP,#TICKS]
+ 4359 143a 0844     	    add r0,r1 
+ 4360 143c E169     	1:  ldr r1,[UPP,#TICKS]
+ 4361 143e 8142     	    cmp r1,r0 
+ 4362 1440 FCD4     	    bmi 1b 
+ 4363              	    // stop tone 
+ 4364 1442 1088     	    ldrh r0,[R2,#TIM_CR1]
+ 4365 1444 80F00100 	    eor r0,#1 
+ 4366 1448 1080     	    strh r0,[R2,#TIM_CR1]     
+ 4367 144a 7047     	    _RET 
+ 4368              	
+ 4369              	/************************************
+ 4370              	  BASIC: TONE_INIT 
+ 4371              	  initialize tone_generator
+ 4372              	  output on GPIOB:6 
+ 4373              	************************************/
+ 4374              	    _FUNC tone_init 
+ 4375              	    // configure pin 
+ 4376 144c 4FF44060 	    _MOV32 r0,GPIOB_BASE_ADR
+ 4376      C4F20100 
+ 4377 1454 4FF00601 	    mov r1,#6 // gpio pin 
+ 4378 1458 4FF00A02 	    mov r2,#0xa // OUTPUT_AFPP 
+ 4379 145c 00B5FFF7 	    _CALL gpio_config
+ 4379      DBFA5DF8 
+ 4379      04EB
+ 4380              	    // enable timer4 clock 
+ 4381 1466 4FF48052 	    _MOV32 r2,RCC_BASE_ADR
+ 4381      C4F20202 
+ 4382 146e 4FF00400 	    mov r0,#(1<<2)
+ 4383 1472 D169     	    ldr r1,[R2,#RCC_APB1ENR]
+ 4384 1474 40EA0100 	    orr r0,r1 
+ 4385 1478 D061     	    str r0,[R2,#RCC_APB1ENR]
+ 4386              	    // configure TIMER4 in PWM mode 
+ 4387 147a 4FF40062 	    _MOV32 r2,TIMER4_BASE_ADR
+ 4387      C4F20002 
+ 4388              	    // prescale divisor 16 
+ 4389 1482 4FF00F00 	    mov r0,#15 
 ARM GAS  tinyBasic.s 			page 111
 
 
- 4390 1482 6FEA0000 	    mvn r0,r0 
- 4391 1486 03EA0003 	    and r3,r0 // clear bit field 
- 4392 148a 4FF06800 	    mov r0,#0x68
- 4393 148e 43EA0003 	    orr r3,r0  
- 4394 1492 1383     	    strh r3,[R2,#TIM_CCMR1]     
- 4395 1494 7047     	    _RET 
- 4396              	
- 4397              	
- 4398              	/****************************************
- 4399              	  BASIC: TRACE n 
- 4400              	  enable execution trace 
- 4401              	  0   ddisable
- 4402              	  1   show current line#
- 4403              	  2  show line#+data_stack
- 4404              	  3  show line#+data_stack+main_stack 
- 4405              	***************************************/
- 4406 1496 00BF     	    _FUNC trace 
- 4407 1498 00B5FFF7 	    _CALL next_token 
- 4407      FEFF5DF8 
- 4407      04EB
- 4408 14a2 1B28     	    cmp r0,#TK_INTGR  
- 4409 14a4 7FF4FEAF 	    bne syntax_error 
- 4410 14a8 01F00301 	    and r1,#3 
- 4411 14ac C4F8CC10 	    str r1,[UPP,#TRACE_LEVEL]
- 4412 14b0 7047     	    _RET 
- 4413              	
- 4414              	
- 4415              	/***************************
- 4416              	  BASIC: UBOUND 
- 4417              	  return last indice of @
- 4418              	  output:
- 4419              	    r0  TK_INTGR 
- 4420              	    r1  +int 
- 4421              	**************************/
- 4422 14b2 00BF     	    _FUNC ubound
- 4423 14b4 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
- 4424 14b8 D4F8D000 	    ldr r0,[UPP,#HERE]
- 4425 14bc A1EB0001 	    sub r1,r0 
- 4426 14c0 4FEA9101 	    lsr r1,#2
- 4427 14c4 4FF01B00 	    mov r0,#TK_INTGR 
- 4428 14c8 7047     	    _RET 
- 4429              	
- 4430              	/****************************
- 4431              	  BASIC: UFLASH 
- 4432              	  return user flash address
- 4433              	*****************************/
- 4434 14ca 00BF     	    _FUNC uflash
- 4435 14cc 7749     	    ldr r1,=user
- 4436 14ce 4FF01B00 	    mov r0,#TK_INTGR 
- 4437 14d2 7047     	    _RET 
- 4438              	
- 4439              	
- 4440              	/************************************
- 4441              	  BASIC: UNTIL relation 
- 4442              	  close a DO..UNTIL loop 
- 4443              	  loop until relation come true 
- 4444              	************************************/
+ 4390 1486 9062     	    str r0,[r2,#TIM_PSC]
+ 4391              	    // pwm mode 6
+ 4392 1488 138B     	    ldrh r3,[r2,#TIM_CCMR1]
+ 4393 148a 4FF0FF00 	    mov r0,#255
+ 4394 148e 6FEA0000 	    mvn r0,r0 
+ 4395 1492 03EA0003 	    and r3,r0 // clear bit field 
+ 4396 1496 4FF06800 	    mov r0,#0x68
+ 4397 149a 43EA0003 	    orr r3,r0  
+ 4398 149e 1383     	    strh r3,[R2,#TIM_CCMR1]     
+ 4399 14a0 7047     	    _RET 
+ 4400              	
+ 4401              	
+ 4402              	/****************************************
+ 4403              	  BASIC: TRACE n 
+ 4404              	  enable execution trace 
+ 4405              	  0   ddisable
+ 4406              	  1   show current line#
+ 4407              	  2  show line#+data_stack
+ 4408              	  3  show line#+data_stack+main_stack 
+ 4409              	***************************************/
+ 4410 14a2 00BF     	    _FUNC trace 
+ 4411 14a4 00B5FFF7 	    _CALL next_token 
+ 4411      FEFF5DF8 
+ 4411      04EB
+ 4412 14ae 1B28     	    cmp r0,#TK_INTGR  
+ 4413 14b0 7FF4FEAF 	    bne syntax_error 
+ 4414 14b4 01F00301 	    and r1,#3 
+ 4415 14b8 C4F8CC10 	    str r1,[UPP,#TRACE_LEVEL]
+ 4416 14bc 7047     	    _RET 
+ 4417              	
+ 4418              	
+ 4419              	/***************************
+ 4420              	  BASIC: UBOUND 
+ 4421              	  return last indice of @
+ 4422              	  output:
+ 4423              	    r0  TK_INTGR 
+ 4424              	    r1  +int 
+ 4425              	**************************/
+ 4426 14be 00BF     	    _FUNC ubound
+ 4427 14c0 D4F8C810 	    ldr r1,[UPP,#ARRAY_ADR]
+ 4428 14c4 D4F8D000 	    ldr r0,[UPP,#HERE]
+ 4429 14c8 A1EB0001 	    sub r1,r0 
+ 4430 14cc 4FEA9101 	    lsr r1,#2
+ 4431 14d0 4FF01B00 	    mov r0,#TK_INTGR 
+ 4432 14d4 7047     	    _RET 
+ 4433              	
+ 4434              	/****************************
+ 4435              	  BASIC: UFLASH 
+ 4436              	  return user flash address
+ 4437              	*****************************/
+ 4438 14d6 00BF     	    _FUNC uflash
+ 4439 14d8 7749     	    ldr r1,=user
+ 4440 14da 4FF01B00 	    mov r0,#TK_INTGR 
+ 4441 14de 7047     	    _RET 
+ 4442              	
+ 4443              	
+ 4444              	/************************************
 ARM GAS  tinyBasic.s 			page 112
 
 
- 4445              	    _FUNC until
- 4446 14d4 00B5FFF7 	    _CALL relation 
- 4446      FEFF5DF8 
- 4446      04EB
- 4447 14de 11B1     	    cbz r1,9f
- 4448 14e0 0CF1080C 	    add DP,#8
- 4449 14e4 7047     	    _RET  
- 4450 14e6 9CE8000C 	9:  ldmia DP,{IN,BPTR}
- 4451 14ea 9BF80200 	    ldrb r0,[BPTR,#2]
- 4452 14ee 6060     	    str r0,[UPP,#COUNT]
- 4453 14f0 7047     	    _RET 
- 4454              	
- 4455              	/*************************************
- 4456              	  BASIC: WAIT addr,expr1[,expr2] 
- 4457              	  wait until *addr&expr1 is not null 
- 4458              	  or until (*addr&expr1)^expr2 is null 
- 4459              	***************************************/
- 4460 14f2 00BF     	    _FUNC wait
- 4461 14f4 00B5FFF7 	    _CALL arg_list 
- 4461      FEFF5DF8 
- 4461      04EB
- 4462 14fe 0228     	    cmp r0,#2
- 4463 1500 03D0     	    beq 2f 
- 4464 1502 0328     	    cmp r0,#3
- 4465 1504 07D0     	    beq 4f
- 4466 1506 FFF7FEBF 	    b syntax_error 
- 4467 150a BCE80300 	2:  ldmia DP!,{r0,r1}
- 4468 150e 0A88     	3:  ldrh r2,[r1]
- 4469 1510 0240     	    ands r2,r0 
- 4470 1512 FCD0     	    beq 3b 
- 4471 1514 06E0     	    b 9f 
- 4472 1516 BCE80700 	4:  ldmia DP!,{r0,r1,r2}
- 4473 151a 1388     	5:  ldrh r3,[r2]
- 4474 151c 83EA0003 	    eor r3,r0
- 4475 1520 0B40     	    ands r3,r1 
- 4476 1522 FAD0     	    beq 5b 
- 4477 1524 7047     	9:  _RET 
- 4478              	
- 4479              	/*********************************************
- 4480              	  BASIC: WORDS 
- 4481              	  print list of BASIC WORDS in dictionary 
- 4482              	  use:
- 4483              	    r0,r1,r2,T1,T2  
- 4484              	********************************************/
- 4485 1526 00BF     	    _FUNC words
- 4486 1528 206C10F0 	    _CLO 
- 4486      010F03D0 
- 4486      4FF00700 
- 4486      FFF7FEBF 
- 4487 1538 DFF87881 	    ldr T1,=kword_dict
- 4488 153c 89EA0909 	    eor T2,T2
- 4489 1540 82EA0202 	    eor r2,r2  
- 4490              	1:  
- 4491 1544 4046     	    mov r0,T1
- 4492 1546 00B5FFF7 	    _CALL strlen
- 4492      FEFF5DF8 
- 4492      04EB
+ 4445              	  BASIC: UNTIL relation 
+ 4446              	  close a DO..UNTIL loop 
+ 4447              	  loop until relation come true 
+ 4448              	************************************/
+ 4449              	    _FUNC until
+ 4450 14e0 00B5FFF7 	    _CALL relation 
+ 4450      FEFF5DF8 
+ 4450      04EB
+ 4451 14ea 11B1     	    cbz r1,9f
+ 4452 14ec 0CF1080C 	    add DP,#8
+ 4453 14f0 7047     	    _RET  
+ 4454 14f2 9CE8000C 	9:  ldmia DP,{IN,BPTR}
+ 4455 14f6 9BF80200 	    ldrb r0,[BPTR,#2]
+ 4456 14fa 6060     	    str r0,[UPP,#COUNT]
+ 4457 14fc 7047     	    _RET 
+ 4458              	
+ 4459              	/*************************************
+ 4460              	  BASIC: WAIT addr,expr1[,expr2] 
+ 4461              	  wait until *addr&expr1 is not null 
+ 4462              	  or until (*addr&expr1)^expr2 is null 
+ 4463              	***************************************/
+ 4464 14fe 00BF     	    _FUNC wait
+ 4465 1500 00B5FFF7 	    _CALL arg_list 
+ 4465      FEFF5DF8 
+ 4465      04EB
+ 4466 150a 0228     	    cmp r0,#2
+ 4467 150c 03D0     	    beq 2f 
+ 4468 150e 0328     	    cmp r0,#3
+ 4469 1510 07D0     	    beq 4f
+ 4470 1512 FFF7FEBF 	    b syntax_error 
+ 4471 1516 BCE80300 	2:  ldmia DP!,{r0,r1}
+ 4472 151a 0A88     	3:  ldrh r2,[r1]
+ 4473 151c 0240     	    ands r2,r0 
+ 4474 151e FCD0     	    beq 3b 
+ 4475 1520 06E0     	    b 9f 
+ 4476 1522 BCE80700 	4:  ldmia DP!,{r0,r1,r2}
+ 4477 1526 1388     	5:  ldrh r3,[r2]
+ 4478 1528 83EA0003 	    eor r3,r0
+ 4479 152c 0B40     	    ands r3,r1 
+ 4480 152e FAD0     	    beq 5b 
+ 4481 1530 7047     	9:  _RET 
+ 4482              	
+ 4483              	/*********************************************
+ 4484              	  BASIC: WORDS 
+ 4485              	  print list of BASIC WORDS in dictionary 
+ 4486              	  use:
+ 4487              	    r0,r1,r2,T1,T2  
+ 4488              	********************************************/
+ 4489 1532 00BF     	    _FUNC words
+ 4490 1534 206C10F0 	    _CLO 
+ 4490      010F03D0 
+ 4490      4FF00700 
+ 4490      FFF7FEBF 
+ 4491 1544 DFF87881 	    ldr T1,=kword_dict
+ 4492 1548 89EA0909 	    eor T2,T2
+ 4493 154c 82EA0202 	    eor r2,r2  
+ 4494              	1:  
 ARM GAS  tinyBasic.s 			page 113
 
 
- 4493 1550 F0B1     	    cbz r0,4f 
- 4494 1552 8144     	    add T2,r0 
- 4495 1554 B9F1500F 	    cmp T2,#80 
- 4496 1558 06D4     	    bmi 2f
- 4497 155a 89EA0909 	    eor T2,T2  
- 4498 155e 00B5FFF7 	    _CALL cr 
- 4498      FEFF5DF8 
- 4498      04EB
- 4499 1568 4046     	2:  mov r0,T1 
- 4500 156a 00B5FFF7 	    _CALL uart_puts 
- 4500      FEFF5DF8 
- 4500      04EB
- 4501 1574 4FF02000 	    mov r0,#SPACE
- 4502 1578 09F10109 	    add T2,#1  
- 4503 157c 00B5FFF7 	    _CALL uart_putc
- 4503      FEFF5DF8 
- 4503      04EB
- 4504 1586 02F10102 	    add r2,#1 
- 4505 158a 58F80C8C 	    ldr T1,[T1,#-12]
- 4506 158e D9E7     	    b 1b 
- 4507 1590 19EA0909 	4:  ands T2,T2
- 4508 1594 04D0     	    beq 5f 
- 4509 1596 00B5FFF7 	    _CALL cr 
- 4509      FEFF5DF8 
- 4509      04EB
- 4510 15a0 1046     	5:  mov r0,r2 
- 4511 15a2 4FF00A01 	    mov r1,#10
- 4512 15a6 00B5FFF7 	    _CALL print_int 
- 4512      FEFF5DF8 
- 4512      04EB
- 4513 15b0 4148     	    ldr r0,=dict_words
- 4514 15b2 00B5FFF7 	    _CALL uart_puts  
- 4514      FEFF5DF8 
- 4514      04EB
- 4515 15bc 7047     	9:  _RET 
- 4516              	
- 4517 15be 776F7264 	dict_words: .asciz "words in dictionary" 
- 4517      7320696E 
- 4517      20646963 
- 4517      74696F6E 
- 4517      61727900 
- 4518              	
- 4519              	
- 4520              	/**************************************
- 4521              	  BASIC: XOR(expr1,expr2)
- 4522              	  binary exclusive or between 2 expressions
- 4523              	**************************************/
- 4524 15d2 00BF     	    _FUNC bit_xor
- 4525 15d4 00B5FFF7 	    _CALL func_args
- 4525      FEFF5DF8 
- 4525      04EB
- 4526 15de 0228     	    cmp r0,#2
- 4527 15e0 7FF4FEAF 	    bne syntax_error
- 4528 15e4 5CF8040B 	    _POP r0
- 4529 15e8 5CF8041B 	    _POP r1 
- 4530 15ec 81EA0001 	    eor r1,r0 
- 4531 15f0 4FF01B00 	    mov r0,#TK_INTGR
+ 4495 1550 4046     	    mov r0,T1
+ 4496 1552 00B5FFF7 	    _CALL strlen
+ 4496      FEFF5DF8 
+ 4496      04EB
+ 4497 155c F0B1     	    cbz r0,4f 
+ 4498 155e 8144     	    add T2,r0 
+ 4499 1560 B9F1500F 	    cmp T2,#80 
+ 4500 1564 06D4     	    bmi 2f
+ 4501 1566 89EA0909 	    eor T2,T2  
+ 4502 156a 00B5FFF7 	    _CALL cr 
+ 4502      FEFF5DF8 
+ 4502      04EB
+ 4503 1574 4046     	2:  mov r0,T1 
+ 4504 1576 00B5FFF7 	    _CALL uart_puts 
+ 4504      FEFF5DF8 
+ 4504      04EB
+ 4505 1580 4FF02000 	    mov r0,#SPACE
+ 4506 1584 09F10109 	    add T2,#1  
+ 4507 1588 00B5FFF7 	    _CALL uart_putc
+ 4507      FEFF5DF8 
+ 4507      04EB
+ 4508 1592 02F10102 	    add r2,#1 
+ 4509 1596 58F80C8C 	    ldr T1,[T1,#-12]
+ 4510 159a D9E7     	    b 1b 
+ 4511 159c 19EA0909 	4:  ands T2,T2
+ 4512 15a0 04D0     	    beq 5f 
+ 4513 15a2 00B5FFF7 	    _CALL cr 
+ 4513      FEFF5DF8 
+ 4513      04EB
+ 4514 15ac 1046     	5:  mov r0,r2 
+ 4515 15ae 4FF00A01 	    mov r1,#10
+ 4516 15b2 00B5FFF7 	    _CALL print_int 
+ 4516      FEFF5DF8 
+ 4516      04EB
+ 4517 15bc 4148     	    ldr r0,=dict_words
+ 4518 15be 00B5FFF7 	    _CALL uart_puts  
+ 4518      FEFF5DF8 
+ 4518      04EB
+ 4519 15c8 7047     	9:  _RET 
+ 4520              	
+ 4521 15ca 776F7264 	dict_words: .asciz "words in dictionary" 
+ 4521      7320696E 
+ 4521      20646963 
+ 4521      74696F6E 
+ 4521      61727900 
+ 4522              	
+ 4523              	
+ 4524              	/**************************************
+ 4525              	  BASIC: XOR(expr1,expr2)
+ 4526              	  binary exclusive or between 2 expressions
+ 4527              	**************************************/
+ 4528 15de 00BF     	    _FUNC bit_xor
+ 4529 15e0 00B5FFF7 	    _CALL func_args
+ 4529      FEFF5DF8 
+ 4529      04EB
+ 4530 15ea 0228     	    cmp r0,#2
+ 4531 15ec 7FF4FEAF 	    bne syntax_error
 ARM GAS  tinyBasic.s 			page 114
 
 
- 4532 15f4 7047     	    _RET 
- 4533              	
- 4534              	/***************************************
- 4535              	    BASIC: XPOS 
- 4536              	    report cursor column on terminal 
- 4537              	***************************************/
- 4538 15f6 00BF     	    _FUNC xpos 
- 4539 15f8 00B5FFF7 	    _CALL get_curpos
- 4539      FEFF5DF8 
- 4539      04EB
- 4540 1602 4FF01B00 	    mov r0,#TK_INTGR
- 4541 1606 7047     	    _RET 
- 4542              	
- 4543              	/***********************************
- 4544              	    BASIC: YPOS 
- 4545              	    report cursor line on terminal 
- 4546              	***********************************/
- 4547              	    _FUNC ypos 
- 4548 1608 00B5FFF7 	    _CALL get_curpos 
- 4548      FEFF5DF8 
- 4548      04EB
- 4549 1612 0146     	    mov r1,r0 
- 4550 1614 4FF01B00 	    mov r0,#TK_INTGR
- 4551 1618 7047     	    _RET 
- 4552              	
- 4553              	
- 4554              	/**********************************
- 4555              	     argument stack manipulation
- 4556              	**********************************/
+ 4532 15f0 5CF8040B 	    _POP r0
+ 4533 15f4 5CF8041B 	    _POP r1 
+ 4534 15f8 81EA0001 	    eor r1,r0 
+ 4535 15fc 4FF01B00 	    mov r0,#TK_INTGR
+ 4536 1600 7047     	    _RET 
+ 4537              	
+ 4538              	/***************************************
+ 4539              	    BASIC: XPOS 
+ 4540              	    report cursor column on terminal 
+ 4541              	***************************************/
+ 4542 1602 00BF     	    _FUNC xpos 
+ 4543 1604 00B5FFF7 	    _CALL get_curpos
+ 4543      FEFF5DF8 
+ 4543      04EB
+ 4544 160e 4FF01B00 	    mov r0,#TK_INTGR
+ 4545 1612 7047     	    _RET 
+ 4546              	
+ 4547              	/***********************************
+ 4548              	    BASIC: YPOS 
+ 4549              	    report cursor line on terminal 
+ 4550              	***********************************/
+ 4551              	    _FUNC ypos 
+ 4552 1614 00B5FFF7 	    _CALL get_curpos 
+ 4552      FEFF5DF8 
+ 4552      04EB
+ 4553 161e 0146     	    mov r1,r0 
+ 4554 1620 4FF01B00 	    mov r0,#TK_INTGR
+ 4555 1624 7047     	    _RET 
+ 4556              	
  4557              	
  4558              	/**********************************
- 4559              	  BASIC PUSH expr[,expr] 
- 4560              	  push integers on stack 
- 4561              	*********************************/
- 4562 161a 00BF     	    _FUNC cmd_push 
- 4563 161c 00B5FFF7 	    _CALL arg_list
- 4563      FEFF5DF8 
- 4563      04EB
- 4564 1626 7047     	    _RET 
- 4565              	
- 4566              	/********************************
- 4567              	  BASIC: POP 
- 4568              	  pop an integer out of stack 
- 4569              	********************************/    
- 4570              	    _FUNC fn_pop 
- 4571 1628 5CF8041B 	    _POP r1 
- 4572 162c 4FF01B00 	    mov r0,#TK_INTGR 
- 4573 1630 7047     	    _RET 
- 4574              	
- 4575              	/*******************************
- 4576              	  BASIC: DROP n 
- 4577              	  discard n integer from stack
- 4578              	*******************************/
- 4579 1632 00BF     	    _FUNC drop 
- 4580 1634 00B5FFF7 	    _CALL expression 
- 4580      FEFF5DF8 
- 4580      04EB
+ 4559              	     argument stack manipulation
+ 4560              	**********************************/
+ 4561              	
+ 4562              	/**********************************
+ 4563              	  BASIC PUSH expr[,expr] 
+ 4564              	  push integers on stack 
+ 4565              	*********************************/
+ 4566 1626 00BF     	    _FUNC cmd_push 
+ 4567 1628 00B5FFF7 	    _CALL arg_list
+ 4567      FEFF5DF8 
+ 4567      04EB
+ 4568 1632 7047     	    _RET 
+ 4569              	
+ 4570              	/********************************
+ 4571              	  BASIC: POP 
+ 4572              	  pop an integer out of stack 
+ 4573              	********************************/    
+ 4574              	    _FUNC fn_pop 
+ 4575 1634 5CF8041B 	    _POP r1 
+ 4576 1638 4FF01B00 	    mov r0,#TK_INTGR 
+ 4577 163c 7047     	    _RET 
+ 4578              	
+ 4579              	/*******************************
+ 4580              	  BASIC: DROP n 
+ 4581              	  discard n integer from stack
+ 4582              	*******************************/
 ARM GAS  tinyBasic.s 			page 115
 
 
- 4581 163e 1B28     	    cmp r0,#TK_INTGR 
- 4582 1640 7FF4FEAF 	    bne syntax_error 
- 4583 1644 4FF00400 	    mov r0,#4 
- 4584 1648 01FB00F0 	    mul r0,r1 
- 4585 164c 8444     	    add DP,r0 
- 4586 164e 7047     	    _RET 
- 4587              	
- 4588              	/********************************
- 4589              	  BASIC: GET(expr) 
- 4590              	  retreive nth element from stack 
- 4591              	********************************/
- 4592              	    _FUNC get 
- 4593 1650 00B5FFF7 	    _CALL func_args
- 4593      FEFF5DF8 
- 4593      04EB
- 4594 165a 0128     	    cmp r0,#1 
- 4595 165c 7FF4FEAF 	    bne syntax_error 
- 4596 1660 5CF8040B 	    _POP r0
- 4597 1664 4FF00401 	    mov r1,#4 
- 4598 1668 01FB00F0 	    mul r0,r1 
- 4599 166c 5CF80010 	    ldr r1,[DP,r0]
- 4600 1670 4FF01B00 	    mov r0,#TK_INTGR
- 4601 1674 7047     	    _RET 
- 4602              	
- 4603              	/*************************************
- 4604              	  BASIC: PUT value,n  
- 4605              	  store value at nth position on stack
- 4606              	**************************************/
- 4607 1676 00BF     	    _FUNC put
- 4608 1678 00B5FFF7 	    _CALL arg_list 
- 4608      FEFF5DF8 
- 4608      04EB
- 4609 1682 0228     	    cmp r0,#2 
- 4610 1684 7FF4FEAF 	    bne syntax_error 
- 4611 1688 5CF8040B 	    _POP r0 
- 4612 168c 4FF00401 	    mov r1,#4 
- 4613 1690 01FB00F0 	    mul r0,r1 
- 4614 1694 5CF8041B 	    _POP r1
- 4615 1698 4CF80010 	    str r1,[DP,r0]
- 4616 169c 7047     	    _RET 
- 4617              	
- 4618              	
- 4619 169e 0000     	  .section .rodata.user
- 4620              	  .p2align 10 
- 4621              	user:
- 4622 0000 FFFFFFFF 	  .space 1024,255
- 4622      FFFFFFFF 
- 4622      FFFFFFFF 
- 4622      FFFFFFFF 
- 4622      FFFFFFFF 
- 4623              	
- 4624              	/*************************************************
- 4625              	   extra FLASH memory not used by Tiny BASIC
- 4626              	   is used to save BASIC programs.
- 4627              	************************************************/
- 4628              	  .p2align 10  // align to 1KB, smallest erasable segment 
- 4629              	  .section .rodata.fs
+ 4583 163e 00BF     	    _FUNC drop 
+ 4584 1640 00B5FFF7 	    _CALL expression 
+ 4584      FEFF5DF8 
+ 4584      04EB
+ 4585 164a 1B28     	    cmp r0,#TK_INTGR 
+ 4586 164c 7FF4FEAF 	    bne syntax_error 
+ 4587 1650 4FF00400 	    mov r0,#4 
+ 4588 1654 01FB00F0 	    mul r0,r1 
+ 4589 1658 8444     	    add DP,r0 
+ 4590 165a 7047     	    _RET 
+ 4591              	
+ 4592              	/********************************
+ 4593              	  BASIC: GET(expr) 
+ 4594              	  retreive nth element from stack 
+ 4595              	********************************/
+ 4596              	    _FUNC get 
+ 4597 165c 00B5FFF7 	    _CALL func_args
+ 4597      FEFF5DF8 
+ 4597      04EB
+ 4598 1666 0128     	    cmp r0,#1 
+ 4599 1668 7FF4FEAF 	    bne syntax_error 
+ 4600 166c 5CF8040B 	    _POP r0
+ 4601 1670 4FF00401 	    mov r1,#4 
+ 4602 1674 01FB00F0 	    mul r0,r1 
+ 4603 1678 5CF80010 	    ldr r1,[DP,r0]
+ 4604 167c 4FF01B00 	    mov r0,#TK_INTGR
+ 4605 1680 7047     	    _RET 
+ 4606              	
+ 4607              	/*************************************
+ 4608              	  BASIC: PUT value,n  
+ 4609              	  store value at nth position on stack
+ 4610              	**************************************/
+ 4611 1682 00BF     	    _FUNC put
+ 4612 1684 00B5FFF7 	    _CALL arg_list 
+ 4612      FEFF5DF8 
+ 4612      04EB
+ 4613 168e 0228     	    cmp r0,#2 
+ 4614 1690 7FF4FEAF 	    bne syntax_error 
+ 4615 1694 5CF8040B 	    _POP r0 
+ 4616 1698 4FF00401 	    mov r1,#4 
+ 4617 169c 01FB00F0 	    mul r0,r1 
+ 4618 16a0 5CF8041B 	    _POP r1
+ 4619 16a4 4CF80010 	    str r1,[DP,r0]
+ 4620 16a8 7047     	    _RET 
+ 4621              	
+ 4622              	
+ 4623 16aa 0000     	  .section .rodata.user
+ 4624              	  .p2align 10 
+ 4625              	user:
+ 4626 0000 FFFFFFFF 	  .space 1024,255
+ 4626      FFFFFFFF 
+ 4626      FFFFFFFF 
+ 4626      FFFFFFFF 
+ 4626      FFFFFFFF 
+ 4627              	
+ 4628              	/*************************************************
+ 4629              	   extra FLASH memory not used by Tiny BASIC
 ARM GAS  tinyBasic.s 			page 116
 
 
- 4630              	FILE_SYSTEM: // file system start here
+ 4630              	   is used to save BASIC programs.
+ 4631              	************************************************/
+ 4632              	  .p2align 10  // align to 1KB, smallest erasable segment 
+ 4633              	  .section .rodata.fs
+ 4634              	FILE_SYSTEM: // file system start here
 ARM GAS  tinyBasic.s 			page 117
 
 
@@ -7477,8 +7481,8 @@ DEFINED SYMBOLS
          tinyBasic.s:1558   .text:0000000000000c8e sysvar_size
          tinyBasic.s:1569   .text:0000000000000c94 prt_version
          tinyBasic.s:1625   .text:0000000000000d38 clear_basic
-         tinyBasic.s:3693   .text.basic:0000000000000ce4 search_free
-         tinyBasic.s:4018   .text.basic:00000000000010c8 exec_autorun
+         tinyBasic.s:3697   .text.basic:0000000000000cf0 search_free
+         tinyBasic.s:4022   .text.basic:00000000000010d4 exec_autorun
          tinyBasic.s:1555   .text:0000000000000c86 $d
          tinyBasic.s:2196   .rodata:0000000000000000 uzero
          tinyBasic.s:2222   .rodata:00000000000000d4 ulast
@@ -7523,7 +7527,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2125   .text:0000000000001172 $t
          tinyBasic.s:2145   .text:0000000000001188 set_array_element
          tinyBasic.s:2181   .text:00000000000011ac set_var
-         tinyBasic.s:4630   .rodata.fs:0000000000000000 FILE_SYSTEM
+         tinyBasic.s:4634   .rodata.fs:0000000000000000 FILE_SYSTEM
          tinyBasic.s:2217   .rodata:0000000000000050 $d
          tinyBasic.s:2230   .rodata.dictionary:0000000000000000 kword_end
          tinyBasic.s:2229   *ABS*:0000000000000000 link
@@ -7535,7 +7539,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2421   .text.basic:0000000000000060 adc
          tinyBasic.s:2462   .text.basic:00000000000000d8 bit_and
          tinyBasic.s:2477   .text.basic:00000000000000fc ascii
-         tinyBasic.s:3966   .text.basic:0000000000001024 autorun
+         tinyBasic.s:3970   .text.basic:0000000000001030 autorun
          tinyBasic.s:2503   .text.basic:000000000000014c awu
          tinyBasic.s:2545   .text.basic:00000000000001bc bitmask
          tinyBasic.s:2567   .text.basic:00000000000001e0 bit_reset
@@ -7546,16 +7550,16 @@ DEFINED SYMBOLS
          tinyBasic.s:2656   .text.basic:000000000000029c cls
          tinyBasic.s:2681   .text.basic:00000000000002c8 const
          tinyBasic.s:2808   .text.basic:000000000000042c dec_base
-         tinyBasic.s:3758   .text.basic:0000000000000d50 directory
+         tinyBasic.s:3762   .text.basic:0000000000000d5c directory
          tinyBasic.s:2817   .text.basic:0000000000000434 do_loop
-         tinyBasic.s:4579   .text.basic:0000000000001634 drop
+         tinyBasic.s:4583   .text.basic:0000000000001640 drop
          tinyBasic.s:2832   .text.basic:000000000000043c dump
          tinyBasic.s:2876   .text.basic:00000000000004e4 cmd_end
          tinyBasic.s:2904   .text.basic:0000000000000524 erase
          tinyBasic.s:2915   .text.basic:0000000000000538 for
-         tinyBasic.s:3798   .text.basic:0000000000000e08 forget
-         tinyBasic.s:4034   .text.basic:00000000000010f4 free
-         tinyBasic.s:4592   .text.basic:0000000000001650 get
+         tinyBasic.s:3802   .text.basic:0000000000000e14 forget
+         tinyBasic.s:4038   .text.basic:0000000000001100 free
+         tinyBasic.s:4596   .text.basic:000000000000165c get
          tinyBasic.s:2996   .text.basic:00000000000005f4 gosub
          tinyBasic.s:3022   .text.basic:0000000000000634 goto
          tinyBasic.s:3030   .text.basic:0000000000000640 hex_base
@@ -7569,7 +7573,7 @@ DEFINED SYMBOLS
          tinyBasic.s:3149   .text.basic:0000000000000784 key
          tinyBasic.s:3165   .text.basic:0000000000000798 let
          tinyBasic.s:3208   .text.basic:0000000000000824 list
-         tinyBasic.s:3827   .text.basic:0000000000000e54 load
+         tinyBasic.s:3831   .text.basic:0000000000000e60 load
          tinyBasic.s:3259   .text.basic:00000000000008d4 locate
          tinyBasic.s:3273   .text.basic:00000000000008f8 lshift
          tinyBasic.s:3287   .text.basic:0000000000000918 new
@@ -7586,46 +7590,46 @@ DEFINED SYMBOLS
          tinyBasic.s:3487   .text.basic:0000000000000ac8 poke8
          tinyBasic.s:3499   .text.basic:0000000000000ae0 poke16
          tinyBasic.s:3511   .text.basic:0000000000000af8 poke32
-         tinyBasic.s:4570   .text.basic:0000000000001628 fn_pop
+         tinyBasic.s:4574   .text.basic:0000000000001634 fn_pop
          tinyBasic.s:3525   .text.basic:0000000000000b10 print
-         tinyBasic.s:4562   .text.basic:000000000000161c cmd_push
-         tinyBasic.s:4607   .text.basic:0000000000001678 put
+         tinyBasic.s:4566   .text.basic:0000000000001628 cmd_push
+         tinyBasic.s:4611   .text.basic:0000000000001684 put
          tinyBasic.s:3597   .text.basic:0000000000000c00 qkey
          tinyBasic.s:2716   .text.basic:000000000000034c read
          tinyBasic.s:2766   .text.basic:00000000000003c0 restore
          tinyBasic.s:3011   .text.basic:000000000000061c return
          tinyBasic.s:3609   .text.basic:0000000000000c1c random
-         tinyBasic.s:3632   .text.basic:0000000000000c60 rshift
-         tinyBasic.s:3645   .text.basic:0000000000000c80 run
-         tinyBasic.s:3881   .text.basic:0000000000000ee4 save
-         tinyBasic.s:4052   .text.basic:0000000000001108 servo_init
-         tinyBasic.s:4152   .text.basic:000000000000122c servo_off
-         tinyBasic.s:4188   .text.basic:0000000000001298 servo_pos
-         tinyBasic.s:4220   .text.basic:00000000000012f4 sleep
-         tinyBasic.s:4234   .text.basic:0000000000001314 spc
+         tinyBasic.s:3636   .text.basic:0000000000000c6c rshift
+         tinyBasic.s:3649   .text.basic:0000000000000c8c run
+         tinyBasic.s:3885   .text.basic:0000000000000ef0 save
+         tinyBasic.s:4056   .text.basic:0000000000001114 servo_init
+         tinyBasic.s:4156   .text.basic:0000000000001238 servo_off
+         tinyBasic.s:4192   .text.basic:00000000000012a4 servo_pos
+         tinyBasic.s:4224   .text.basic:0000000000001300 sleep
+         tinyBasic.s:4238   .text.basic:0000000000001320 spc
          tinyBasic.s:2946   .text.basic:0000000000000584 step
-         tinyBasic.s:4263   .text.basic:000000000000134c stop
+         tinyBasic.s:4267   .text.basic:0000000000001358 stop
          tinyBasic.s:2884   .text.basic:00000000000004ec store
-         tinyBasic.s:4285   .text.basic:0000000000001390 tab
+         tinyBasic.s:4289   .text.basic:000000000000139c tab
          tinyBasic.s:3050   .text.basic:000000000000065c then
-         tinyBasic.s:4301   .text.basic:00000000000013b8 get_ticks
-         tinyBasic.s:4310   .text.basic:00000000000013c0 set_timer
-         tinyBasic.s:4322   .text.basic:00000000000013d4 timeout
+         tinyBasic.s:4305   .text.basic:00000000000013c4 get_ticks
+         tinyBasic.s:4314   .text.basic:00000000000013cc set_timer
+         tinyBasic.s:4326   .text.basic:00000000000013e0 timeout
          tinyBasic.s:2933   .text.basic:000000000000056c to
-         tinyBasic.s:4335   .text.basic:00000000000013e8 tone
-         tinyBasic.s:4370   .text.basic:0000000000001440 tone_init
-         tinyBasic.s:4406   .text.basic:0000000000001498 trace
-         tinyBasic.s:4422   .text.basic:00000000000014b4 ubound
-         tinyBasic.s:4434   .text.basic:00000000000014cc uflash
-         tinyBasic.s:4445   .text.basic:00000000000014d4 until
-         tinyBasic.s:4460   .text.basic:00000000000014f4 wait
-         tinyBasic.s:4485   .text.basic:0000000000001528 words
-         tinyBasic.s:4524   .text.basic:00000000000015d4 bit_xor
-         tinyBasic.s:4538   .text.basic:00000000000015f8 xpos
+         tinyBasic.s:4339   .text.basic:00000000000013f4 tone
+         tinyBasic.s:4374   .text.basic:000000000000144c tone_init
+         tinyBasic.s:4410   .text.basic:00000000000014a4 trace
+         tinyBasic.s:4426   .text.basic:00000000000014c0 ubound
+         tinyBasic.s:4438   .text.basic:00000000000014d8 uflash
+         tinyBasic.s:4449   .text.basic:00000000000014e0 until
+         tinyBasic.s:4464   .text.basic:0000000000001500 wait
+         tinyBasic.s:4489   .text.basic:0000000000001534 words
+         tinyBasic.s:4528   .text.basic:00000000000015e0 bit_xor
+         tinyBasic.s:4542   .text.basic:0000000000001604 xpos
 ARM GAS  tinyBasic.s 			page 129
 
 
-         tinyBasic.s:4547   .text.basic:0000000000001608 ypos
+         tinyBasic.s:4551   .text.basic:0000000000001614 ypos
          tinyBasic.s:2381   .text.basic:0000000000000000 $t
          tinyBasic.s:2408   .text.basic:000000000000004e adc_loop
          tinyBasic.s:2446   .text.basic:00000000000000b2 adc_off
@@ -7637,7 +7641,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2850   .text.basic:0000000000000484 print_dump_header
          tinyBasic.s:2908   .text.basic:0000000000000534 user_space
          tinyBasic.s:2908   .text.basic:0000000000000534 $d
-         tinyBasic.s:4621   .rodata.user:0000000000000000 user
+         tinyBasic.s:4625   .rodata.user:0000000000000000 user
          tinyBasic.s:2915   .text.basic:0000000000000538 $t
          tinyBasic.s:2999   .text.basic:0000000000000602 target
          tinyBasic.s:3129   .text.basic:0000000000000760 str_buffer
@@ -7652,41 +7656,41 @@ DEFINED SYMBOLS
          tinyBasic.s:3413   .text.basic:0000000000000a18 gpio_config
          tinyBasic.s:3582   .text.basic:0000000000000bdc unget_exit
          tinyBasic.s:3584   .text.basic:0000000000000be4 print_exit
-         tinyBasic.s:3746   .text.basic:0000000000000d4c fs_addr
-         tinyBasic.s:3721   .text.basic:0000000000000d08 search_file
-         tinyBasic.s:3725   .text.basic:0000000000000d10 cmp_loop
-         tinyBasic.s:3746   .text.basic:0000000000000d4c $d
-         tinyBasic.s:3758   .text.basic:0000000000000d50 $t
-         tinyBasic.s:3781   .text.basic:0000000000000dc8 no_more_file
-         tinyBasic.s:3791   .text.basic:0000000000000e00 fcount
-         tinyBasic.s:3791   .text.basic:0000000000000e00 $d
-         tinyBasic.s:3833   .text.basic:0000000000000e76 load_autorun
-         tinyBasic.s:3954   .text.basic:0000000000001010 fsize
-         tinyBasic.s:3955   .text.basic:000000000000101c data_bytes
-         tinyBasic.s:3899   .text.basic:0000000000000f2c new_file
-         tinyBasic.s:3954   .text.basic:0000000000001010 $d
-         tinyBasic.s:4006   .text.basic:00000000000010b0 write_back
-         tinyBasic.s:4011   .text.basic:00000000000010c2 arun_sign
-         tinyBasic.s:4011   .text.basic:00000000000010c2 $d
-         tinyBasic.s:4018   .text.basic:00000000000010c6 $t
-         tinyBasic.s:4142   .text.basic:000000000000120c servo_port
-         tinyBasic.s:4089   .text.basic:0000000000001182 setup_pwm3
-         tinyBasic.s:4142   .text.basic:000000000000120c $d
-         tinyBasic.s:4152   .text.basic:000000000000122c $t
-         tinyBasic.s:4245   .text.basic:000000000000133c spi_read
-         tinyBasic.s:4248   .text.basic:0000000000001340 spi_enable
-         tinyBasic.s:4251   .text.basic:0000000000001344 spi_select
-         tinyBasic.s:4254   .text.basic:0000000000001348 spi_write
-         tinyBasic.s:4517   .text.basic:00000000000015be dict_words
-         tinyBasic.s:4517   .text.basic:00000000000015be $d
-         tinyBasic.s:4524   .text.basic:00000000000015d2 $t
-         tinyBasic.s:4620   .rodata.user:0000000000000000 $d
-         tinyBasic.s:4619   .text.basic:000000000000169e $d
+         tinyBasic.s:3750   .text.basic:0000000000000d58 fs_addr
+         tinyBasic.s:3725   .text.basic:0000000000000d14 search_file
+         tinyBasic.s:3729   .text.basic:0000000000000d1c cmp_loop
+         tinyBasic.s:3750   .text.basic:0000000000000d58 $d
+         tinyBasic.s:3762   .text.basic:0000000000000d5c $t
+         tinyBasic.s:3785   .text.basic:0000000000000dd4 no_more_file
+         tinyBasic.s:3795   .text.basic:0000000000000e0c fcount
+         tinyBasic.s:3795   .text.basic:0000000000000e0c $d
+         tinyBasic.s:3837   .text.basic:0000000000000e82 load_autorun
+         tinyBasic.s:3958   .text.basic:000000000000101c fsize
+         tinyBasic.s:3959   .text.basic:0000000000001028 data_bytes
+         tinyBasic.s:3903   .text.basic:0000000000000f38 new_file
+         tinyBasic.s:3958   .text.basic:000000000000101c $d
+         tinyBasic.s:4010   .text.basic:00000000000010bc write_back
+         tinyBasic.s:4015   .text.basic:00000000000010ce arun_sign
+         tinyBasic.s:4015   .text.basic:00000000000010ce $d
+         tinyBasic.s:4022   .text.basic:00000000000010d2 $t
+         tinyBasic.s:4146   .text.basic:0000000000001218 servo_port
+         tinyBasic.s:4093   .text.basic:000000000000118e setup_pwm3
+         tinyBasic.s:4146   .text.basic:0000000000001218 $d
+         tinyBasic.s:4156   .text.basic:0000000000001238 $t
+         tinyBasic.s:4249   .text.basic:0000000000001348 spi_read
+         tinyBasic.s:4252   .text.basic:000000000000134c spi_enable
+         tinyBasic.s:4255   .text.basic:0000000000001350 spi_select
+         tinyBasic.s:4258   .text.basic:0000000000001354 spi_write
+         tinyBasic.s:4521   .text.basic:00000000000015ca dict_words
+         tinyBasic.s:4521   .text.basic:00000000000015ca $d
+         tinyBasic.s:4528   .text.basic:00000000000015de $t
+         tinyBasic.s:4624   .rodata.user:0000000000000000 $d
+         tinyBasic.s:4623   .text.basic:00000000000016aa $d
 ARM GAS  tinyBasic.s 			page 130
 
 
-         tinyBasic.s:4630   .text.basic:00000000000016a0 $d
-         tinyBasic.s:4630   .text:00000000000011bc $d
+         tinyBasic.s:4634   .text.basic:00000000000016ac $d
+         tinyBasic.s:4634   .text:00000000000011bc $d
          tinyBasic.s:247    .text:0000000000000195 $d
          tinyBasic.s:247    .text:0000000000000196 $t
          tinyBasic.s:269    .text:00000000000001e9 $d
@@ -7698,10 +7702,10 @@ DEFINED SYMBOLS
          tinyBasic.s:1596   .text:0000000000000d1a $t
          tinyBasic.s:1691   .text:0000000000000dbf $d
          tinyBasic.s:1691   .text:0000000000000dc0 $t
-         tinyBasic.s:3798   .text.basic:0000000000000e07 $d
-         tinyBasic.s:3798   .text.basic:0000000000000e08 $t
-         tinyBasic.s:3966   .text.basic:0000000000001023 $d
-         tinyBasic.s:3966   .text.basic:0000000000001024 $t
+         tinyBasic.s:3802   .text.basic:0000000000000e13 $d
+         tinyBasic.s:3802   .text.basic:0000000000000e14 $t
+         tinyBasic.s:3970   .text.basic:000000000000102f $d
+         tinyBasic.s:3970   .text.basic:0000000000001030 $t
 
 UNDEFINED SYMBOLS
 uart_puts

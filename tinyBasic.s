@@ -3603,14 +3603,18 @@ print_exit:
     _RET 
 
 /******************************************
-  BASIC RANDOM(expr)
+  BASIC RND(expr)
   generate random number between 0..expr-1
 ******************************************/
     _FUNC random
     _CALL func_args 
     cmp r0,#1
-    bne syntax_error 
-    ldr r0,[UPP,#SEED]
+    bne syntax_error
+    tst r1,#(1<<31)
+    beq 1f 
+    mov r0,#ERR_BAD_VALUE 
+    b tb_error 
+1:  ldr r0,[UPP,#SEED]
     lsl r1,r0,#13
     eor r1,r0
     lsr r0,r1,#17

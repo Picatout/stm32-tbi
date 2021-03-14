@@ -1,5 +1,8 @@
 #### 2021-03-13
 
+* Travail sur le manuel de référence.
+
+* Modifié fonction **RANDOM** pour refuser les entiers négatif.
 
 #### 2021-03-12
 
