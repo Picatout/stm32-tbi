@@ -38,7 +38,7 @@ https://github.com/picatout/stm32-tbi
 <a id="data-types"></a>
 ### Type de données 
 
-Le seul type de donné numérique est l'entier 32 bits donc dans l'intervalle **-2147483650...2147483649**.  
+Le seul type de donné numérique est l'entier 32 bits donc dans l'intervalle **{-2147483650...2147483649**}.  
 
 Cependant pour des fins d'impression des chaînes de caractères entre guillemets sont disponibles. Seul les commandes **PRINT** et **INPUT** utilisent ces chaînes comme arguments. 
 
@@ -121,10 +121,10 @@ Certaines commandes sont représentées facultativement par une caractère uniqu
 
 Plusieurs commandes peuvent-être présentent sur la même ligne. Le caractère **':'** est utilisé pour indiqué la fin d'une commande. Son utilisation est facultif s'il n'y pas pas d'ambiguité. 
 ```
->A=2:B=4   ' valide
-
->C=3 D=35 ' valide car il n'y pas d'ambiguité.
-
+A=2:B=4   ' valide
+READY
+C=3 D=35 ' valide car il n'y pas d'ambiguité.
+READY
 ```
 
 Une fin de ligne marque la fin d'une commande. Autrement dit une commande ne peut s'étendre sur plusieurs lignes. 
