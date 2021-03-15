@@ -3,7 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[English version](user-manual.md)
+[-&gt;English](user-manual.md)
 # Manuel de l'utilisateur de blue pill Tiny BASIC 
 
 Blue pill Tiny BASIC est un langage simple qui cependant permet de configurer et d'utiliser tous les périphériques du microcontrôleur. La seule limitation est que les interruptions ne sont pas utilisée. Tiny BASIC lui-même utilise 2 interruptions 

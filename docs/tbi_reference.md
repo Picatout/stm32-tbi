@@ -3,7 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[-&gt;english version](refman.md)
+[-&gt;english](refman.md)
 # référence du langage blue pill Tiny BASIC
 
 <a id="index-princ"></a>
@@ -410,14 +410,18 @@ Maintenant chaque fois que la carte est réinitialisée le progamme **blink** es
 [index](#index)
 <a id="awu"></a>
 ### AWU *expr*  {C,P}
-Cette commande arrête le MCU pour une durée déterminée. Son nom signifit  *Auto Wake up*.  Cette commande utilise l'oscillateur interne **LSI** ainsi que le **IWDG** *(Independant WatchDog timer)*. Lorsque le compteur arrive à expiration le MCU redémarre. Ce mode réduit la consommation électrique au minimum. *expr* doit résulter en un entier dans l'interval {0..65535}. Cet entier correspond à la durée de la mise en sommeil en millisecondes. La durée maximale est d'environ 26 secondes. Notez que la fréquence LSI nominale est de 40Khz mais elle peut varier entre 30Khz et 60Khz (selon les spécifications fournies par le fabricant, section 5.3.7 du datatsheet ). 
+Cette commande arrête le MCU pour une durée déterminée. Son nom signifit  *Auto Wake up*.  Cette commande utilise l'oscillateur interne **LSI** ainsi que le **IWDG** *(Independant WatchDog timer)*. Lorsque le compteur arrive à expiration le MCU redémarre. Ce mode réduit la consommation électrique au minimum. *expr* doit résulter en un entier dans l'interval {0..26214}. Cet entier correspond à la durée de la mise en sommeil en millisecondes. La durée maximale est d'environ 26 secondes. Notez que la fréquence LSI nominale est de 40Khz mais elle peut varier entre 30Khz et 60Khz (selon les spécifications fournies par le fabricant, section 5.3.7 du datatsheet ). 
 ```
-awu 1  ' sommeil de 0.2 millisecondes
+awu 0  ' delais minimum 
 
-awu $ffff ' sommeil maximal d'environ 26 secondes
+blue pill tiny BASIC, version 1.0
+READY
+awu 26214 ' delais maximum  
 
+blue pill tiny BASIC, version 1.0
+READY
 ```
- **AWU** est surtout utile pour les applications fonctionnant sur piles pour prolonger la durée de celles-ci.
+ Voir aussi [SLEEP](#sleep)
 
 [index](#index)
 <a id="bit"></a>

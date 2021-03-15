@@ -3,7 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[-&gt;version française](tbi_reference.md)
+[-&gt;français](tbi_reference.md)
 # Blue pill Tiny BASIC reference manual
 <a id="index-princ"></a>
 ## main index
@@ -12,17 +12,17 @@ https://github.com/picatout/stm32-tbi
 
 * [Variables](#variables)
 
-* [user Constants](#userconst)
+* [user Constants](#user-constants)
 
 * [Arithmetic expressions](#expressions)
 
-* [Syntax](#syntaxe)
+* [Syntax](#syntax)
 
 * [numerical bases](#bases)
 
 * [Command line interface](#cli)
 
-* [Files](#fichiers)
+* [Files](#files)
 
 * [Commands and functions reference](#index)
 
@@ -56,8 +56,9 @@ Variables are limited to 26 and are named by the alphabets letters {A..Z}.
 A single dimension array is available with name **@**. As it used the RAM left out by the program loaded in memory its size varies. The function [UBOUND](#ubound) enable the application to know this size. The array indice range is {1..UBOUND}.
 
 [main index](#index-princ)
+<a id="#user-constants"></a>
 ### user Constants
-The keyword [CONST](#const) is use to defines symbolics constants. A constant name must have at least 2 characters and at most 6. The name is limited to letters plus *'_'** character. Below an exemple of its usage. 
+The keyword [CONST](#const) is use to defines symbolics constants. A constant name must have at least 2 characters and at most 6. The name is limited to letters and *'_'** character. Below an exemple of its usage. 
 
 ```
 HEX LIST
@@ -72,9 +73,13 @@ RUN
 <a id="expressions"></a>
 ### Arithmetic expressions 
 
-There 5 arithmetic operators by precedence order:
+Expression are evaluated from left to right but operators priority is respected.
+
+The arithmetic operators by precedence order, items on same line have same priority and are evaluated left to right.
+
 1. **'-'**  unary minus, highest precedence.
-1.  __'*'__ mulitiplication, **'/'** division, **'%'** modulo 
+1. **(_expr_)** expression in parenthesis.
+1.  __'*'__ mulitiplication, **'/'** division, **'%'** modulo, function 
 1. **'+'** addition, **'-'** substraction.
 
 **NOTE:** The division quotient is not rounded. 
@@ -92,13 +97,16 @@ Relational operators are used only by [IF..THEN](#if) and [DO..UNTIL](#do) contr
 
 [main index](#index-princ)
 ## Syntax
-The character code used is [ASCII](https://en.wikipedia.org/wiki/ASCII) set {0..127.
+<a id="syntax"></a>
+For a formal syntax description see [syntax](syntax-en.md) document.
 
-A program is a list of numbered lines. Valid Line number range is {1..65535}. If a line without number is entered it is taken as an immediate command and executed. A line with a number is compiled to tokens list and store un RAM as part of a program.
+The character set used is [ASCII](https://en.wikipedia.org/wiki/ASCII) code {0..127}.
+
+A program is a list of numbered lines. Valid Line number range is {1..65535}. If a line without number is entered it is taken as an immediate command and executed. Otherwise the the compiled line is stored in RAM as part of a program.
 
 Blue pill Tiny BASIC authorize *labels* as [GOSUB](#gosub) and [GOTO](#goto) target instead of a line number. It is faster at execution to use a *label* instead of a line number. 
 
-*Label* name obey the same form as constants names, minimum 2 characters and maximum 6. Only letters plus **'_'**. character. 
+*Label* name obey the same form as user constants names, minimum 2 characters and maximum 6. Only letters and **'_'**. character. 
 
 The *label* must follow immediately the line number. 
 
@@ -106,15 +114,15 @@ The *label* must follow immediately the line number.
 
 A *statement* is a command which may be followed by one or more arguments separated by a comma **','**. 
 
-There may be more than one statement per line separated by **':'** character. This statement separator is optional in most case as the interpreter knows where a command end in most cases. 
+There may be more than one statement per line separated by **':'** character. This statement separator is optional. In most cases the interpreter knows where a command end. 
 
-Statement can be entered in any case but the compiler convert all letters to uppercase. 
+Statement can be entered in any letter case but the compiler convert all letters to uppercase. 
 
-*keyword* can be shortened at least 2 characters provide there is no confusion between to commands. Using short form for *keyword* doesn't doesn't save memory space or improve execution speed as source code is compile in tokens before beeing store in program space. 
+A command *keyword* can be shortened to at least 2 characters provide there is no confusion between to commands. Using short form for *keyword* doesn't doesn't save memory space or improve execution speed as source code is compiled in tokens before beeing store in program space. 
 
 [PRINT](#print) can use **'?'**  as a remplacement for its name. 
 
-[REM](#remark) can use tick character **'\''** as a replacement for ist name. 
+[REM](#remark) can use tick character **(')** as a replacement for ist name. 
 
 An end of line mark the end of a statement except for control structures [FOR..NEXT](#for) and [DO..UNTIL](#do) which can expand many lines up to their associated closing *keyword*.
 
@@ -122,33 +130,33 @@ An end of line mark the end of a statement except for control structures [FOR..N
 <a id="bases"></a>
 ## Numerical bases
 Integer can be entered in 3 differents bases, decimal, hexadecimal and binary.
-The [PRINT](#print) command only output integer in decimal or hexadecimal.
+The [PRINT](#print) command only output integer in decimal or hexadecimal. The system variable **BASE** determine the output format of numbers, see [HEX](#hex) and [DEC](#dec) commands that set this variable.
 
 Here de lexical form of integers. In the following what is between **'['** and **']'** is optional. The **'+'** character means the charater must appear at least one time. A character between single quote is *literal*. **::=** introduce a definition.
-
+**&epsi;** stand for *no character*.
 *  digit ::= '0','1','2','3','4','5','6','7','8','9'
 *  hex_digit ::= digit,'A','B','C','D','E','F' 
-*  decimal integer ::=  ['+'|'-']digit+
-*  hexadecimal integer ::= ['+'|'-']'$'hex_digit+
-*  binary integer ::= ['+'|'-']'&'('0'|'1')+   
+*  decimal integer ::=  ['+'|'-'|&epsi;]digit+
+*  hexadecimal integer ::= ['+'|'-'|&epsi;]'$'hex_digit+
+*  binary integer ::= ['+'|'-'|&epsi;]'&'('0'|'1')+   
 
-som examples:
+some examples:
 ```
 -13534 ' negative decimal integer 
 $ff0f  ' hexadecimal integer  
--&101   ' binary integer for -5 decimal. 
+-&101   ' decimal -5 entered in binary. 
 ```
 [main index](#index-princ)
 <a id="cli"></a>
 ## Command line interface 
-The communication between **blue pill** and the terminal emulator on the PC is done via a serial port. The terminal emulator must VT100 compatible. There is no application to install on the PC other than this terminal emulator. 
+The communication between **blue pill** and the terminal emulator on the PC is done via a serial port. The terminal emulator must be VT100 compatible. There is no application to install on the PC other than this terminal emulator. This **blue pill BASIC stamp** is designed to be usable with any operating system on the PC.
 
-At power up or reset of **blue pill** the software name and version is displayed on the terminal followed on the next line by the word **READY**. From then commands and be entered on the terminal. 
+At power up or reset of **blue pill** the software name and version is displayed on the terminal followed on the next line by the word **READY**. From then commands can be entered on the terminal. 
 ```
 blue pill tiny BASIC, version 1.0
 READY
 ```
-A command line is ended when the &lt;ENTER&gt; key is pressed. Then the text line is compiled to tokens list. If the first token is a line number the compiler insert this line in the program area. 
+A command line is ended when the **&lt;ENTER&gt;** key is pressed. Then the text line is compiled. If the first token is a line number the compiler insert this line in the program area. 
 
 * The line is inserted in increasing line number. 
 * An empty line remove an aldready existing one with the same number.
@@ -156,14 +164,15 @@ A command line is ended when the &lt;ENTER&gt; key is pressed. Then the text lin
 
 If there is no line number this is executed immediately.
 
-Some commands are valid only in programs others only in immediate mode. Using a statement in wrong context in an error report and end of execution.
+Some commands are valid only in programs others only in immediate mode. Using a statement in wrong context result in an error report and end of execution.
 
 Programs stored in RAM are lost at power cycle or reset. 
 
-* **&lt;CTRL-C&gt; result in such a reboot, *cold start*.
-* **&lt;CTLR-B&gt; result in program interruption but no reboot, *warm start*.
+* **&lt;CTRL-C&gt;** Result in such a reboot, *cold start*.
+* **&lt;CTLR-B&gt;** Result in program END but no reboot, *warm start*.
 
 [main index](#index-princ)
+<a id="files"></a>
 ## File system
 The stm32f103c8 MCU used on the **blue pill** has 64Ko of RAM. Tiny BASIC use only a fraction of that flash memory. From the unused flash 1KB is reserved for programs persistant data and the rest for a simple file system used to save BASIC programs.
 See [SAVE](#save) and other file system commands in the next section for more information.
@@ -177,12 +186,12 @@ The {C,P} comment that follow a command name specify the context in which this c
 * **P** This command can be used in program.
 
 <a id="index"></a>
-## Vocubulary index 
+## Vocabulary index 
 name|short form
 -|-
 [ABS](#abs)|AB
+[ADC](#adcon)|ADC
 [ANA](#adcread)|AN
-[ADC](#adcon)|ADCO
 [AND](#and)|AN
 [ASC](#asc)|AS
 [AUTORUN](#autorun)|AU
@@ -287,4 +296,195 @@ name|short form
 [YPOS](#ypos)|YP 
 
 <hr>
+<a id="abs"></a>
+### ABS(*expr*)  {C,P}
 
+Return the absolute value of argument. 
+```
+? abs(-45)
+ 45
+READY
+```
+[index](#index)
+<a id="adcon"></a>
+### ADC 0|1 {C,P}
+Enable **1** or disable **0** the analog/digital converter.
+```
+pmode gpioa,0,input_ana 'set pin mode GPIOA:0       
+READY
+adc 1 ' enable ADC 
+READY
+? ana(0)
+2291 
+READY
+? ana(16) ' read internal MCU temp. sensor.
+1619 
+READY
+adc 0
+READY
+```
+Disabling the ADC reduce power comsumption.
+
+[index](#index)
+<a id="adcread"></a>
+### ANA(*expr*) {C,P}
+Read ADC channel specified by *expr*. There is 18 channels {0..17}. Channel 16 is internal temperature sensor and 17 an internal voltage reference. For this version of *blue pill tiny BASIC* external analog channels are limited to pins {A0:A7,B0:B1}. 
+```
+5 REM ADC TEST 
+10 CLS 
+20 ADC 1 
+30 T=0 B=ANA(16) PAUSE 100 
+40 D=B
+50 T=ANA(16) LOCATE 1,1 ? "TEMP:", T ;"DELTA:",D,"    "
+60 D=ABS(T-B)
+70 B=T 
+80 PAUSE 500 
+90 IF NOT QKEY THEN GOTO 50 
+100 K=ASC(KEY)
+110 CLS 
+120 B=ANA(0)  D=0 PAUSE 100   
+130 A=ANA(0) LOCATE 1,1 ? "ANA0:",A,"   DELTA: ",D,"   "
+140 D=ABS(A-B) B=A 
+150 PAUSE 500
+160 IF NOT QKEY THEN GOTO 130 
+170 K=ASC(KEY)
+180 ADC 0 
+190 END 
+```
+[index](#index)
+<a id="and"></a>
+### AND(*expr1*,*expr2*) {C,P}
+This function return binary AND operation between *expr1* and *expr2*.  
+```
+? and(4,6)
+   4
+READY 
+? and(255,127)
+ 127
+READY
+```
+[index](#index)
+<a id="asc"></a>
+### ASC(*string*|*char*) {C,P}
+This function the  **ASCII** of its argument. If the argument is a string it return the first character code.
+```
+? ASC("hello")
+104 
+READY
+? ASC(\Z)
+90 
+READY
+```
+[index](#index)
+<a id="autorun"></a>
+### AUTORUN *"file"*  {C}
+This command select a file to be auto executed a power up or reset. The program must be save in de flash file system with command [SAVE](#save).
+```
+LIST
+5 REM  BLINK GREEN LED ON BLUE PILL 
+10 BLINK 
+20 OUT GPIOC ,13 ,0 
+30 PAUSE 200 
+40 OUT GPIOC ,13 ,1 
+50 PAUSE 200 
+60 GOTO BLINK 
+READY
+SAVE "blink"
+file size: 137 bytes
+
+READY
+autorun "blink" 
+READY
+
+user reboot!
+
+blue pill tiny BASIC, version 1.0
+file size: 137 bytes
+
+```
+The blink program has been save then define as the autorun program. Pressing the reset button on the card load an execute this program. The program can be stopped pressing **&lt;CTRL-B&gt;** at terminal.
+
+[index](#index)
+<a id="awu"></a>
+### AWU *expr*  {C,P}
+*Auto Wake Up* command is used to place the MCU in deep sleep. This commande use the internal **LSI** oscillator and the **IWDG** timer. When the **IWDG** timer expire the MCU is resetted. This command is used to reduce power consumtion to minimum. *expr* must be in {0..26214}. This number is delay in milliseconds. 
+```
+awu 0  ' minimum delay 
+
+blue pill tiny BASIC, version 1.0
+READY
+awu 26214 ' maximum delay 
+
+blue pill tiny BASIC, version 1.0
+READY
+```
+ See also [SLEEP](#sleep)
+
+ [index](#index)
+<a id="bit"></a>
+### BIT(*expr*) {C,P}
+This function return 2^*expr*  (2 power n). *expr* in range {0..31}.  
+```
+for i=0 to 31 : ? bit(i), next i
+1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 16777216 33554432 67108864 134217728 268435456 536870912 1073741824 -2147483648 
+READY
+```
+[index](#index)
+
+<a id="bres"></a>
+### BRES addr,mask {C,P}
+This command set bits that are at **1** in the *mask*. 
+```
+bres gpioc+$c,bit(13)
+READY
+```
+The above command light the green LED on blue pill.
+
+[index](#index)
+<a id="bset"></a>
+### BSET addr,mask  {C,P}
+This command reset bits that are at **1** in the *mask*. 
+```
+bset gpioc+$c,bit(13)
+READY
+```
+The above command turn off the green LED on blue pill.
+
+[index](#index)
+<a id="btest"></a>
+### BTEST(addr,bit) {C,P}
+This function return the state of a *bit* in a special function register or RAM address. 
+```
+? btest(gpioc+$c,13)
+0 
+READY
+bset gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+1 
+READY
+```
+
+[index](#index)
+<a id="btogl"></a>
+### BTOGL addr,mask  {C,P}
+This command invert the state of all bits that are at **1** in the *mask*. 
+```
+btogl gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+1 
+READY
+btogl gpioc+$c,bit(13) ? btest(gpioc+$c,13)
+0 
+READY
+```
+The above command invert the state of green LED on blue pill.
+
+[index](#index)
+
+<a id="char"></a>
+### CHAR(*expr*) {C,P}
+This function return the ASCII character corresponding to the value of *expr*. The value of *expr* is masked to keep only the 7 least significant bits. The token type returned by this function is **TK_CHAR**  which can't be affected to a variable it can only be use as [PRINT](#print) output. See also [ASC](#asc).
+```
+for a=32 to 126:? char(a),:next a
+ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+READY
+```
+[index](#index)

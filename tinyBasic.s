@@ -2516,12 +2516,12 @@ adc_off:
 // configure IWDG
 // compute values for IWDG_PR and IWDG_RLR 
     _POP r2 // time_sleep in msec. 
-    mov r3,#0xffff
-    and r2,r3 
-    mov r3,#10 // Flsi=40Khz but smallest divisor is 4 
-    mul r2,r3 
+    mov r3,#10
+    mul r2,r3 // milliseconds adjustment
+    _MOV32 r3,0x3ffff 
+    and r2,r3 // r2 limit=0x3ffff
     eor r3,r3
-2:  cmp r2,#8192 
+2:  cmp r2,#4096 
     bmi 3f 
     lsr r2,#1 
     add r3,#1

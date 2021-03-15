@@ -3,6 +3,11 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+#### 2021-03-15
+
+* Corrigé bogue dans commande **AWU**.
+
+* Travail sur [refman.md](docs/refman.md)
 
 #### 2021-03-14
 
