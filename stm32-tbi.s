@@ -318,7 +318,10 @@ wait_sws:
   _MOV32 r0,RCC_BASE_ADR
   mov	r1, #0x5e7d		/* all GPIO and USART1 */
   str	r1, [r0,#RCC_APB2ENR]
-
+// enable T2-T4 clock 
+  ldr r1,[r0,#RCC_APB1ENR]
+  orr r1,#7 
+  str r1,[r0,#RCC_APB1ENR]
 /* configure GPIOC:13 as output for user LED */
   _MOV32 r0,GPIOC_BASE_ADR 
   ldr r1,[r0,#GPIO_CRH]

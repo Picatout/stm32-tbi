@@ -877,7 +877,7 @@ ARM GAS  stm32-tbi.s 			page 1
  146              	*****************************************************/
  147              	   .section  .text , "ax", %progbits 
  148              	    _GBL_FUNC default_handler 
- 149 0000 DFF89404 	    ldr r0,=exception_msg 
+ 149 0000 DFF89C04 	    ldr r0,=exception_msg 
  150 0004 00B5FFF7 	    _CALL uart_puts 
  150      FEFF5DF8 
  150      04EB
@@ -936,13 +936,13 @@ ARM GAS  stm32-tbi.s 			page 1
  195 0070 00B5FFF7 	3:  _CALL uart_flush_queue
  195      FEFF5DF8 
  195      04EB
- 196 007a DFF82004 	    ldr r0,=warm_start 
+ 196 007a DFF82804 	    ldr r0,=warm_start 
  197 007e 40F00100 	    orr r0,#1 
  198 0082 0690     	    str r0,[sp,#0x18]
  199 0084 7047     	    _RET 
  200              	
  201 0086 00BF     	    _GBL_FUNC user_reboot   
- 202 0088 DFF81404 	    ldr r0,=user_reboot_msg
+ 202 0088 DFF81C04 	    ldr r0,=user_reboot_msg
  203 008c 00B5FFF7 	    _CALL uart_puts 
  203      FEFF5DF8 
  203      04EB
@@ -979,7 +979,7 @@ ARM GAS  stm32-tbi.s 			page 1
  227 00cc 8546     	    mov sp,r0 
  228 00ce 00F02FF8 	    bl remap  
  229 00d2 00F045F8 	    bl	init_devices	 	/* RCC, GPIOs */
- 230 00d6 00F09DF8 	    bl  uart_init
+ 230 00d6 00F0A1F8 	    bl  uart_init
  231 00da FFF7FEFF 	    bl  cold_start  /* initialize BASIC SYSTEM */ 
  232 00de 00F001F8 	    bl  test 
  233 00e2 FEE7     	    b .  
@@ -1094,427 +1094,430 @@ ARM GAS  stm32-tbi.s 			page 1
  318      C4F20200 
  319 01c8 45F67D61 	  mov	r1, #0x5e7d		/* all GPIO and USART1 */
  320 01cc 8161     	  str	r1, [r0,#RCC_APB2ENR]
- 321              	
- 322              	/* configure GPIOC:13 as output for user LED */
- 323 01ce 4FF48050 	  _MOV32 r0,GPIOC_BASE_ADR 
- 323      C4F20100 
- 324 01d6 4168     	  ldr r1,[r0,#GPIO_CRH]
- 325 01d8 6FF47002 	  mvn r2,#(15<<20)
- 326 01dc 01EA0201 	  and r1,r1,r2
- 327 01e0 4FF4C002 	  mov r2,#(6<<20)
- 328 01e4 41EA0201 	  orr r1,r1,r2
- 329 01e8 4160     	  str r1,[r0,#GPIO_CRH]
- 330              	/* turn off user LED */ 
- 331 01ea 4FF40051 	  mov r1,#(1<<13)
- 332 01ee C160     	  str r1,[r0,#GPIO_ODR]
- 333              	
- 334              	/* disable JTDI,JTDO,JTRST */
- 335 01f0 4FF00000 	  _MOV32 r0,AFIO_BASE_ADR
- 335      C4F20100 
- 336 01f8 4FF00071 	  mov r1,#2<<24 
- 337 01fc 4160     	  str r1,[r0,#AFIO_MAPR]
- 338              	
- 339              	/* configure systicks for 1msec ticks */
- 340 01fe 4EF21000 	  _MOV32 r0,STK_BASE_ADR 
- 340      CEF20000 
- 341 0206 42F22831 	  mov r1,#9000 /* reload value for 1msec */
- 342 020a 4160     	  str r1,[r0,#STK_LOAD]
- 343 020c 4FF00301 	  mov r1,#3
- 344 0210 0160     	  str r1,[r0,STK_CTL]
- 345 0212 7047     	  _RET  
- 346              	
- 347              	/*******************************
- 348              	  initialize UART peripheral 
- 349              	********************************/
- 350              		  _FUNC uart_init
- 351              	/* set GPIOA PIN 9, uart TX  */
- 352 0214 4FF40060 	    _MOV32 r0,GPIOA_BASE_ADR
- 352      C4F20100 
- 353 021c 4168     	    ldr r1,[r0,#GPIO_CRH]
- 354 021e 6FF0F002 	    mvn r2,#(15<<4)
- 355 0222 01EA0201 	    and r1,r1,r2
- 356 0226 4FF0A002 	    mov r2,#(0xA<<4)
- 357 022a 41EA0201 	    orr r1,r1,r2 
- 358 022e 4160     	    str r1,[r0,#GPIO_CRH]
- 359              	/* lock PA9,PA10 to block pins reconfiguration */
- 360 0230 4FF4C061 	    mov r1,#(1<<9)+(1<<10)
+ 321              	// enable T2-T4 clock 
+ 322 01ce C169     	  ldr r1,[r0,#RCC_APB1ENR]
+ 323 01d0 41F00701 	  orr r1,#7 
+ 324 01d4 C161     	  str r1,[r0,#RCC_APB1ENR]
+ 325              	/* configure GPIOC:13 as output for user LED */
+ 326 01d6 4FF48050 	  _MOV32 r0,GPIOC_BASE_ADR 
+ 326      C4F20100 
+ 327 01de 4168     	  ldr r1,[r0,#GPIO_CRH]
+ 328 01e0 6FF47002 	  mvn r2,#(15<<20)
+ 329 01e4 01EA0201 	  and r1,r1,r2
+ 330 01e8 4FF4C002 	  mov r2,#(6<<20)
+ 331 01ec 41EA0201 	  orr r1,r1,r2
+ 332 01f0 4160     	  str r1,[r0,#GPIO_CRH]
+ 333              	/* turn off user LED */ 
+ 334 01f2 4FF40051 	  mov r1,#(1<<13)
+ 335 01f6 C160     	  str r1,[r0,#GPIO_ODR]
+ 336              	
+ 337              	/* disable JTDI,JTDO,JTRST */
+ 338 01f8 4FF00000 	  _MOV32 r0,AFIO_BASE_ADR
+ 338      C4F20100 
+ 339 0200 4FF00071 	  mov r1,#2<<24 
+ 340 0204 4160     	  str r1,[r0,#AFIO_MAPR]
+ 341              	
+ 342              	/* configure systicks for 1msec ticks */
+ 343 0206 4EF21000 	  _MOV32 r0,STK_BASE_ADR 
+ 343      CEF20000 
+ 344 020e 42F22831 	  mov r1,#9000 /* reload value for 1msec */
+ 345 0212 4160     	  str r1,[r0,#STK_LOAD]
+ 346 0214 4FF00301 	  mov r1,#3
+ 347 0218 0160     	  str r1,[r0,STK_CTL]
+ 348 021a 7047     	  _RET  
+ 349              	
+ 350              	/*******************************
+ 351              	  initialize UART peripheral 
+ 352              	********************************/
+ 353              		  _FUNC uart_init
+ 354              	/* set GPIOA PIN 9, uart TX  */
+ 355 021c 4FF40060 	    _MOV32 r0,GPIOA_BASE_ADR
+ 355      C4F20100 
+ 356 0224 4168     	    ldr r1,[r0,#GPIO_CRH]
+ 357 0226 6FF0F002 	    mvn r2,#(15<<4)
+ 358 022a 01EA0201 	    and r1,r1,r2
+ 359 022e 4FF0A002 	    mov r2,#(0xA<<4)
+ 360 0232 41EA0201 	    orr r1,r1,r2 
 ARM GAS  stm32-tbi.s 			page 20
 
 
- 361 0234 4FF00402 	    mov r2,#4
- 362 0238 C0F20101 	    movt r1,#1
- 363 023c 8161     	1:  str r1,[r0,#GPIO_LCKR]
- 364 023e 81F48031 	    eor r1,#(1<<16) 
- 365 0242 013A     	    subs r2,#1 
- 366 0244 FAD1     	    bne 1b 
- 367              	/* configure usart */     
- 368 0246 4FF46050 	    _MOV32 r0,UART 
- 368      C4F20100 
- 369              	/* BAUD rate */
- 370 024e 40F27121 	    mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
- 371 0252 8160     	    str r1,[r0,#USART_BRR]
- 372 0254 42F22C01 	    mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
- 373 0258 C160     	    str r1,[r0,#USART_CR1] /*enable usart*/
- 374              	/* enable interrupt in NVIC */
- 375 025a 4FF46140 	    _MOV32 r0,NVIC_BASE_ADR
- 375      CEF20000 
- 376 0262 4168     	    ldr r1,[r0,#NVIC_ISER1]
- 377 0264 41F02001 	    orr r1,#32   
- 378 0268 4160     	    str r1,[r0,#NVIC_ISER1]
- 379 026a 7047     	    bx lr 
- 380              	
- 381              	/***************************
- 382              	    uart_flush_queue
- 383              	    flush rx queue
- 384              	  input:
- 385              	    none
- 386              	  output:
- 387              	    none 
- 388              	  use:
- 389              	    T1 temp
- 390              	***************************/
- 391              	    _GBL_FUNC uart_flush_queue
- 392 026c 4DF8048D 	    push {T1}
- 393 0270 88EA0808 	    eor T1,T1 
- 394 0274 C4F84880 	    str T1,[UPP,#RX_HEAD]
- 395 0278 C4F84C80 	    str T1,[UPP,#RX_TAIL]
- 396 027c 5DF8048B 	    pop {T1}
- 397 0280 7047     	    _RET 
- 398              	
- 399              	/****************************
- 400              	    UART_PUTC
- 401              	  send character to uart
- 402              	  input: 
- 403              	    R0 character to send 
- 404              	  use:
- 405              	    T1 status  
- 406              	    T2 UART address
- 407              	*****************************/
- 408 0282 00BF     	    _GBL_FUNC uart_putc
- 409 0284 2DE90003 	    push {T1,T2}
- 410 0288 4FF46059 	    _MOV32 T2,UART
- 410      C4F20109 
- 411              	1: 
- 412 0290 D9F80080 	    ldr T1,[T2,#USART_SR]
- 413 0294 18F08008 	    ands T1,#0x80
- 414 0298 FAD0     	    beq 1b // UART_DR full,wait  
+ 361 0236 4160     	    str r1,[r0,#GPIO_CRH]
+ 362              	/* lock PA9,PA10 to block pins reconfiguration */
+ 363 0238 4FF4C061 	    mov r1,#(1<<9)+(1<<10)
+ 364 023c 4FF00402 	    mov r2,#4
+ 365 0240 C0F20101 	    movt r1,#1
+ 366 0244 8161     	1:  str r1,[r0,#GPIO_LCKR]
+ 367 0246 81F48031 	    eor r1,#(1<<16) 
+ 368 024a 013A     	    subs r2,#1 
+ 369 024c FAD1     	    bne 1b 
+ 370              	/* configure usart */     
+ 371 024e 4FF46050 	    _MOV32 r0,UART 
+ 371      C4F20100 
+ 372              	/* BAUD rate */
+ 373 0256 40F27121 	    mov r1,#(39<<4)+1  /* (72Mhz/16)/115200,39,0625, quotient,39, reste,0,0625*16,1 */
+ 374 025a 8160     	    str r1,[r0,#USART_BRR]
+ 375 025c 42F22C01 	    mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
+ 376 0260 C160     	    str r1,[r0,#USART_CR1] /*enable usart*/
+ 377              	/* enable interrupt in NVIC */
+ 378 0262 4FF46140 	    _MOV32 r0,NVIC_BASE_ADR
+ 378      CEF20000 
+ 379 026a 4168     	    ldr r1,[r0,#NVIC_ISER1]
+ 380 026c 41F02001 	    orr r1,#32   
+ 381 0270 4160     	    str r1,[r0,#NVIC_ISER1]
+ 382 0272 7047     	    bx lr 
+ 383              	
+ 384              	/***************************
+ 385              	    uart_flush_queue
+ 386              	    flush rx queue
+ 387              	  input:
+ 388              	    none
+ 389              	  output:
+ 390              	    none 
+ 391              	  use:
+ 392              	    T1 temp
+ 393              	***************************/
+ 394              	    _GBL_FUNC uart_flush_queue
+ 395 0274 4DF8048D 	    push {T1}
+ 396 0278 88EA0808 	    eor T1,T1 
+ 397 027c C4F84880 	    str T1,[UPP,#RX_HEAD]
+ 398 0280 C4F84C80 	    str T1,[UPP,#RX_TAIL]
+ 399 0284 5DF8048B 	    pop {T1}
+ 400 0288 7047     	    _RET 
+ 401              	
+ 402              	/****************************
+ 403              	    UART_PUTC
+ 404              	  send character to uart
+ 405              	  input: 
+ 406              	    R0 character to send 
+ 407              	  use:
+ 408              	    T1 status  
+ 409              	    T2 UART address
+ 410              	*****************************/
+ 411 028a 00BF     	    _GBL_FUNC uart_putc
+ 412 028c 2DE90003 	    push {T1,T2}
+ 413 0290 4FF46059 	    _MOV32 T2,UART
+ 413      C4F20109 
+ 414              	1: 
 ARM GAS  stm32-tbi.s 			page 21
 
 
- 415 029a 89F80400 	    strb r0,[T2,#USART_DR]
- 416 029e BDE80003 	    pop {T1,T2}
- 417 02a2 7047     	    _RET  
- 418              	
- 419              	
- 420              	/**********************************
- 421              	  UART_QKEY
- 422              	  check if character available in 
- 423              	  rx1_qeue
- 424              	  input:
- 425              	    none
- 426              	  output:
- 427              	    r0 flag = RX_HEAD^REX_TAIL 
- 428              	    flags 
- 429              	  use:
- 430              	    r0  RX_HEAD  
- 431              	    r1  RX_TAIL   
- 432              	***********************************/
- 433              	    _GBL_FUNC uart_qkey
- 434 02a4 02B4     	    push {r1}
- 435 02a6 A06C     	    ldr r0,[UPP,#RX_HEAD]
- 436 02a8 E16C     	    ldr r1,[UPP,#RX_TAIL]
- 437 02aa 4840     	    eors r0,r1
- 438 02ac 02BC     	    pop {r1} 
- 439 02ae 7047     	    _RET 
- 440              	
- 441              	/**********************************
- 442              	  UART_GETC 
- 443              	  wait a character from uart 
- 444              	  input:
- 445              	    none
- 446              	  output:
- 447              	    r0  character 
- 448              	  use:
- 449              	    T1  rx_queue 
- 450              	    T2  rx_head  
- 451              	**********************************/
- 452              	    _GBL_FUNC uart_getc
- 453 02b0 2DE90003 	    push {T1,T2}
- 454              	1:
- 455 02b4 00B5FFF7 	    _CALL uart_qkey 
- 455      FEFF5DF8 
- 455      04EB
- 456 02be F9D0     	    beq 1b  
- 457 02c0 04F15008 	    add T1,UPP,#RX_QUEUE
- 458 02c4 D4F84890 	    ldr T2, [UPP,#RX_HEAD]
- 459 02c8 18F80900 	    ldrb r0,[T1,T2]
- 460 02cc 09F10109 	    add T2,#1
- 461 02d0 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
- 462 02d4 C4F84890 	    str T2,[UPP,#RX_HEAD]
- 463 02d8 BDE80003 	    pop {T1,T2}
- 464 02dc 7047     	    _RET  
- 465              	
- 466              	
- 467              	/***************************
- 468              	  Flash memory interface
- 469              	***************************/
+ 415 0298 D9F80080 	    ldr T1,[T2,#USART_SR]
+ 416 029c 18F08008 	    ands T1,#0x80
+ 417 02a0 FAD0     	    beq 1b // UART_DR full,wait  
+ 418 02a2 89F80400 	    strb r0,[T2,#USART_DR]
+ 419 02a6 BDE80003 	    pop {T1,T2}
+ 420 02aa 7047     	    _RET  
+ 421              	
+ 422              	
+ 423              	/**********************************
+ 424              	  UART_QKEY
+ 425              	  check if character available in 
+ 426              	  rx1_qeue
+ 427              	  input:
+ 428              	    none
+ 429              	  output:
+ 430              	    r0 flag = RX_HEAD^REX_TAIL 
+ 431              	    flags 
+ 432              	  use:
+ 433              	    r0  RX_HEAD  
+ 434              	    r1  RX_TAIL   
+ 435              	***********************************/
+ 436              	    _GBL_FUNC uart_qkey
+ 437 02ac 02B4     	    push {r1}
+ 438 02ae A06C     	    ldr r0,[UPP,#RX_HEAD]
+ 439 02b0 E16C     	    ldr r1,[UPP,#RX_TAIL]
+ 440 02b2 4840     	    eors r0,r1
+ 441 02b4 02BC     	    pop {r1} 
+ 442 02b6 7047     	    _RET 
+ 443              	
+ 444              	/**********************************
+ 445              	  UART_GETC 
+ 446              	  wait a character from uart 
+ 447              	  input:
+ 448              	    none
+ 449              	  output:
+ 450              	    r0  character 
+ 451              	  use:
+ 452              	    T1  rx_queue 
+ 453              	    T2  rx_head  
+ 454              	**********************************/
+ 455              	    _GBL_FUNC uart_getc
+ 456 02b8 2DE90003 	    push {T1,T2}
+ 457              	1:
+ 458 02bc 00B5FFF7 	    _CALL uart_qkey 
+ 458      FEFF5DF8 
+ 458      04EB
+ 459 02c6 F9D0     	    beq 1b  
+ 460 02c8 04F15008 	    add T1,UPP,#RX_QUEUE
+ 461 02cc D4F84890 	    ldr T2, [UPP,#RX_HEAD]
+ 462 02d0 18F80900 	    ldrb r0,[T1,T2]
+ 463 02d4 09F10109 	    add T2,#1
+ 464 02d8 09F00F09 	    and T2,#(RX_QUEUE_SIZE-1)
+ 465 02dc C4F84890 	    str T2,[UPP,#RX_HEAD]
+ 466 02e0 BDE80003 	    pop {T1,T2}
+ 467 02e4 7047     	    _RET  
+ 468              	
+ 469              	
 ARM GAS  stm32-tbi.s 			page 22
 
 
- 470              	
- 471              	/***********************************
- 472              	  unlock 
- 473              	  unlock flash memory for writing
- 474              	  input:
- 475              	    r0    0 lock, 1 unlock 
- 476              	  output:
- 477              	    none
- 478              	  use: 
- 479              	    r6     temp  
- 480              	***********************************/
- 481 02de 00BF     	    _GBL_FUNC unlock  
- 482 02e0 40B4     	    push {r6}
- 483 02e2 0040     	    ands r0,r0 
- 484 02e4 15D0     	    beq lock 
- 485 02e6 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
- 485      C4F20200 
- 486 02ee 4FF03406 	    mov r6,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
- 487 02f2 C660     	    str r6,[r0,#FLASH_SR]
- 488 02f4 0669     	    ldr r6,[r0,#FLASH_CR]
- 489 02f6 16F0800F 	    tst r6,#(1<<7)
- 490 02fa 11D0     	    beq 9f
- 491 02fc 40F22316 	    _MOV32 r6,FLASH_KEY1  
- 491      C4F26756 
- 492 0304 4660     	    str	r6, [r0, #FLASH_KEYR]
- 493 0306 48F6AB16 	    _MOV32 r6,FLASH_KEY2
- 493      CCF6EF56 
- 494 030e 4660     	    str	r6, [r0, #FLASH_KEYR]
- 495 0310 06E0     	    b 9f 
- 496              	// lock flash memory
- 497              	lock: 
- 498 0312 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
- 498      C4F20200 
- 499 031a 4FF08006 	    mov r6,#(1<<7)
- 500 031e 0661     	    str r6,[r0,#FLASH_CR]
- 501 0320 40BC     	9:  pop {r6}
- 502 0322 7047     	  	_RET  
- 503              	
- 504              	
- 505              	/*********************************
- 506              	   wait_busy 
- 507              	   wait until busy flag is cleared 
- 508              	   input:
- 509              	    none
- 510              	   output:
- 511              	    none 
- 512              	   use:
- 513              	     r0    flash registers address 
- 514              	     r1    temp 
- 515              	***********************************/
- 516              	    _FUNC wait_busy 
- 517 0324 03B4     	    push {r0,r1}
- 518 0326 4FF40050 	    _MOV32	r0,FLASH_BASE_ADR
- 518      C4F20200 
- 519              	1:
- 520 032e C168     	    ldr	r1, [r0, #FLASH_SR]	//  FLASH_SR
- 521 0330 11F00101 	    ands r1, #0x1	//  BSY
+ 470              	/***************************
+ 471              	  Flash memory interface
+ 472              	***************************/
+ 473              	
+ 474              	/***********************************
+ 475              	  unlock 
+ 476              	  unlock flash memory for writing
+ 477              	  input:
+ 478              	    r0    0 lock, 1 unlock 
+ 479              	  output:
+ 480              	    none
+ 481              	  use: 
+ 482              	    r6     temp  
+ 483              	***********************************/
+ 484 02e6 00BF     	    _GBL_FUNC unlock  
+ 485 02e8 40B4     	    push {r6}
+ 486 02ea 0040     	    ands r0,r0 
+ 487 02ec 15D0     	    beq lock 
+ 488 02ee 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 488      C4F20200 
+ 489 02f6 4FF03406 	    mov r6,#(0xD<<2) // clear EOP|WRPRTERR|PGERR bits 
+ 490 02fa C660     	    str r6,[r0,#FLASH_SR]
+ 491 02fc 0669     	    ldr r6,[r0,#FLASH_CR]
+ 492 02fe 16F0800F 	    tst r6,#(1<<7)
+ 493 0302 11D0     	    beq 9f
+ 494 0304 40F22316 	    _MOV32 r6,FLASH_KEY1  
+ 494      C4F26756 
+ 495 030c 4660     	    str	r6, [r0, #FLASH_KEYR]
+ 496 030e 48F6AB16 	    _MOV32 r6,FLASH_KEY2
+ 496      CCF6EF56 
+ 497 0316 4660     	    str	r6, [r0, #FLASH_KEYR]
+ 498 0318 06E0     	    b 9f 
+ 499              	// lock flash memory
+ 500              	lock: 
+ 501 031a 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 501      C4F20200 
+ 502 0322 4FF08006 	    mov r6,#(1<<7)
+ 503 0326 0661     	    str r6,[r0,#FLASH_CR]
+ 504 0328 40BC     	9:  pop {r6}
+ 505 032a 7047     	  	_RET  
+ 506              	
+ 507              	
+ 508              	/*********************************
+ 509              	   wait_busy 
+ 510              	   wait until busy flag is cleared 
+ 511              	   input:
+ 512              	    none
+ 513              	   output:
+ 514              	    none 
+ 515              	   use:
+ 516              	     r0    flash registers address 
+ 517              	     r1    temp 
+ 518              	***********************************/
+ 519              	    _FUNC wait_busy 
+ 520 032c 03B4     	    push {r0,r1}
+ 521 032e 4FF40050 	    _MOV32	r0,FLASH_BASE_ADR
+ 521      C4F20200 
 ARM GAS  stm32-tbi.s 			page 23
 
 
- 522 0334 FBD1     	    bne	1b 
- 523 0336 03BC     	    pop {r0,r1}
- 524 0338 7047     	    _RET
- 525              	
- 526              	/***************************************
- 527              	   hword_write
- 528              	   write 16 bits value to flash memory 
- 529              	   input:
- 530              	    r0  data 
- 531              	    r1  address 
- 532              	   output:
- 533              	     none 
- 534              	   use: 
- 535              	     r6    flash control regs base address 
- 536              	     r7    temp  
- 537              	***************************************/
- 538 033a 00BF     	    _GBL_FUNC hword_write 
- 539 033c C0B4     	    push {r6,r7}
- 540 033e 4FF40056 	    _MOV32 r6,FLASH_BASE_ADR
- 540      C4F20206 
- 541 0346 4FF00107 	    mov r7,#1 // set PG 
- 542 034a 3761     	    str r7,[r6,#FLASH_CR]
- 543 034c 0880     	    strh r0,[r1] 
- 544 034e 00B5FFF7 	    _CALL wait_busy  
- 544      E8FF5DF8 
- 544      04EB
- 545 0358 F768     	    ldr r7,[r6,#FLASH_SR]
- 546 035a 17F01407 	    ands r7,r7,#(5<<2) 
- 547 035e 05D0     	    beq 9f
- 548 0360 5048     	    ldr r0,=write_error
- 549 0362 00B5FFF7 	    _CALL uart_puts   
- 549      FEFF5DF8 
- 549      04EB
- 550 036c C0BC     	9:	pop {r6,r7}
- 551 036e 7047     	    _RET  
- 552              	write_error:	
- 553 0370 20777269 	    .asciz " write error!"
- 553      74652065 
- 553      72726F72 
- 553      2100
- 554 037e 00BF     	    .p2align 2
- 555              	
- 556              	/****************************************
- 557              	    flash_store
- 558              	    Write one word into flash memory
- 559              	    address must even
- 560              	    input:
- 561              	      r0    data 
- 562              	      r1    adr 
- 563              	    output: 
- 564              	      none 
- 565              	    use:
- 566              	      T1 data 
- 567              	      T2 adr 
- 568              	*****************************************/ 
- 569              	    _GBL_FUNC flash_store 
- 570 0380 2DE90003 	    push {T1,T2}
+ 522              	1:
+ 523 0336 C168     	    ldr	r1, [r0, #FLASH_SR]	//  FLASH_SR
+ 524 0338 11F00101 	    ands r1, #0x1	//  BSY
+ 525 033c FBD1     	    bne	1b 
+ 526 033e 03BC     	    pop {r0,r1}
+ 527 0340 7047     	    _RET
+ 528              	
+ 529              	/***************************************
+ 530              	   hword_write
+ 531              	   write 16 bits value to flash memory 
+ 532              	   input:
+ 533              	    r0  data 
+ 534              	    r1  address 
+ 535              	   output:
+ 536              	     none 
+ 537              	   use: 
+ 538              	     r6    flash control regs base address 
+ 539              	     r7    temp  
+ 540              	***************************************/
+ 541 0342 00BF     	    _GBL_FUNC hword_write 
+ 542 0344 C0B4     	    push {r6,r7}
+ 543 0346 4FF40056 	    _MOV32 r6,FLASH_BASE_ADR
+ 543      C4F20206 
+ 544 034e 4FF00107 	    mov r7,#1 // set PG 
+ 545 0352 3761     	    str r7,[r6,#FLASH_CR]
+ 546 0354 0880     	    strh r0,[r1] 
+ 547 0356 00B5FFF7 	    _CALL wait_busy  
+ 547      E8FF5DF8 
+ 547      04EB
+ 548 0360 F768     	    ldr r7,[r6,#FLASH_SR]
+ 549 0362 17F01407 	    ands r7,r7,#(5<<2) 
+ 550 0366 05D0     	    beq 9f
+ 551 0368 5048     	    ldr r0,=write_error
+ 552 036a 00B5FFF7 	    _CALL uart_puts   
+ 552      FEFF5DF8 
+ 552      04EB
+ 553 0374 C0BC     	9:	pop {r6,r7}
+ 554 0376 7047     	    _RET  
+ 555              	write_error:	
+ 556 0378 20777269 	    .asciz " write error!"
+ 556      74652065 
+ 556      72726F72 
+ 556      2100
+ 557 0386 00BF     	    .p2align 2
+ 558              	
+ 559              	/****************************************
+ 560              	    flash_store
+ 561              	    Write one word into flash memory
+ 562              	    address must even
+ 563              	    input:
+ 564              	      r0    data 
+ 565              	      r1    adr 
+ 566              	    output: 
+ 567              	      none 
+ 568              	    use:
+ 569              	      T1 data 
+ 570              	      T2 adr 
 ARM GAS  stm32-tbi.s 			page 24
 
 
- 571 0384 8046     	    mov T1,r0
- 572 0386 8946     	    mov T2,r1  
- 573 0388 4FF00100 	    mov r0,#1
- 574 038c 00B5FFF7 	    _CALL unlock 
- 574      FEFF5DF8 
- 574      04EB
- 575 0396 4046     	    mov r0,T1 
- 576 0398 4946     	    mov r1,T2 
- 577 039a 00B5FFF7 	    _CALL hword_write
+ 571              	*****************************************/ 
+ 572              	    _GBL_FUNC flash_store 
+ 573 0388 2DE90003 	    push {T1,T2}
+ 574 038c 8046     	    mov T1,r0
+ 575 038e 8946     	    mov T2,r1  
+ 576 0390 4FF00100 	    mov r0,#1
+ 577 0394 00B5FFF7 	    _CALL unlock 
  577      FEFF5DF8 
  577      04EB
- 578 03a4 4FEA1840 	    mov r0,T1,lsr #16 
- 579 03a8 09F10201 	    add r1,T2,#2
- 580 03ac 00B5FFF7 	    _CALL hword_write
+ 578 039e 4046     	    mov r0,T1 
+ 579 03a0 4946     	    mov r1,T2 
+ 580 03a2 00B5FFF7 	    _CALL hword_write
  580      FEFF5DF8 
  580      04EB
- 581 03b6 80EA0000 	    eor r0,r0 
- 582 03ba 00B5FFF7 	    _CALL unlock  
- 582      FEFF5DF8 
- 582      04EB
- 583 03c4 BDE80003 	    pop {T1,T2}
- 584 03c8 7047     	    _RET 
- 585              	
- 586              	/********************************************
- 587              	    erase_page 
- 588              	    erase 1024 bytes flash page 
- 589              	    input:
- 590              	       r0    adr 
- 591              	    output:
- 592              	       None 
- 593              	    use:
- 594              	      T1    adr
- 595              	      T2    temp   
- 596              	**********************************************/
- 597 03ca 00BF     	    _GBL_FUNC erase_page 
- 598 03cc 2DE90003 	    push {T1,T2}
- 599 03d0 8046     	    mov T1,r0 
- 600 03d2 4FF00100 	    mov r0,#1 
- 601 03d6 00B5FFF7 	    _CALL unlock 
- 601      FEFF5DF8 
- 601      04EB
- 602 03e0 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
- 602      C4F20200 
- 603 03e8 4FF00209 	    mov T2,#2 // PER bit in FLASH_CR 
- 604 03ec C0F81090 	    str T2,[r0,#FLASH_CR]
- 605 03f0 C0F81480 	    str T1,[r0,#FLASH_AR]
- 606 03f4 49F04009 	    orr T2,#0x40 
- 607 03f8 C0F81090 	    str T2,[r0,#FLASH_CR]
- 608 03fc 00B5FFF7 	    _CALL wait_busy
- 608      91FF5DF8 
- 608      04EB
- 609 0406 D0F80C90 	    ldr T2,[r0,#FLASH_SR]
- 610 040a 19F01409 	    ands T2,#(5<<2)
- 611 040e 05D0     	    beq 9f
- 612 0410 0748     	    ldr r0,erase_error
- 613 0412 00B5FFF7 	    _CALL uart_puts 
- 613      FEFF5DF8 
+ 581 03ac 4FEA1840 	    mov r0,T1,lsr #16 
+ 582 03b0 09F10201 	    add r1,T2,#2
+ 583 03b4 00B5FFF7 	    _CALL hword_write
+ 583      FEFF5DF8 
+ 583      04EB
+ 584 03be 80EA0000 	    eor r0,r0 
+ 585 03c2 00B5FFF7 	    _CALL unlock  
+ 585      FEFF5DF8 
+ 585      04EB
+ 586 03cc BDE80003 	    pop {T1,T2}
+ 587 03d0 7047     	    _RET 
+ 588              	
+ 589              	/********************************************
+ 590              	    erase_page 
+ 591              	    erase 1024 bytes flash page 
+ 592              	    input:
+ 593              	       r0    adr 
+ 594              	    output:
+ 595              	       None 
+ 596              	    use:
+ 597              	      T1    adr
+ 598              	      T2    temp   
+ 599              	**********************************************/
+ 600 03d2 00BF     	    _GBL_FUNC erase_page 
+ 601 03d4 2DE90003 	    push {T1,T2}
+ 602 03d8 8046     	    mov T1,r0 
+ 603 03da 4FF00100 	    mov r0,#1 
+ 604 03de 00B5FFF7 	    _CALL unlock 
+ 604      FEFF5DF8 
+ 604      04EB
+ 605 03e8 4FF40050 	    _MOV32 r0,FLASH_BASE_ADR
+ 605      C4F20200 
+ 606 03f0 4FF00209 	    mov T2,#2 // PER bit in FLASH_CR 
+ 607 03f4 C0F81090 	    str T2,[r0,#FLASH_CR]
+ 608 03f8 C0F81480 	    str T1,[r0,#FLASH_AR]
+ 609 03fc 49F04009 	    orr T2,#0x40 
+ 610 0400 C0F81090 	    str T2,[r0,#FLASH_CR]
+ 611 0404 00B5FFF7 	    _CALL wait_busy
+ 611      91FF5DF8 
+ 611      04EB
+ 612 040e D0F80C90 	    ldr T2,[r0,#FLASH_SR]
+ 613 0412 19F01409 	    ands T2,#(5<<2)
+ 614 0416 05D0     	    beq 9f
 ARM GAS  stm32-tbi.s 			page 25
 
 
- 613      04EB
- 614 041c 80EA0000 	9:  eor r0,r0 
- 615 0420 00B5FFF7 	    _CALL unlock 
- 615      FEFF5DF8 
- 615      04EB
- 616 042a BDE80003 	    pop {T1,T2}
- 617 042e 7047     	    _RET 
- 618              	erase_error:
- 619 0430 20657261 	    .asciz " erase error!\r"
- 619      73652065 
- 619      72726F72 
- 619      210D00
- 620 043f 00       	    .p2align 2
- 621              	
- 622              	/*****************************************
- 623              	    write_page 
- 624              	    write a page buffer to flash memory 
- 625              	    input:
- 626              	      r0  *buffer 
- 627              	      r1  flash_adr 
- 628              	    output:
- 629              	      none 
- 630              	    use:
- 631              	      r2  size counter
- 632              	      T1  *buffer 
- 633              	******************************************/
- 634              	    _GBL_FUNC write_page
- 635 0440 2DE90401 	    push {r2,T1}
- 636 0444 8046     	    mov T1,r0
- 637 0446 4FF00100 	    mov r0,#1 
- 638 044a 00B5FFF7 	    _CALL unlock
- 638      FEFF5DF8 
- 638      04EB
- 639 0454 4FF48062 	    mov r2,#PAGE_SIZE 
- 640 0458 38F8020B 	1:  ldrh r0,[T1],#2 
- 641 045c 00B5FFF7 	    _CALL hword_write 
+ 615 0418 0748     	    ldr r0,erase_error
+ 616 041a 00B5FFF7 	    _CALL uart_puts 
+ 616      FEFF5DF8 
+ 616      04EB
+ 617 0424 80EA0000 	9:  eor r0,r0 
+ 618 0428 00B5FFF7 	    _CALL unlock 
+ 618      FEFF5DF8 
+ 618      04EB
+ 619 0432 BDE80003 	    pop {T1,T2}
+ 620 0436 7047     	    _RET 
+ 621              	erase_error:
+ 622 0438 20657261 	    .asciz " erase error!\r"
+ 622      73652065 
+ 622      72726F72 
+ 622      210D00
+ 623 0447 00       	    .p2align 2
+ 624              	
+ 625              	/*****************************************
+ 626              	    write_page 
+ 627              	    write a page buffer to flash memory 
+ 628              	    input:
+ 629              	      r0  *buffer 
+ 630              	      r1  flash_adr 
+ 631              	    output:
+ 632              	      none 
+ 633              	    use:
+ 634              	      r2  size counter
+ 635              	      T1  *buffer 
+ 636              	******************************************/
+ 637              	    _GBL_FUNC write_page
+ 638 0448 2DE90401 	    push {r2,T1}
+ 639 044c 8046     	    mov T1,r0
+ 640 044e 4FF00100 	    mov r0,#1 
+ 641 0452 00B5FFF7 	    _CALL unlock
  641      FEFF5DF8 
  641      04EB
- 642 0466 01F10201 	    add r1,#2
- 643 046a 023A     	    subs r2,#2 
- 644 046c F4D1     	    bne 1b 
- 645 046e 80EA0000 	    eor r0,r0 
- 646 0472 00B5FFF7 	    _CALL unlock 
- 646      FEFF5DF8 
- 646      04EB
- 647 047c BDE80401 	    pop {r2,T1}
- 648 0480 7047     	    _RET 
- 649              	
- 650              	      
- 651              	/**********************************************
- 652              	   page_align 
- 653              	   align address to FLASH page boundary 
- 654              	   input:
- 655              	     r0    address 
- 656              	   output:
- 657              	     r0    aligned 
- 658              	   use: 
+ 642 045c 4FF48062 	    mov r2,#PAGE_SIZE 
+ 643 0460 38F8020B 	1:  ldrh r0,[T1],#2 
+ 644 0464 00B5FFF7 	    _CALL hword_write 
+ 644      FEFF5DF8 
+ 644      04EB
+ 645 046e 01F10201 	    add r1,#2
+ 646 0472 023A     	    subs r2,#2 
+ 647 0474 F4D1     	    bne 1b 
+ 648 0476 80EA0000 	    eor r0,r0 
+ 649 047a 00B5FFF7 	    _CALL unlock 
+ 649      FEFF5DF8 
+ 649      04EB
+ 650 0484 BDE80401 	    pop {r2,T1}
+ 651 0488 7047     	    _RET 
+ 652              	
+ 653              	      
+ 654              	/**********************************************
+ 655              	   page_align 
+ 656              	   align address to FLASH page boundary 
+ 657              	   input:
+ 658              	     r0    address 
 ARM GAS  stm32-tbi.s 			page 26
 
 
- 659              	     r1  
- 660              	**********************************************/
- 661 0482 00BF     	    _GBL_FUNC page_align 
- 662 0484 02B4     	    push {r1}
- 663 0486 40F2FF31 	    mov r1,#PAGE_SIZE-1
- 664 048a 0844     	    add r0,r1
- 665 048c 6FEA0101 	    mvn r1,r1 
- 666 0490 00EA0100 	    and r0,r1 
- 667 0494 02BC     	    pop {r1}
- 668 0496 7047     	    _RET 
- 669 0498 18000000 	
- 669      00000000 
- 669      B4000000 
- 669      70030000 
+ 659              	   output:
+ 660              	     r0    aligned 
+ 661              	   use: 
+ 662              	     r1  
+ 663              	**********************************************/
+ 664 048a 00BF     	    _GBL_FUNC page_align 
+ 665 048c 02B4     	    push {r1}
+ 666 048e 40F2FF31 	    mov r1,#PAGE_SIZE-1
+ 667 0492 0844     	    add r0,r1
+ 668 0494 6FEA0101 	    mvn r1,r1 
+ 669 0498 00EA0100 	    and r0,r1 
+ 670 049c 02BC     	    pop {r1}
+ 671 049e 7047     	    _RET 
+ 672 04a0 18000000 	
+ 672      00000000 
+ 672      B4000000 
+ 672      78030000 
 ARM GAS  stm32-tbi.s 			page 27
 
 
@@ -1982,15 +1985,15 @@ DEFINED SYMBOLS
          stm32-tbi.s:208    .text:000000000000009e reset_mcu
          stm32-tbi.s:158    .text:0000000000000018 $d
          stm32-tbi.s:201    .text:0000000000000088 user_reboot
-         stm32-tbi.s:391    .text:000000000000026c uart_flush_queue
+         stm32-tbi.s:394    .text:0000000000000274 uart_flush_queue
          stm32-tbi.s:218    .text:00000000000000b4 user_reboot_msg
          stm32-tbi.s:216    .text:00000000000000b0 scb_adr
          stm32-tbi.s:217    .text:00000000000000b0 $d
          stm32-tbi.s:254    .text:0000000000000130 remap
          stm32-tbi.s:266    .text:0000000000000160 init_devices
-         stm32-tbi.s:350    .text:0000000000000214 uart_init
+         stm32-tbi.s:353    .text:000000000000021c uart_init
          stm32-tbi.s:235    .text:00000000000000e4 test
-         stm32-tbi.s:408    .text:0000000000000284 uart_putc
+         stm32-tbi.s:411    .text:000000000000028c uart_putc
          stm32-tbi.s:249    .text:000000000000012a tib_addr
          stm32-tbi.s:250    .text:000000000000012a $d
          stm32-tbi.s:254    .text:000000000000012e $t
@@ -2000,28 +2003,28 @@ DEFINED SYMBOLS
 
          stm32-tbi.s:299    .text:0000000000000198 wait_pllrdy
          stm32-tbi.s:311    .text:00000000000001b8 wait_sws
-         stm32-tbi.s:433    .text:00000000000002a4 uart_qkey
-         stm32-tbi.s:452    .text:00000000000002b0 uart_getc
-         stm32-tbi.s:481    .text:00000000000002e0 unlock
-         stm32-tbi.s:497    .text:0000000000000312 lock
-         stm32-tbi.s:516    .text:0000000000000324 wait_busy
-         stm32-tbi.s:538    .text:000000000000033c hword_write
-         stm32-tbi.s:552    .text:0000000000000370 write_error
-         stm32-tbi.s:553    .text:0000000000000370 $d
-         stm32-tbi.s:554    .text:000000000000037e $t
-         stm32-tbi.s:569    .text:0000000000000380 flash_store
-         stm32-tbi.s:597    .text:00000000000003cc erase_page
-         stm32-tbi.s:618    .text:0000000000000430 erase_error
-         stm32-tbi.s:619    .text:0000000000000430 $d
-         stm32-tbi.s:634    .text:0000000000000440 write_page
-         stm32-tbi.s:661    .text:0000000000000484 page_align
-         stm32-tbi.s:669    .text:0000000000000498 $d
+         stm32-tbi.s:436    .text:00000000000002ac uart_qkey
+         stm32-tbi.s:455    .text:00000000000002b8 uart_getc
+         stm32-tbi.s:484    .text:00000000000002e8 unlock
+         stm32-tbi.s:500    .text:000000000000031a lock
+         stm32-tbi.s:519    .text:000000000000032c wait_busy
+         stm32-tbi.s:541    .text:0000000000000344 hword_write
+         stm32-tbi.s:555    .text:0000000000000378 write_error
+         stm32-tbi.s:556    .text:0000000000000378 $d
+         stm32-tbi.s:557    .text:0000000000000386 $t
+         stm32-tbi.s:572    .text:0000000000000388 flash_store
+         stm32-tbi.s:600    .text:00000000000003d4 erase_page
+         stm32-tbi.s:621    .text:0000000000000438 erase_error
+         stm32-tbi.s:622    .text:0000000000000438 $d
+         stm32-tbi.s:637    .text:0000000000000448 write_page
+         stm32-tbi.s:664    .text:000000000000048c page_align
+         stm32-tbi.s:672    .text:00000000000004a0 $d
          stm32-tbi.s:163    .text:000000000000002b $d
          stm32-tbi.s:163    .text:000000000000002c $t
          stm32-tbi.s:220    .text:00000000000000c3 $d
          stm32-tbi.s:220    .text:00000000000000c4 $t
-         stm32-tbi.s:620    .text:000000000000043f $d
-         stm32-tbi.s:620    .text:0000000000000440 $t
+         stm32-tbi.s:623    .text:0000000000000447 $d
+         stm32-tbi.s:623    .text:0000000000000448 $t
 
 UNDEFINED SYMBOLS
 _mstack

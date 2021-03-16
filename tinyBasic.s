@@ -4049,6 +4049,8 @@ arun_sign: .ascii "ARUN"
   2 -> PWM2/2 pin B3 
   3 -> PWM3/1 pin B4 
   4 -> PWM3/2 pin B5
+  5 -> PMW4/3 pin B8
+  6 -> PWM4/4 pin B9
   TIMER parameters are for Fclk=72Mhz 
   period=20msec 
   default pos = 1500µSec 
@@ -4061,97 +4063,161 @@ arun_sign: .ascii "ARUN"
     bpl 1f 
 0:  mov r0,#ERR_BAD_VALUE
     b tb_error 
-1:  cmp r1,#5
+1:  cmp r1,#7
     bpl 0b
     sub r3,r1,#1
 1:  // configure port pin
-    ldr r2,=servo_port
-    lsl r1,r3,#3
+    ldr r2,=servo_param
+    lsl r1,r3,#4
     add r2,r1  
     ldr r0,[r2],#4 //GPIOx_BASE_ADR
     ldr r1,[r2]  // pin 
-    mov r2,#0xa // OUTPUT_AFPP 
+    mov r2,#0xe // OUTPUT_AFOD  
     _CALL gpio_config 
-    _MOV32 r2,RCC_BASE_ADR 
-    ldr r0,[r2,#RCC_APB1ENR]
-    cmp r3,#2
-    bmi 1f 
-    sub r3,#2
-    b setup_pwm3  
-// setup pwm2 ch1|ch2
-1:  // TIMER2 clock enable 
-    orr r0,#1
-    str r0,[r2,#RCC_APB1ENR]
-    // TIMER2 OC remapping 
-    _MOV32 r2,AFIO_BASE_ADR
-    ldr r0,[r2,#AFIO_MAPR]
-    mov r1,#(3<<8)
-    orr r0,r1
-    str r0,[r2,#AFIO_MAPR]
-    _MOV32 r2,TIMER2_BASE_ADR
-    b 2f 
-setup_pwm3: // ch1|ch2 
-    // TIMER3 clock enable 
-    orr r0,#2
-    str r0,[r2,#RCC_APB1ENR]
-    // TIMER3 OC remapping 
-    _MOV32 r2,AFIO_BASE_ADR
-    ldr r0,[r2,#AFIO_MAPR]
-    mvn r1,#3<<10 
-    and r0,r1 
-    mov r1,#2<<10
-    orr r0,r1 
-    str r0,[r2,#AFIO_MAPR]
-    _MOV32 r2,TIMER3_BASE_ADR
-2:  // PWM configuration 
-    //set TIMER prescaler to 32
-    mov r0,#31 
-    strh r0,[r2,#TIM_PSC]
-    // set autoreload value to 45000 (20msec period)
-    _MOV32 r0,45000
-    strh r0,[r2,#TIM_ARR]
-    // set compare value for 1500µsec 
-    mov r0,#3375
-    cbz r3,3f 
-    strh r0,[r2,#TIM_CCR2]
-    b 4f 
-3:  strh r0,[r2,#TIM_CCR1]
-    // set mode 
-4:  mov r0,#(0xd<<3)
-    mov T1,#0xff00 
-    cbz r3,4f 
-    lsl r0,#8
-    lsr T1,#8  
-4:  ldrh r1,[r2,#TIM_CCMR1]
-    and r1,T1 
-    orr r1,r0 
-    strh r1,[r2,#TIM_CCMR1]
-    // enable OC output 
-    mov r0,#1 
-    cbz r3,5f 
-    lsl r0,#4 
-5:  ldrh r1,[r2,#TIM_CCER]
-    orr r1,r0 
-    strh r1,[r2,#TIM_CCER]
-    // enable counter 
-    mov r0,#1+(1<<7) // CE+ARPE  
-    ldrh r1,[r2,TIM_CR1]
-    orr r1,r0
-    strh r1,[r2,TIM_CR1]
-    // generate a reload event 
-    mov r0,#1 
-    strh r0,[r2,TIM_EGR]
+    ldr r0,=servo_param 
+    lsl r1,r3,#4
+    add r1,#8
+    add r0,r1 
+    ldr r3,[r0],#4
+    ldr r2,[r0]
+    mov r0,#32
+    mov r1,#45000
+    push {r2,r3}
+    _CALL pwm_config
+    pop {r1,r2}   
+    // remap TIMER2|3 pin 
+    _MOV32 r3,AFIO_BASE_ADR
+    _MOV32 r0,TIMER2_BASE_ADR
+    cmp r2,r0 
+    beq remap_t2
+    add r0,#0x400
+    cmp r2,r0  
+    beq remap_t3 
+    b no_remap 
+remap_t2:
+    ldr r0,[r3,#AFIO_MAPR]
+    mov T1,#0x300 
+    orr r0,T1 
+    str r0,[r3,#AFIO_MAPR]
+    b no_remap 
+remap_t3: 
+    ldr r0,[r3,#AFIO_MAPR]
+    mov T1,0xc00 
+    mvn T1,T1 
+    and r0,T1 
+    mov T1,#0x800
+    orr r0,T1 
+    str r0,[r3,#AFIO_MAPR]
+no_remap:
+     mov r0,#3375 
+    _CALL pwm_dc
     _RET 
 
-servo_port: .word GPIOA_BASE_ADR,15
-            .word GPIOB_BASE_ADR,3
-            .word GPIOB_BASE_ADR,4
-            .word GPIOB_BASE_ADR,5
-
+servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
+            .word GPIOB_BASE_ADR,3,TIMER2_BASE_ADR,2
+            .word GPIOB_BASE_ADR,4,TIMER3_BASE_ADR,1
+            .word GPIOB_BASE_ADR,5,TIMER3_BASE_ADR,2
+            .word GPIOB_BASE_ADR,8,TIMER4_BASE_ADR,3
+            .word GPIOB_BASE_ADR,9,TIMER4_BASE_ADR,4
 
 /*********************************
-  BASIC: SERVO_OFF expr 
-  disable servomotor channel
+    pwm_config 
+    configure timer for pwm mode 6
+    Fck_int=72Mhz 
+    input:
+      r0   PSC
+      r1   ARR
+      r2   channel  
+      r3   TIMER_BASE_ADR 
+    output:
+      none 
+    use:
+      T1,T2 
+*********************************/
+    _FUNC pwm_config
+    push {T1,T2}
+    strh r0,[r3,#TIM_PSC]
+    strh r1,[r3,#TIM_ARR]
+    eor r0,r0 // 0% duty cycle
+    mov T1,#TIM_CCR1
+    mov r1,r2 
+1:  subs r1,r1,#1
+    beq 2f 
+    add T1,#4
+    b 1b   
+2:  strh r0,[r3,T1] // duty cycle = 0.
+    // set counter mode 
+    mov r0,#0xff00 // mask to clear mode field
+    mov T1,#0x68 // PWM mode 6, preload enabled  
+    tst r2,#1 // odd channel?
+    bne 1f 
+    lsr r0,#8  // shift mask for even channel
+    lsl T1,#8  // shift mode for even channel 
+1:  mov  T2,#TIM_CCMR1  //channel 1,2
+    cmp r2,#3
+    bmi 2f 
+    mov T2,#TIM_CCMR2 // channel 3,4
+2:  ldrh r1,[r3,T2]
+    and r1,r0 // clear bit field
+    orr r1,T1 // set mode
+    strh r1,[r3,T2]
+    // enable OC output 
+    mov r0,#1
+    mov T1,#0xfff0
+    mov r1,r2  
+2:  subs r1,r1,#1 
+    beq 3f 
+    lsl r0,#4
+    lsl T1,#4
+    orr T1,#15 
+    b 2b  
+3:  ldrh r1,[r3,#TIM_CCER]
+    and r1,T1 // clear bit field 
+    orr r1,r0 // set bit fiel new value 
+    strh r1,[r3,#TIM_CCER]
+    // enable counter 
+    mov r0,#1+(1<<7) // CE+ARPE  
+    ldrh r1,[r3,TIM_CR1]
+    orr r1,r0
+    strh r1,[r3,TIM_CR1]
+    // generate a reload event 
+    mov r0,#1 
+    strh r0,[r3,TIM_EGR]
+    pop {T1,T2}
+    _RET 
+
+/*********************************
+    pwm_dc 
+    set pwm duty cycle 
+    input:
+      r0   CCR value, i.e duty cycle 
+      r1   channel 
+      r2   TIMER_BASE_ADDR 
+    use:
+
+************************************/
+    _FUNC pwm_dc 
+    push {T1,T2}
+    mov T2,r1 
+    mov T1,#TIM_CCR1 
+0:  subs r1,#1
+    beq 1f 
+    add T1,#4
+    b 0b
+1:  strh r0,[r2,T1]
+    // trigger an update even 
+    mov r0,#2
+1:  subs T2,#1 
+    beq 2f 
+    lsl r0,#1
+    b 1b 
+2:  strh r0,[r2,#TIM_EGR]
+    pop {T1,T2}
+    _RET 
+
+/*********************************
+  BASIC: SERVO_OFF channel 
+  disable servo-motor channel
 *********************************/
     _FUNC servo_off 
     _CALL expression 
@@ -4161,57 +4227,53 @@ servo_port: .word GPIOA_BASE_ADR,15
     bpl 1f 
 0:  mov r0,#ERR_BAD_VALUE
     b tb_error 
-1:  cmp r1,#5
+1:  cmp r1,#7
     bpl 0b 
-    sub r3,r1,#1
-    ldr r2,=servo_port 
-    lsl r1,r3,#3
+    sub r1,#1 // channel {0..5}
+    lsl r1,#4 // channel*16
+    ldr r3,=servo_param 
+    add r3,r1 
     // reconfigure GPIO 
-    ldr r0,[r2],#4
-    ldr r1,[r2]
-    mov r2,#16 // INPUT_PD 
+    ldr r0,[r3],#4 // GPIO_BASE_ADR 
+    ldr r1,[r3],#4 // GPIO pin 
+    mov r2,#16 // INPUT_PD mode 
     _CALL gpio_config
-    _MOV32 r2, TIMER2_BASE_ADR  
-    cmp r3,#2
-    bmi 2f
-    sub r3,#2 
-    _MOV32 r2,TIMER3_BASE_ADR
-2:  mov r0,#1 
-    cbz r3,3f 
-    lsl r0,#4 
-3:  ldrh r1,[r2,TIM_CCER]
-    eor r1,r0 
-    strh r1,[r2,TIM_CCER] 
+    ldr r0,[r3],#4 // TIMER_BASE_ADDR
+    ldr r1,[r3] // oc channel 
+    sub r1,#1 
+    lsl r1,#4 
+    mov r2,#0xf 
+    lsl r2,r1 
+    mvn r2,r2 
+    ldrh r1,[r0,#TIM_CCER]
+    and r1,r2 
+    strh r1,[r0,#TIM_CCER]
     _RET 
 
 
 /*********************************
-  BASIC: SERVO_POS {1..4},expr 
+  BASIC: SERVO_POS channel,value  
   set servo position 
 *********************************/
     _FUNC servo_pos 
     _CALL arg_list 
     cmp r0,#2
     bne syntax_error 
-    ldmia DP!,{r1,r2} // value, channel 
-    sub r2,#1 
-    cmp r2,#2 
-    bpl 3f // timer 3 channels 
-// timer 2 channels 
-    _MOV32 r3,TIMER2_BASE_ADR
-    b 4f 
-3:  _MOV32 r3,TIMER3_BASE_ADR
-    sub r2,#2 
-4:  _MOV32 r0,45000
-    mul r0,r1 
-    _MOV32 r1,20000
-    udiv r0,r1 
-    cbz r2,6f 
-    strh r0,[r3,#TIM_CCR2]
-    b 7f 
-6:  strh r0,[r3,#TIM_CCR1]
-7:  mov r0,#6 
-    strh r0,[r3,#TIM_EGR]
+    ldr r1,[DP,#4] // servo channel 
+    cmp r1,#7
+    bmi 1f 
+    mov r0,#ERR_BAD_VALUE
+    b tb_error 
+1:  ldr r3,=servo_param 
+    subs r1,#1
+    lsl r1,#4
+    add r1,#8
+    add r3,r1   
+2:  ldr r2,[r3],#4 // TIMER_BASE_ADR
+    ldr r1,[r3] // oc channel 
+    _POP r0 // set value 
+    add DP,#4 // drop servo channel 
+    _CALL pwm_dc 
     _RET 
 
 
@@ -4377,25 +4439,17 @@ servo_port: .word GPIOA_BASE_ADR,15
     mov r1,#6 // gpio pin 
     mov r2,#0xa // OUTPUT_AFPP 
     _CALL gpio_config
-    // enable timer4 clock 
-    _MOV32 r2,RCC_BASE_ADR
-    mov r0,#(1<<2)
-    ldr r1,[R2,#RCC_APB1ENR]
-    orr r0,r1 
-    str r0,[R2,#RCC_APB1ENR]
     // configure TIMER4 in PWM mode 
-    _MOV32 r2,TIMER4_BASE_ADR
-    // prescale divisor 16 
-    mov r0,#15 
-    str r0,[r2,#TIM_PSC]
-    // pwm mode 6
-    ldrh r3,[r2,#TIM_CCMR1]
-    mov r0,#255
-    mvn r0,r0 
-    and r3,r0 // clear bit field 
-    mov r0,#0x68
-    orr r3,r0  
-    strh r3,[R2,#TIM_CCMR1]     
+    mov r0,#15 //PSC 
+    mov r1,#65535 // ARR 
+    mov r2,#1 // channel
+    _MOV32 r3,TIMER4_BASE_ADR
+    mov T1,r3
+    _CALL pwm_config  
+    // tone off 
+    ldrh r0,[T1,#TIM_CR1]
+    eor r0,#1 
+    strh r0,[T1,#TIM_CR1]     
     _RET 
 
 

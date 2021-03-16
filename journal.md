@@ -3,7 +3,16 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+#### 2021-03-16
+
+* Modifié [servo-test.bas](tb_progs/servo-test.bas) pour tenir compte des 2 nouveaux canneaux. 
+* Ajout des canneaux servo-moteurs 5 et 6. Modifié code et tester code. Note les canaux 5 et 6 ne peuvent-être utilisé en même temps que *TONE** est activé.  
+
 #### 2021-03-15
+
+* Création de **pwm_dc**.
+
+* Création de la sous-routine **pwm_config**, facteur commun a **SERVO_INIT** et **TONE_INIT**.
 
 * Corrigé bogue dans commande **AWU**.
 
