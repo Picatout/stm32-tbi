@@ -488,3 +488,72 @@ for a=32 to 126:? char(a),:next a
 READY
 ```
 [index](#index)
+<a id="cls"></a>
+### CLS {C,P}
+This commande clear terminal screen an move cursor to top-left corner.
+
+[index](#index)
+<a id="const"></a>
+### CONST name=value [, name=value] {P}
+This command is used to define symbolic constants that can be refered by their name in the program. Constants names are *letters* and *'_'* character only. The name must be at least 2 characters and at most 6. Theses constants are created at run time and stored in space not used by the program. So their number is limited by free space. This free space is also shared by **@** array variable.
+```
+hex list
+5 REM   BASE ADDRESS OF USART2 AND 3
+10 CONST UART_B =$40004400 ,UART_C =$40004800 
+20 HEX PRINT "usart2 status register value: ",PEEKH (UART_B )
+30 PRINT "usart2 data register: ",PEEKB (UART_B +$4 )
+READY
+run
+usart2 status register value: $0 
+usart2 data register: $0 
+READY
+```
+After line 10 **UART_B** and **UART_C** can be used to access usart registers.
+
+[index](#index)
+<a id="data"></a>
+### DATA number [,number]  {P}
+The keyword **DATA** is used to embed data in program. This information is accessed by [READ](#read) function. The interpreter skip those lines. See also [READ](#read) and [RESTORE](#restore).
+
+
+[index](#index)
+<a id="servo-init"></a>
+### SERVO_INIT *n* {C,P}
+ This command is to initialize one of the 6 servo-motor output.
+ Output are on A15,B3,B4,B5,B8 and B9. These output are configured in *open drain* and require an external *pull up* connector to same power as the servo-motor. Usual voltage used by small servo-motor is 5 volt. 
+
+ * **NOTE:** [TONE](#tone) can be used at the same time as servo-motor channels 5 and 6. This is because they both use **TIMER4**. 
+
+ See also [SERVO_POS](#servo-pos) and [SERVO_OFF](#servo-off)
+```
+list
+10 REM  servo test
+12 REM  channel 1 on A15, channel 2 on B3
+14 REM  channel 3 on B4, channel 4 on B5 
+15 REM  channel 5 on B8, channel 6 on B9 
+20 PRINT "select channel 1,2,3,4,5,6"
+30 INPUT S 
+40 IF S <1 THEN GOTO 20 
+50 IF S >4 THEN GOTO 20 
+80 SERVO_INIT S 
+90 PRINT "set position 1000-2000"
+100 INPUT P 
+110 IF P =ASC (\N)THEN SERVO_OFF S GOTO 20 
+120 IF P =ASC (\Q)THEN GOTO 150 
+130 SERVO_POS S ,P 
+140 GOTO 90 
+150 SERVO_OFF S 
+160 END 
+READY
+```
+[index](#index)
+<a id="servo-off"></a>
+### SERVO_OFF *n* {C,P}
+This command is to turn off a servo-motor channel. See also [SERVO_INIT](#servo-init)
+
+[index](#index)
+<a id="servo-pos"></a>
+### SERVO_POS *channel, position* {C,P}
+Thi command is to control servo-motor position. Usual values for small servo-motors is in {1000...2000} range. See also [SERVO_INIT](#servo-init).
+
+[index](#index)

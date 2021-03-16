@@ -4806,14 +4806,14 @@ Disassembly of section .text:
  8003262:	ea41 0108 	orr.w	r1, r1, r8
  8003266:	f823 1009 	strh.w	r1, [r3, r9]
  800326a:	f04f 0001 	mov.w	r0, #1
- 800326e:	f64f 78f0 	movw	r8, #65520	; 0xfff0
+ 800326e:	f04f 080f 	mov.w	r8, #15
  8003272:	4611      	mov	r1, r2
  8003274:	3901      	subs	r1, #1
- 8003276:	d006      	beq.n	8003286 <pwm_config+0x6e>
+ 8003276:	d004      	beq.n	8003282 <pwm_config+0x6a>
  8003278:	ea4f 1000 	mov.w	r0, r0, lsl #4
  800327c:	ea4f 1808 	mov.w	r8, r8, lsl #4
- 8003280:	f048 080f 	orr.w	r8, r8, #15
- 8003284:	e7f6      	b.n	8003274 <pwm_config+0x5c>
+ 8003280:	e7f8      	b.n	8003274 <pwm_config+0x5c>
+ 8003282:	ea6f 0808 	mvn.w	r8, r8
  8003286:	8c19      	ldrh	r1, [r3, #32]
  8003288:	ea01 0108 	and.w	r1, r1, r8
  800328c:	ea41 0100 	orr.w	r1, r1, r0
@@ -7189,7 +7189,7 @@ Disassembly of section .debug_line:
  db0:	2f2f2121 	svccs	0x002f2121
  db4:	2f302f2f 	svccs	0x00302f2f
  db8:	2121212f 			; <UNDEFINED> instruction: 0x2121212f
- dbc:	212f2f2f 			; <UNDEFINED> instruction: 0x212f2f2f
+ dbc:	2f212f2f 	svccs	0x00212f2f
  dc0:	222f2f21 	eorcs	r2, pc, #33, 30	; 0x84
  dc4:	222f212f 	eorcs	r2, pc, #-1073741813	; 0xc000000b
  dc8:	032f212f 			; <UNDEFINED> instruction: 0x032f212f

@@ -1384,14 +1384,16 @@ READY
 [index](#index)
 <a id="servo-init"></a>
 ### SERVO_INIT *n* {C,P}
- Cette commande initialise l'une des 4 sorties de contrôle d'un servo-moteur.
- Les sorties sont sur A15,B3,B4,B5. Voir aussi [SERVO_POS](#servo-pos) ainsi que [SERVO_OFF](#servo-off)
+ Cette commande initialise l'une des 6 sorties de contrôle d'un servo-moteur.
+ Les sorties sont sur A15,B3,B4,B5,B8 et B9. Les broches de sorties pour les servo-moteurs sont configurées en **open drain** et requière une résistance *pull up* externe branchée au même voltage d'alimentation que le servo-moteur. Voltage qui est habituellement de 5 volts pour les petits servo-moteurs.
+ Voir aussi [SERVO_POS](#servo-pos) ainsi que [SERVO_OFF](#servo-off)
 ```
 list
 10 REM  servo test
 12 REM  channel 1 on A15, channel 2 on B3
 14 REM  channel 3 on B4, channel 4 on B5 
-20 PRINT "select channel 1,2,3,4"
+15 REM  channel 5 on B8, channel 6 on B9 
+20 PRINT "select channel 1,2,3,4,5,6"
 30 INPUT S 
 40 IF S <1 THEN GOTO 20 
 50 IF S >4 THEN GOTO 20 

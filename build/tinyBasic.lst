@@ -6340,15 +6340,15 @@ ARM GAS  tinyBasic.s 			page 1
  4163 1286 23F80910 	    strh r1,[r3,T2]
  4164              	    // enable OC output 
  4165 128a 4FF00100 	    mov r0,#1
- 4166 128e 4FF6F078 	    mov T1,#0xfff0
+ 4166 128e 4FF00F08 	    mov T1,#0xf
  4167 1292 1146     	    mov r1,r2  
  4168 1294 0139     	2:  subs r1,r1,#1 
- 4169 1296 06D0     	    beq 3f 
+ 4169 1296 04D0     	    beq 3f 
  4170 1298 4FEA0010 	    lsl r0,#4
  4171 129c 4FEA0818 	    lsl T1,#4
- 4172 12a0 48F00F08 	    orr T1,#15 
- 4173 12a4 F6E7     	    b 2b  
- 4174 12a6 198C     	3:  ldrh r1,[r3,#TIM_CCER]
+ 4172 12a0 F8E7     	    b 2b  
+ 4173 12a2 6FEA0808 	3:  mvn T1,T1 
+ 4174 12a6 198C     	    ldrh r1,[r3,#TIM_CCER]
  4175 12a8 01EA0801 	    and r1,T1 // clear bit field 
  4176 12ac 41EA0001 	    orr r1,r0 // set bit fiel new value 
  4177 12b0 1984     	    strh r1,[r3,#TIM_CCER]

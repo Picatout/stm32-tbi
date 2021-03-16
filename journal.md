@@ -5,7 +5,10 @@ https://github.com/picatout/stm32-tbi
 -->
 #### 2021-03-16
 
+* Le mode GPIO pour les servo-moteur est maintenant **OUTPUT_AFOD** et requiert donc un résistance pull up externe branché à 5 volts. Ce changement est pour tenir compte de la différence de voltage d'alimentation entre MCU de la blue pill (3.3volts) et celui d'un petit servo-moteur qui est de 5 volts. 
+
 * Modifié [servo-test.bas](tb_progs/servo-test.bas) pour tenir compte des 2 nouveaux canneaux. 
+
 * Ajout des canneaux servo-moteurs 5 et 6. Modifié code et tester code. Note les canaux 5 et 6 ne peuvent-être utilisé en même temps que *TONE** est activé.  
 
 #### 2021-03-15
