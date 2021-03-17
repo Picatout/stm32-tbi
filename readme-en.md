@@ -3,7 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[-&gt;version française](readme.md)
+[-&gt;français](readme.md)
 #  Blue pill Tiny BASIC 
 
 This is an implementation of a BASIC stamp on blue pill board. This BASIC is based on original [tiny BASIC](https://en.wikipedia.org/wiki/Tiny_BASIC) but add extensions to it.  

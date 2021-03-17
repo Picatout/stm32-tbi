@@ -3,7 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-[-&GT;English version](readme-en.md)
+[-&GT;English](readme-en.md)
 #  Blue pill Tiny BASIC 
 
 Il s'agit de l'implémentation d'un timbre BASIC sur la carte blue pill. Ce BASIC est basé sur [tiny BASIC](https://en.wikipedia.org/wiki/Tiny_BASIC) mais avec des extensions.  
