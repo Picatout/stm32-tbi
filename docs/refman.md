@@ -515,7 +515,143 @@ After line 10 **UART_B** and **UART_C** can be used to access usart registers.
 ### DATA number [,number]  {P}
 The keyword **DATA** is used to embed data in program. This information is accessed by [READ](#read) function. The interpreter skip those lines. See also [READ](#read) and [RESTORE](#restore).
 
+[index](#index)
+<a id="dec"></a>
+### DEC {C,P}
+This set **BASE** system variable to decimal. This variable define how numerical value are formatted by [PRINT](#print). See also [HEX](#hex)
+```
+a=25  hex ? a, dec ? a
+$19 25 
+READY
+```
+[index](#index)
+<a id="dir"></a>
+### DIR {C}
+This command display list of programs saved in flash memory. See also [SAVE](#save), [LOAD](#load),[FORGET](#forget) and [AUTORUN](#autorun).
+```
+list
+10 REM  servo test
+12 REM  channel 1 on A15, channel 2 on B3
+14 REM  channel 3 on B4, channel 4 on B5 
+15 REM  channel 5 on B8, channel 6 on B9
+20 PRINT "select channel 1,2,3,4,5,6"
+30 INPUT S 
+40 IF S <1 THEN GOTO 20 
+50 IF S >6 THEN GOTO 20 
+80 SERVO_INIT S 
+90 PRINT "set position 1000-2000"
+100 INPUT P 
+110 IF P =ASC (\N)THEN SERVO_OFF S GOTO 20 
+120 IF P =ASC (\Q)THEN GOTO 150 
+130 SERVO_POS S ,P 
+140 GOTO 90 
+150 SERVO_OFF S 
+160 END 
+READY
+save "servo-test"
+file size: 362 bytes
 
+READY
+dir
+servo-test     362 
+
+               1 files
+
+READY
+
+```
+[index](#index)
+<a id="do"></a>
+### DO {C,P}
+This keyword introduce **DO...UNTIL _relation_** control structure. See also [UNTIL](#until).
+```
+LIST
+10 REM  DO ... LOOP demo 
+15 A =1 
+20 DO 
+30 A =A *2 
+40 PRINT A ,
+50 UNTIL A >1024 
+READY
+RUN
+2 4 8 16 32 64 128 256 512 1024 2048 
+READY
+``` 
+[index](#index)
+<a id="drop"></a>
+### DROP *n*  {C,P} 
+This command is to discard *n* elements from the arguments stack. The virtual machine use an arguments stack. There is a few words that enable to manipulate this stack. See also [PUSH](#push),[POP](#pop),[GET](#get) and [PUT](#put).
+```
+list
+10 INPUT A ,B 
+20 PUSH A ,B GOSUB PROD 
+30 PRINT POP 
+40 GOTO 10
+48 ' compute product of 2 top elements on stack
+59 ' return product on stack. 
+50 PROD PUSH POP *POP RETURN 
+READY
+run
+A=23
+B=56
+1288 
+A=
+READY
+```
+[index](#index)
+<a id="dump"></a>
+### DUMP adr,count {C}
+This is a debuging to examine the containt of memory. The dump start at *adr* and a multiple of 16 bytes are displayed &gt;=*count*.
+```
+DUMP $20000210,48
+           00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 
+===============================================================================
+$20000210  0A 00 0B 17 20 14 00 02 14 01 00 14 00 12 17 38   ____ __________8
+$20000220  14 00 02 14 01 17 1B 1A E4 49 08 00 00 1E 00 08   _________I______
+$20000230  17 37 15 36 00 28 00 0B 17 1C 1B 0A 00 00 00 00   _7_6_(__________
+$20000240  32 00 12 1A E4 49 08 00 17 38 15 36 09 15 36 17   2____I___8_6__6_
+READY
+``` 
+[index](#index)
+<a id="end"></a>
+### END {C,P}
+ This command terminate a program. It can be place anywhere in a program.See also [STOP](#stop).
+
+[index](#index)
+<a id="erase"></a>
+### ERASE {C,P}
+This command erase the 1KB of user flash memory. All data store there is lost included [AUTORUN](#autorun) information. 
+
+[index](#index)
+<a id="FOR"></a>
+### FOR {C,P}
+This keyword introduce a **FOR _var=expr_ TO _expr_ [STEP _expr_]** control structure. This is a loop with counter. The loop execute at least once and terminate when _var_ cross the limit.
+```
+LLIST
+5 PRINT #5 
+10 FOR A =1 TO 12 
+20 FOR B =1 TO 12 
+30 PRINT A *B ;
+40 NEXT B PRINT 
+50 NEXT A 
+READY
+RUN
+
+1    2    3    4    5    6    7    8    9    10   11   12   
+2    4    6    8    10   12   14   16   18   20   22   24   
+3    6    9    12   15   18   21   24   27   30   33   36   
+4    8    12   16   20   24   28   32   36   40   44   48   
+5    10   15   20   25   30   35   40   45   50   55   60   
+6    12   18   24   30   36   42   48   54   60   66   72   
+7    14   21   28   35   42   49   56   63   70   77   84   
+8    16   24   32   40   48   56   64   72   80   88   96   
+9    18   27   36   45   54   63   72   81   90   99   108  
+10   20   30   40   50   60   70   80   90   100  110  120  
+11   22   33   44   55   66   77   88   99   110  121  132  
+12   24   36   48   60   72   84   96   108  120  132  144  
+READY
+```
+ 
 [index](#index)
 <a id="servo-init"></a>
 ### SERVO_INIT *n* {C,P}

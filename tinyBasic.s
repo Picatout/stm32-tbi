@@ -4162,14 +4162,14 @@ servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
     orr r1,T1 // set mode
     strh r1,[r3,T2]
     // enable OC output 
-    mov r0,#1
-    mov T1,#0xf
+    mov r0,#1 
+    mov T1,#15 
     mov r1,r2  
 2:  subs r1,r1,#1 
     beq 3f 
     lsl r0,#4
     lsl T1,#4
-    b 2b  
+    b 2b
 3:  mvn T1,T1 
     ldrh r1,[r3,#TIM_CCER]
     and r1,T1 // clear bit field 
