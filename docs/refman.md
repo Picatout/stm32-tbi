@@ -653,6 +653,74 @@ READY
 ```
  
 [index](#index)
+<a id="forget"></a>
+###  FORGET ["name"] {C}
+This command is used to delete one or more files saved in flash. Without the optional *"name"* argument all files are delete. With given name this file is deleted and all the following ones. See also [SAVE](#save),[LOAD](#load),[DIR](#dir).
+
+[index](#index)
+<a id="free"></a>
+### FREE {C,P}
+This function return number of bytes free in program space.
+```
+blue pill tiny BASIC, version 1.0
+READY
+? free
+19360 
+READY
+load "servo-test"
+file size: 362 bytes
+
+READY
+? free
+18998 
+READY
+```
+[index](#index)
+<a id="get"></a>
+### GET *n* {C,P}
+This function return the value of *n*th element on arguments stack. *n* is the position, the top element being indice by **0**.
+```
+READY
+push 128,256 ? get(0),get(1) drop 2
+256 128 
+READY
+```
+See also [DROP](#drop), [POP](#pop), [PUSH](#push), [PUT](#put).
+
+[index](#index)
+<a id="servo-init"></a>
+### GOSUB *expr*|*label*  {P}
+This keyword is used to call a subroutine. A subroutine can be called by a line number *expr* or a name *label*.  Calling by name is slightly faster at execution. 
+Search for target line number is done from start of program. Hence the farther the target the longer the search. It may be advantagous to place subroutines at the begining. 
+
+See also keyword [RETURN](#return)
+```
+list
+5 REM  Label test 
+10 A =0 T =TICKS 
+14 REM  GOSUB and GOTO by line # 
+20 GOSUB 1000 
+30 IF A >10000 GOTO 50 
+40 GOTO 20 
+50 PRINT CHAR (13 ),TICKS -T ,"MSEC"
+54 REM  GOSUB and GOTO by label 
+60 A =0 :T =TICKS 
+70 LOOP GOSUB CNTR 
+80 IF A >10000 PRINT CHAR (13 ),TICKS -T ,"MSEC":END 
+90 GOTO LOOP 
+1000 CNTR 
+1010 A =A +1 
+1020 RETURN 
+READY
+run
+
+414 MSEC
+
+366 MSEC
+READY
+```
+
+[index](#index)
 <a id="servo-init"></a>
 ### SERVO_INIT *n* {C,P}
  This command is to initialize one of the 6 servo-motor output.

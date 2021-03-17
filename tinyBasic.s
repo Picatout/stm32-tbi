@@ -483,6 +483,7 @@ main_stack:
     _CALL cmove
     add T2,T1 
     str T2,[UPP,#TXTEND]
+    str T2,[upp,#HERE]
     pop {r0,r2,T1,T2}
     _RET 
 
@@ -3846,6 +3847,7 @@ load_autorun:
     ldr r2,[UPP,#TXTBGN]
     add r0,r2,r3  
     str r0,[UPP,#TXTEND]
+    str r0,[UPP,#HERE]
     add r3,#1
     lsr r3,#1
 2:  // load file data 

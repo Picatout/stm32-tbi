@@ -3,6 +3,10 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+#### 2021-03-17
+
+* Travail sur [refman.md](docs/refman.md) 
+
 #### 2021-03-16
 
 * Travail sur [refman.md](docs/refman.md).

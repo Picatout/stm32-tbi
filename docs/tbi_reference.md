@@ -708,14 +708,19 @@ READY
 ### FREE {C,P}
  Cette commande retourne le nombre d'octets libres dans la mémoire RAM.
 ```
-? free
-19276 
-READY
-new
+blue pill tiny BASIC, version 1.0
 READY
 ? free
 19360 
 READY
+load "servo-test"
+file size: 362 bytes
+
+READY
+? free
+18998 
+READY
+
 ```
 [index](#index)
 <a id="get"></a>
@@ -747,19 +752,30 @@ READY
 [index](#index)
 <a id="gosub"></a>
 ### GOSUB *expr*|étiquette {P}
-Appel de sous-routine. *expr* doit résulté en un numéro de ligne existant sinon le programme arrête avec un message d'erreur. À la place d'une expression arithmétique on peut utiliser une étiquette comme cible comme dans l'exemple [ci-haut](#etiquette) où **SQAURE** est utilisé comme nom d'une fonction et utilisé par le **GOSUB** de la ligne 30. Les appels vers les étiquettes sont plus rapides que les appels par numéro de ligne.
+Appel de sous-routine. *expr* doit résulté en un numéro de ligne existant sinon le programme arrête avec un message d'erreur. À la place d'une expression arithmétique on peut utiliser une étiquette comme cible comme dans l'exemple [ci-haut](#etiquette) où **SQAURE** est utilisé comme nom d'une fonction et utilisé par le **GOSUB** de la ligne 30. Les appels vers les étiquettes sont légèrement plus rapides que les appels par numéro de ligne.  Notez que la recherche de la cible se fait à partir du début du programme. Donc plus la sous-routine est loin du début plus la recherche est longue. Pour optimizer la vitesse d'exécution est avantageux de placer les sous-routines au début du programme et le code principal à la fin.
 ```
-LIST
-10 A =0 
+list
+5 REM  Label test 
+10 A =0 T =TICKS 
+14 REM  GOSUB and GOTO by line # 
 20 GOSUB 1000 
-30 IF A >20 END 
+30 IF A >10000 GOTO 50 
 40 GOTO 20 
-1000 PRINT A ,
+50 PRINT CHAR (13 ),TICKS -T ,"MSEC"
+54 REM  GOSUB and GOTO by label 
+60 A =0 :T =TICKS 
+70 LOOP GOSUB CNTR 
+80 IF A >10000 PRINT CHAR (13 ),TICKS -T ,"MSEC":END 
+90 GOTO LOOP 
+1000 CNTR 
 1010 A =A +1 
 1020 RETURN 
 READY
-RUN
-0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 
+run
+
+414 MSEC
+
+366 MSEC
 READY
 ```
 
