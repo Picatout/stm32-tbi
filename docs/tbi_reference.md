@@ -753,6 +753,8 @@ READY
 <a id="gosub"></a>
 ### GOSUB *expr*|étiquette {P}
 Appel de sous-routine. *expr* doit résulté en un numéro de ligne existant sinon le programme arrête avec un message d'erreur. À la place d'une expression arithmétique on peut utiliser une étiquette comme cible comme dans l'exemple [ci-haut](#etiquette) où **SQAURE** est utilisé comme nom d'une fonction et utilisé par le **GOSUB** de la ligne 30. Les appels vers les étiquettes sont légèrement plus rapides que les appels par numéro de ligne.  Notez que la recherche de la cible se fait à partir du début du programme. Donc plus la sous-routine est loin du début plus la recherche est longue. Pour optimizer la vitesse d'exécution est avantageux de placer les sous-routines au début du programme et le code principal à la fin.
+
+Voir aussi [RETURN](#return).
 ```
 list
 5 REM  Label test 

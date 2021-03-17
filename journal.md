@@ -7,6 +7,8 @@ https://github.com/picatout/stm32-tbi
 
 * Travail sur [refman.md](docs/refman.md) 
 
+* Modifié **LOAD*** et *create_gap* qui ne mettait pas à jour la variable **HERE**.
+
 #### 2021-03-16
 
 * Travail sur [refman.md](docs/refman.md).
