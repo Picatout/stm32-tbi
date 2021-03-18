@@ -94,7 +94,12 @@
     .equ SERVO_POS_IDX,SERVO_OFF_IDX+1
     .equ SLEEP_IDX, SERVO_POS_IDX+1 // 
     .equ SPC_IDX,SLEEP_IDX+1 //
-    .equ STEP_IDX, SPC_IDX+1 // 
+    .equ SPI_DSEL_IDX,SPC_IDX+1 // 
+    .equ SPI_INIT_IDX,SPI_DSEL_IDX+1 //
+    .equ SPI_READ_IDX,SPI_INIT_IDX+1 //
+    .equ SPI_SELECT_IDX,SPI_READ_IDX+1 //
+    .equ SPI_WRITE_IDX,SPI_SELECT_IDX+1 //
+    .equ STEP_IDX, SPI_WRITE_IDX+1 // 
     .equ STOP_IDX, STEP_IDX+1 // 
     .equ STORE_IDX,STOP_IDX+1
     .equ TAB_IDX, STORE_IDX+1 //

@@ -2250,6 +2250,11 @@ kword_end:
   _dict_entry TK_CMD,STORE,STORE_IDX // store  
   _dict_entry TK_CMD,STOP,STOP_IDX //stop 
   _dict_entry TK_CMD,STEP,STEP_IDX //step 
+  _dict_entry TK_CMD,SPI_WRITE,SPI_WRITE_IDX // spi_write 
+  _dict_entry TK_CMD,SPI_SEL,SPI_SELECT_IDX // spi_select
+  _dict_entry TK_IFUNC,SPI_READ,SPI_READ_IDX // spi_read
+  _dict_entry TK_CMD,SPI_INIT,SPI_INIT_IDX // spi_init 
+  _dict_entry TK_CMD,SPI_DSEL,SPI_DSEL_IDX // spi_deselect 
   _dict_entry TK_CMD,SPC,SPC_IDX // spc 
   _dict_entry TK_CMD,SLEEP,SLEEP_IDX //sleep 
   _dict_entry TK_CMD,SERVO_POS,SERVO_POS_IDX // servo_pos 
@@ -2356,7 +2361,7 @@ fn_table:
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
 	.word qkey,read,skip_line
 	.word restore,return, random,rshift,run,save,servo_init,servo_off,servo_pos 
-	.word sleep,spc,step,stop,store,tab
+	.word sleep,spc,spi_deselect,spi_init,spi_read,spi_select,spi_write,step,stop,store,tab
 	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace,ubound,uflash,until
 	.word wait,words,bit_xor,xpos,ypos 
 	.word 0 
@@ -3422,7 +3427,7 @@ pad_adr: .word _pad
     bcc 0f 
     mov r0,#1
 0:  lsl r0,r1
-    strh r0,[T1,#GPIO_ODR]
+    strh r0,[T1,#GPIO_BSRR]
 1:  cmp r1,#8
     bmi 2f 
     add T1,#4 // CRH
@@ -4310,16 +4315,176 @@ servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
     _CALL spaces 
 9:  _RET 
 
+/**********************************
+  BASIC: SPI_DSEL channel 
+  deselect SPI channel 
+**********************************/
+    _FUNC spi_deselect 
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error 
+    ldr r3,=spi_param 
+    sub r1,#1
+    mov r2,#24
+    mul r1,r2
+    add r3,r1
+    mov r2,r3 
+    ldr r3,[R3]
+    ldrh r0,[r3]
+    // clear SPI_CR1_SPE bit 
+    mvn r1,#(1<<6) // SPE 
+    and r0,r1
+    strh r0,[R3]
+    // set NSS output high 
+    ldr r3,[r2,#4] // GPIO_BASE_ADR
+    ldr r1,[r2,#8] // NSS pin 
+    mov r0,#1 
+    lsl r0,r1 
+    str r0,[R3,#GPIO_BSRR] 
+    _RET 
+
+/**********************************
+  BASIC: SPI_INIT  channel,BR 
+  enable SPI channel 1|2
+*********************************/
+    _FUNC spi_init 
+    _CALL arg_list
+    cmp r0,#2 
+    bne syntax_error
+    // enable peripheral clock 
+    ldmia DP!,{T1,T2} // T1=BR, T2=channel 
+    _MOV32 r1,RCC_BASE_ADR 
+    mov r0,#RCC_APB2ENR
+    mov r3,#(1<<12) // SPI1EN bit 12 
+    cmp T2,#1
+    beq 1f 
+    add r0,#4 //RCC_APB1ENR
+    lsl r3,#2 // SPI2EN bit 14 
+1:  ldr r2,[r1,r0]
+    orr r2,r3 
+    str r2,[r1,r0]
+    // spi config 
+    ldr r3,=spi_param 
+    sub r1,T2,#1 
+    mov r2,#24
+    mul r1,r2
+    add r3,r1 
+    ldr r1,[r3],#4
+    // SPI_CR2
+    mov r0,#(1<<2)
+    strh r0,[r1,#SPI_CR2] // SSOE
+    // SPI_CR1 as MSTR  
+    lsl T1,#3
+    orr r0,T1 
+    strh r0,[r1,#SPI_CR1] 
+    // configure GPIO pins  
+    ldr r0,[r3],#4 // GPIO_BASE_ADR 
+    mov T1,r0 
+    ldr r1,[r3],#4 // NSS pin 
+    mov T2,r1 
+    mov r2,#OUTPUT_PP 
+    _CALL gpio_config //NSS  
+    // set NSS high 
+    mov r0,T1 
+    mov r1,T2 
+    mov r2,#1 
+    lsl r2,r1 
+    str r2,[r0,#GPIO_BSRR]
+    mov r0,T1 
+    ldr r1,[r3],#4 
+    mov r2,#OUTPUT_AFPP 
+    _CALL gpio_config  // SCK
+    mov r0,T1
+    ldr r1,[r3],#4 
+    mov r2,#INPUT_FLOAT
+    _CALL gpio_config  //MISO 
+    mov r0,T1 
+    ldr r1,[R3] 
+    mov r2,#OUTPUT_AFPP 
+    _CALL gpio_config // MOSI 
+    _RET 
+
+
+spi_param: 
+  .word SPI1_BASE_ADR,GPIOA_BASE_ADR,4,5,6,7   // GPIO pins order NSS,SCK,MISO,MOSI
+  .word SPI2_BASE_ADR,GPIOB_BASE_ADR,12,13,14,15 // GPIO pins order NSS,SCK,MISO,MOSI
+
+/***************************************
+  BASIC: SPI_READ channel 
+  read 1 byte from channel 
+  use:
+**************************************/
     _FUNC spi_read
+    _CALL expression
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    sub r1,#1
+    mov r2,#24
+    mul r1,r2 
+    ldr r3,=spi_param 
+    add r3,r1 
+    ldr r3,[R3]
+    eor r0,r0 
+    strh r0,[r3,#SPI_DR]
+0:  ldr r0,[r3,#SPI_SR]
+    tst r0,#1
+    beq 0b
+    ldrh r1,[r3,#SPI_DR]
+    mov r0,#TK_INTGR  
     _RET 
 
-    _FUNC spi_enable
-    _RET 
-
+/********************************
+  BASIC: SPI_SELECT channel 
+  activate channel 
+  use:
+*******************************/
     _FUNC spi_select
+    _CALL expression 
+    cmp r0,#TK_INTGR
+    bne syntax_error
+    ldr r3,=spi_param 
+    sub r1,#1 
+    mov r2,#24
+    mul r1,r2 
+    add r3,r1 
+    mov r2,r3 
+    ldr r3,[R3]
+    // set SPI_CR1_SPE bit 
+    ldr r0,[R3,#SPI_CR1]
+    mov r1,#(1<<6) // SPE 
+    orr r0,r1 
+    str r0,[r3,#SPI_CR1] 
+    // set NSS low  
+    ldr r3,[r2,#4] // GPIO_BASE_ADR 
+    ldr r1,[r2,#8] // GPIO PIN 
+    mov r0,#(1<<16) 
+    lsl r0,r1 
+    str r0,[R3,#GPIO_BSRR]
     _RET 
 
+/*******************************
+  BASIC: SPI_WRITE channel,count,*buffer 
+  write bytes to spi channel 
+  use:
+********************************/
     _FUNC spi_write
+    _CALL arg_list 
+    cmp r0,#3 
+    bne syntax_error
+    ldmia DP!,{r1,r2,r3} // *buffer, count, channel 
+    sub r0,r3,#1 
+    mov r3,#24
+    mul r0,r3  
+    ldr r3,=spi_param 
+    add r3,r0 
+    ldr r3,[r3] //SPI_BASE_ADR 
+1:  ldrb r0,[r1],#1
+    strh r0,[r3,#SPI_DR]
+2:  ldrh r0,[r3,#SPI_SR]
+    tst r0,#2
+    beq 2b 
+    subs r2,#1 
+    bne 1b     
     _RET 
 
 /******************************

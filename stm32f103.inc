@@ -82,6 +82,16 @@
     .equ GPIO_BRR, 20
     .equ GPIO_LCKR, 24 
     
+   /* GPIO input|output CNF|MODE values */
+   .equ OUTPUT_PP,1
+   .equ OUTPUT_OD,6
+   .equ OUTPUT_AFPP,0xa 
+   .equ OUTPUT_AFOD,0xe
+   .equ INPUT_ANA,0
+   .equ INPUT_FLOAT,4
+   .equ INPUT_PD,16 
+   .equ INPUT_PU,17   
+
    /* AFIO base address */
    .equ AFIO_BASE_ADR, 0x40010000
    
@@ -233,3 +243,15 @@
 .equ TIM_CCR2,0X38
 .equ TIM_DCR,0X48
 .equ TIM_DMAR,0X4C
+
+/* SPI registers */
+.equ SPI1_BASE_ADR, 0x40013000
+.equ SPI2_BASE_ADR, 0x40003800
+
+.equ SPI_CR1, 0
+.equ SPI_CR2, 4
+.equ SPI_SR,  8
+.equ SPI_DR,  12
+.equ SPI_CRCPR, 16
+.equ SPI_RXCRCR, 20
+.equ SPI_TXCRCR, 24
