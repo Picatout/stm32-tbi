@@ -81,7 +81,8 @@
     .equ PUSH_IDX,PRT_IDX+1
     .equ PUT_IDX,PUSH_IDX+1
     .equ QKEY_IDX, PUT_IDX+1 // 
-    .equ READ_IDX, QKEY_IDX+1 // 
+    .equ RANDOMIZE_IDX,QKEY_IDX+1 //
+    .equ READ_IDX, RANDOMIZE_IDX+1 // 
     .equ REM_IDX, READ_IDX+1  //  REMARK command index 
     .equ REST_IDX, REM_IDX+1 //  RESTORE
     .equ RET_IDX, REST_IDX+1   //  RETURN 

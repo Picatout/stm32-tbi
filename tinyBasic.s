@@ -2268,6 +2268,7 @@ kword_end:
   _dict_entry TK_CMD,RESTORE,REST_IDX //restore 
   _dict_entry TK_CMD,REM,REM_IDX //remark 
   _dict_entry TK_IFUNC,READ,READ_IDX //read  
+  _dict_entry TK_CMD,RANDOMIZE,RANDOMIZE_IDX // randomize 
   _dict_entry TK_IFUNC,QKEY,QKEY_IDX //qkey 
   _dict_entry TK_CMD,PUT,PUT_IDX // put 
   _dict_entry TK_CMD,PUSH,PUSH_IDX //cmd_push  
@@ -2359,7 +2360,7 @@ fn_table:
 	.word let,list,load,locate,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
-	.word qkey,read,skip_line
+	.word qkey,randomize,read,skip_line
 	.word restore,return, random,rshift,run,save,servo_init,servo_off,servo_pos 
 	.word sleep,spc,spi_deselect,spi_init,spi_read,spi_select,spi_write,step,stop,store,tab
 	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace,ubound,uflash,until
@@ -3609,6 +3610,15 @@ print_exit:
     _RET 
 
 /******************************************
+  BASIC: RANDOMIZE 
+  Copy TICKS to SEED 
+******************************************/
+    _FUNC randomize
+    ldr r0,[UPP,#TICKS]
+    str r0,[UPP,#SEED]
+    _RET 
+
+/******************************************
   BASIC RND(expr)
   generate random number between 0..expr-1
 ******************************************/
@@ -4410,14 +4420,16 @@ spi_param:
   .word SPI2_BASE_ADR,GPIOB_BASE_ADR,12,13,14,15 // GPIO pins order NSS,SCK,MISO,MOSI
 
 /***************************************
-  BASIC: SPI_READ channel 
+  BASIC: SPI_READ (channel) 
   read 1 byte from channel 
   use:
 **************************************/
     _FUNC spi_read
-    _CALL expression
-    cmp r0,#TK_INTGR
+    push {r2,r3}
+    _CALL func_args 
+    cmp r0,#1
     bne syntax_error
+    _POP r1 
     sub r1,#1
     mov r2,#24
     mul r1,r2 
@@ -4430,7 +4442,9 @@ spi_param:
     tst r0,#1
     beq 0b
     ldrh r1,[r3,#SPI_DR]
+    and r1,#255 
     mov r0,#TK_INTGR  
+    pop {r2,r3}
     _RET 
 
 /********************************
@@ -4484,7 +4498,12 @@ spi_param:
     tst r0,#2
     beq 2b 
     subs r2,#1 
-    bne 1b     
+    bne 1b 
+    // wait BSY=0 completed 
+3:  ldrh r0,[r3,#SPI_SR]
+    tst r0,#(1<<7)
+    bne 3b 
+    ldr r0,[r3,#SPI_DR]    
     _RET 
 
 /******************************

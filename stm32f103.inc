@@ -83,14 +83,31 @@
     .equ GPIO_LCKR, 24 
     
    /* GPIO input|output CNF|MODE values */
-   .equ OUTPUT_PP,1
-   .equ OUTPUT_OD,6
-   .equ OUTPUT_AFPP,0xa 
-   .equ OUTPUT_AFOD,0xe
-   .equ INPUT_ANA,0
-   .equ INPUT_FLOAT,4
-   .equ INPUT_PD,16 
-   .equ INPUT_PU,17   
+   //output CNF field 
+   .equ GPIO_O_PP,0 
+   .equ GPIO_O_OD,(1<<2)
+   .equ GPIO_O_AFPP,(2<<2) 
+   .equ GPIO_O_AFOD,(3<<2)
+  // output MODE field 
+   .equ S2MHZ,2 
+   .equ S10MHZ,1 
+   .equ S50MHZ,3
+   .equ OSPEED,S10MHZ      
+   .equ OUTPUT_PP,GPIO_O_PP+OSPEED
+   .equ OUTPUT_OD,GPIO_O_OD+OSPEED
+   .equ OUTPUT_AFPP,GPIO_O_AFPP+OSPEED 
+   .equ OUTPUT_AFOD,GPIO_AFOD+OSPEED 
+  // input ODR 
+   .equ PULLDOWN,0
+   .equ PULLUPP,1
+  // input CNF field 
+   .equ ANALOG,0
+   .equ FLOATING,(1<<2) 
+   .equ PULL_RESISTOR,(2<<2)  
+   .equ INPUT_ANA,ANALOG 
+   .equ INPUT_FLOAT,FLOATING 
+   .equ INPUT_PD,(PULL_RESISTOR<<1)+PULLDOWN 
+   .equ INPUT_PU,(PULL_RESISTOR<<1)+PULLUP    
 
    /* AFIO base address */
    .equ AFIO_BASE_ADR, 0x40010000
