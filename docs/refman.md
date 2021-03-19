@@ -218,9 +218,9 @@ name|short form
 [GET](#get)|GE
 [GOSUB](#gosub)|GOS
 [GOTO](#goto)|GOT
-[GPIOA](#gpio)|GPIOA
-[GPIOB](#gpio)|GPIOB
-[GPIOC](#gpio)|GPIOC
+[GPIOA](#gpiox)|GPIOA
+[GPIOB](#gpiox)|GPIOB
+[GPIOC](#gpiox)|GPIOC
 [HEX](#hex)|HE
 [IF](#if)|IF
 [IN](#in)|IN
@@ -258,6 +258,7 @@ name|short form
 [PUSH](#push)|PU
 [PUT](#put)|PUT
 [QKEY](#qkey)|QK
+[RANDOMIZE](#randomize)|RA 
 [READ](#read)|REA
 [REM](#remark)|'
 [RESTORE](#restore)|RES
@@ -271,9 +272,11 @@ name|short form
 [SERVO_POS](#servo-pos)|SERVO_P
 [SLEEP](#sleep)|SL
 [SPC](#space)|SP
-[SPIEN](#spien)|SPIE
-[SPIRD](#spird)|SPIR
-[SPISEL](#spisel)|SPIS
+[SPI_DSEL](#spi-dsel)|SPI_D
+[SPI_INIT](#spi-init)|SPI_I
+[SPI_READ](#spi-read)|SPI_R
+[SPI_SEL](#spi-sel)|SPI_S
+[SPI_WRITE](#spi-write)|SPI_W 
 [STEP](#step)|STE
 [STOP](#stop)|ST
 [STORE](#store)|STO
@@ -688,12 +691,13 @@ READY
 See also [DROP](#drop), [POP](#pop), [PUSH](#push), [PUT](#put).
 
 [index](#index)
-<a id="servo-init"></a>
+<a id="gosub"></a>
 ### GOSUB *expr*|*label*  {P}
 This keyword is used to call a subroutine. A subroutine can be called by a line number *expr* or a name *label*.  Calling by name is slightly faster at execution. 
 Search for target line number is done from start of program. Hence the farther the target the longer the search. It may be advantagous to place subroutines at the begining. 
 
 See also keyword [RETURN](#return)
+<a id="branch"></a>
 ```
 list
 5 REM  Label test 
@@ -718,6 +722,167 @@ run
 
 366 MSEC
 READY
+```
+[index](#index)
+<a id="goto"></a>
+### GOTO *expr*|*label* {P}
+This keyword is use to jump to a specified line number *expr* or *label*. Labels are symbolic name given to GOTO target in replacement of a line number. See the following [example](#branch) for usage of GOTO with line number and label. A label name must follow immediately the line number and is limited 6 characters in letters and **'_'**. 
+
+[index](#index)
+<a id="gpiox"></a>
+### GPIOx  {C,P}
+There is 3 system constants that identify the general purpose input/output port. **GPIOA**, **GPIOB** and **GPIOC**. These constantes are used as arguments to [IN](#in), [OUT](#out) and [PMODE](#pmode) commands. These constants are the register set base address that control GPIO port. 
+
+[index](#index)
+<a id="hex"></a>
+### HEX {C,P}
+This commande set system variable **BASE** to 16. This system variable is use to format numeric output by [PRINT](#print). See also [DEC](#dec).
+```
+a=25  hex ? a, dec ? a
+$19 25 
+READY
+```
+[index](#index)
+<a id="if"></a>
+### IF *relation*  {C,P}
+This keyword is used for conditionnal **IF...THEN** structure. The commands that follows the [THEN](#then) keyword are only executed if the *relation* is true. Anything that is not **zero** is considered **true**.
+```
+input "input 'F' or 'T'"v: if v=asc(\T) then ? "This is 'T'" 
+input 'F' or 'T'=t
+This is 'T'
+READY
+input "input 'F' or 'T'"v: if v=asc(\T) then ? "This is 'T'"
+input 'F' or 'T'=f
+READY
+```
+In the second try 'f' was entered so the relation **v=asc(\T)** was false hence the statement following **THEN** was not executed.
+
+[index](#index)
+<a id="in"></a>
+### IN(*gpiox*,*pin*)
+This function is used to read the state of a digital input pin. *gpiox* is one of the [GPIOx](#gpiox) system constant that identify the PORT and *pin* is the pin number as identify on the **blue pill** {0.15}. For example if GPIOB:0 is configured as a digital the to read it use **GPIOB** as first parameter and **0** as second.
+See also [PMODE](#pmode) and [OUT](#out).
+```
+? in(gpioa,0)
+1 
+READY
+``` 
+
+[index](#index)
+<a id="input"></a>
+### INPUT ["string"]var [,["string"]var]
+This commande is use to read a value entered by user. The value is stored in *var*. The optional *"string"* argument is printed as a prompt when given. More than one value can be entered by command. Each stored in a different variable. 
+```
+input "age"a,"gender (M|W)"s
+age=45
+gender (M|W)=M
+READY
+? A,CHAR(S)
+45 M
+READY
+```
+If a letter is entered by user the letter is uppercased and the ASCII value stored in the variable. 
+
+[index](#index)
+<a id="input-xxx"></a>
+### INPUT_xxx {C,P}
+There is 4 system constants used to define GPIO pin configuration. These constants are used as parameter for [PMODE](#pmode) commande. 
+
+* **INPUT_ANA** The pin is configured as analog input pin. 
+* **INPUT_FLOAT** The pin is configured as digital input an left floating. 
+* **INPUT_PD** The pin is configured as digital input with a pull down resistor.
+* **INPUT_PU** The pin is configured as digital input with a pull up resistor.
+
+See also [PMODE](#pmode) and [OUTPUT_xxx](#output-xxx) .
+
+[index](#index)
+<a id="invert"></a>
+### INVERT(*expr*) {C,P}
+This fonction bit complement also named *one's complement* of *expr*.
+```
+? INVERT(-1)
+0 
+READY
+? INVERT(-6)
+5 
+READY
+hex ? invert($aa)
+$FFFFFF55 
+READY
+``` 
+
+[index](#index)
+<a id="key"></a>
+### KEY 
+This command wait for a key from terminal and return it as **TK_CHAR** token type. The [ASC](#asc) function must be used to assign this character to a variable else a syntax error is displayed. 
+```
+a=key
+Runtime error: syntax error
+
+READY
+a=asc(key)
+READY
+? char(a)
+b
+READY
+? key
+z
+READY
+```
+The [PRINT](#print) command accept **TK_CHAR** type as argument.
+
+[index](#index)
+<a id="let"></a>
+### LET var=*expr* [, var=*expr]*  {C,P}
+The keyword **LET** is used to assign a value to a variable. Is usage is optional.
+```
+LET A=45 
+READY
+B=2
+READY
+? A*B
+90 
+READY
+```
+
+[index](#index)
+<a id="list"></a>
+### LIST [[line] [- [line]]]
+This command is use to display the program in RAM on terminal. Without argument it list all lines. 
+
+* **LIST - line** Display from first line to line number given in argument. 
+* **LIST line**  Display only the given line. 
+* **LIST line - ** Display from given line to last one. 
+* **LIST line - line** Display start at first line and end at last line.   
+
+The program is stored in tokenized form. To list it must be decompiled. The output may differ from what was typed by the user. Among difference **?** is listed as **PRINT** and **'** is listed as **REM**. Some system constants may also bear the wrong name if 2 system constants have the same value the first one found see its name displayed. This is so because the decompiler search dictionary by token type and token attribute (i.e. value). All system constants have the **TK_SCONST** type and their attribute is their value. Hence the first entry that match **TK_SCONST** and **value** is a good match. 
+
+[index](#index)
+<a id="locate"></a>
+### LOCATE *line*,*column*
+This command is used to move the terminal cursor at a specified position at *line*, *column* coordinates. The following program use this command to display LED intensity a top left corner on terminal.
+```
+5 REM Software PWM, controle LED verte sur carte blue pill 
+7 CLS :PRINT #6 ,
+10 R =511 :PRINT R ,
+20 K =0 
+30 IF R THEN OUT GPIOC ,13 ,0 
+40 FOR A =0 TO R :NEXT A 
+50 OUT GPIOC ,13 ,1 
+60 FOR A =A TO 1023 :NEXT A 
+70 IF QKEY THEN K =ASC (KEY )
+80 IF K =ASC (\u)THEN GOTO 200 
+84 IF K =ASC (\f)THEN R =1023 :GOTO 600 REM  pleine intensite 
+90 IF K =ASC (\d)THEN GOTO 400 
+94 IF K =ASC (\o)THEN R =0 :GOTO 600 REM  eteindre
+100 IF K =ASC (\q)THEN END 
+110 GOTO 20 
+200 IF R <1023 THEN R =R +1 :GOTO 600 
+210 GOTO 20 
+400 IF R >0 THEN R =R -1 :GOTO 600 
+410 GOTO 20 
+600 LOCATE 1,1 :PRINT R ,"   "
+610 GOTO 20 
 ```
 
 [index](#index)

@@ -259,6 +259,7 @@ nom|abrévation
 [PUSH](#push)|PU
 [PUT](#put)|PUT
 [QKEY](#qkey)|QK
+[RANDOMIZE](#randomize)|RA 
 [READ](#read)|REA
 [REM](#remark)|'
 [RESTORE](#restore)|RES
@@ -272,9 +273,11 @@ nom|abrévation
 [SERVO_POS](#servo-pos)|SERVO_P
 [SLEEP](#sleep)|SL
 [SPC](#space)|SP
-[SPIEN](#spien)|SPIE
-[SPIRD](#spird)|SPIR
-[SPISEL](#spisel)|SPIS
+[SPI_DSEL](#spi-dsel)|SPI_D
+[SPI_INIT](#spi-init)|SPI_I
+[SPI_READ](#spi-read)|SPI_R
+[SPI_SEL](#spi-sel)|SPI_S
+[SPI_WRITE](#spi-write)|SPI_W
 [STEP](#step)|STE
 [STOP](#stop)|ST
 [STORE](#store)|STO
@@ -1258,6 +1261,10 @@ J'ATTEND UNE TOUCHE
 J'ATTEND UNE TOUCHE
 READY
 ```
+[index](#index)
+<a id="read"></a>
+### RANDOMIZE 
+Initialize la variable système **SEED** avec la valeur de la variable système **TICKS**. **SEED** est la variable utilisée par le générateur pseudo-aléatoire [RND](#rnd).
 
 [index](#index)
 <a id="read"></a>
@@ -1442,9 +1449,72 @@ Cette commande sert à contrôler la position d'un servo-moteur. Voir la command
 Cette commande place le MCU en sommeil profond. En mode *sleep* le processeur est suspendu et dépense un minimum d'énergie. Pour redémarrer le processeur il faut  presser le bouton reset. 
 
 [index](#index)
-<a id="spien"></a>
-### SPIEN *div*,*0|1*
-Commande pour activer le périphérique SPI l'interface matérielle du SPI est sur les broches **D10**, **D11**, **D12** et **D13** du connecteur **CN8**. L'argument *div* détermine la fréquence d'horloge du SPI. C'est une nombre entre **0** et **7**. La fréquence Fspi=Fsys/2^(div+1). Donc pour zéro Fspi=Fsys/2 et pour 7 Fspi=Fsys/256. Le deuxième argument détermine s'il s'agit d'une activation **1** ou d'une désactivation **0** du périphérique.   
+<a id="spi-dsel"></a>
+### SPI_DSEL *channel*  {C,P}
+Cette commande sert à désactiver un périphérique SPI. Il y a 2 périphériques SPI {1,2}. Le périphérique doit-être préalablement intitialisé avant son utilissation. Voir la commande [SPI_INIT](#spi-init) à ce sujet. Voir aussi l'exemple d'utilisation d'un périphérique SPI pour écrire et lire une [EEPROM 25LC640A](#spi-example).
+
+[index](#index)
+<a id="spi-init"></a>
+### SPI_INIT *channel*, *div*  {C,P}
+Cette ommande sert à initialiser un périphérique SPI. Il y a 2 périphériques SPI identifiés par les *channel* {1,2}. Le canal 1 a une vitesse maximale de transfert de 36 MBITS/SEC tandis que le canal 2 est limité à 18 MBITS/SEC. Le paramètre *div* est un diviseur et cette valeur est dans l'intervalle {0..7}. **0** correspond à la vitesse maximale et **7** à la vitesse minimale. La valeur du diviseur est 2^^(div+1), donc 0->2 et 7 ->256. Voici un exemple d'utilisation d'un périphérique SPI qui utilise toutes les commandes du groupe **SPI_xxx**. 
+<a id="spi-example"></a>
+```
+list
+1 REM  EEPROM 25LC640A write,read test
+2 REM  Vdd=3.3 EEPROM Fck max is 5Mhz at this Vdd 
+3 REM  Fpclk for SPI(1) is 72Mhz, set divisor 16
+4 REM  Fpclk for SPI(2) is 36Mhz, set divisor 8 
+5 REM  0->DIV=2, 1->DIV=4, 2->div=8, 3->div=16
+6 REM  EEPROM write cycle time 5msec max.  
+7 INPUT "channel (1|2)? "C 
+8 D =3 :IF C =2 THEN D =D-1 :REM  clock divisor Fsck=4.5Mhz
+10 SPI_INIT C ,D :SPI_SEL C :PRINT CHAR (13 ),"channel ",C 
+18 REM  write to eeprom 
+20 REM  send WREN cmd # 6
+30 POKEB PAD ,6 
+40 SPI_WRITE C ,1 ,PAD :SPI_DSEL C 
+48 REM  can program up to 32 bytes, WR cmd # 2 
+50 SPI_SEL C 
+60 RANDOMIZE 
+64 INPUT "EEPROM address? "A 
+70 POKEB PAD ,2 POKEB PAD +1 ,RSHIFT (A ,8 )POKEB PAD +2 ,AND (A ,8 )
+80 FOR I =3 TO 12 R =RND (255 )PRINT R ,:POKEB PAD +I ,R NEXT I 
+90 SPI_WRITE C ,13 ,PAD 
+100 SPI_DSEL C :PAUSE 5 :PRINT CHAR (13 ),"Write completed."
+110 SPI_SEL C 
+118 PRINT "reading back"
+120 POKEB PAD ,3 POKEB PAD +1 ,RSHIFT (A ,8 )POKEB PAD +2 ,AND (A ,8 )
+130 SPI_WRITE C ,3 ,PAD 
+140 FOR I =1 TO 10 PRINT SPI_READ (C ),:NEXT I 
+150 SPI_DSEL C 
+160 END 
+READY
+run
+channel (1|2)? =1
+
+channel 1 
+EEPROM address? =2048
+3 98 116 200 3 2 228 191 156 126 
+Write completed.
+reading back
+3 98 116 200 3 2 228 191 156 126 
+READY
+```
+
+[index](#index)
+<a id="spi-read"></a>
+### SPI_READ(*channel*)  {C,P} 
+Cette fonction lit un octet à partir du périphérique SPI indiqué par *channel*.  Il y a 2 périphériques SPI {1,2}. Le périphérique doit-être préalablement intitialisé avant son utilissation. Voir la commande [SPI_INIT](#spi-init) à ce sujet. Voir aussi l'exemple d'utilisation d'un périphérique SPI pour écrire et lire une [EEPROM 25LC640A](#spi-example).
+
+[index](#index)
+<a id="spi-sel"></a>
+### SPI_SEL *channel*  {C,P}
+Cette commande sert à activer un périphique SPI. Il y a 2 périphériques SPI {1,2}. Le périphérique doit-être préalablement intitialisé avant son utilissation. Voir la commande [SPI_INIT](#spi-init) à ce sujet. Voir aussi l'exemple d'utilisation d'un périphérique SPI pour écrire et lire une [EEPROM 25LC640A](#spi-example).
+
+[index](#index)
+<a id="spi-write"></a>
+### SPI_WRITE *channel*, *count*, *tampon* 
+Cette commande permet d'envoyer un ou plusieurs octets vers le périphérique SPI. *channel* identfit lequel des SPI utiliser, *count* indique le nombre d'octets à envoyer et *tampon* est l'adresse de la région mémoire qui contient les octets à envoyer. Il s'agit habituellement du [PAD](#pad).  Il y a 2 périphériques SPI {1,2}. Le périphérique doit-être préalablement intitialisé avant son utilissation. Voir la commande [SPI_INIT](#spi-init) à ce sujet. Voir aussi l'exemple d'utilisation d'un périphérique SPI pour écrire et lire une [EEPROM 25LC640A](#spi-example).
 
 [index](#index)
 <a id="spc"></a>
@@ -1454,45 +1524,6 @@ Cette commande est utillisée à l'intérieur de la commande [PRINT](#print) pou
 ? \a,spc(5),\b
 a     b
 READY
-```
-
-[index](#index)
-<a id="spird"></a>
-### SPIRD 
-Cette fonction lit un octet à partir du périphérique SPI. Cet octet est retourné comme entier.
-
-[index](#index)
-<a id="spiwr"></a>
-### SPIWR *byte* [, byte] 
-Cette commande permet d'envoyer un ou plusieurs octets vers le périphérique SPI. Le programme suivant illustre l'utilisation de l'interface SPI avec une mémoire externe EEPROM 25LC640. Le programme active l'interface SPI à la fréquence de 2Mhz (16Mhz/2^(2+1)). Ensuite doit activé le bit **WEL** du **25LC640** pour authorizer l'écriture dans l'EEPROM. Cette EEPROM est configurée en page de 32 octets. On écris donc 32 octets au hazard à partir de l'adresse zéro. pour ensuite refaire la lecture de ces 32 octets et les affichés à l'écran. 
-```
->li 
-   10 SPIEN 2,1' spi clock 2Mhz
-   20 SPISEL 1:SPIWR 6:SPISEL 0 'active bit WEL dans l'EEPROM 
-   22 SPISEL 1:SPIWR 5:IF NOT (AND (SPIRD ,2)):GOTO 200
-   24 SPISEL 0
-   30 SPISEL 1:SPIWR 2,0,0
-   40 FOR I =0TO 31:SPIWR RND (256):NEXT I 
-   42 SPISEL 0
-   43 GOSUB 100' wait for write completed 
-   44 SPISEL 1:SPIWR 3,0,0
-   46 HEX :FOR I =0TO 31:PRINT SPIRD ,:NEXT I 
-   50 SPISEL 0
-   60 SPIEN 0,0
-   70 END  
-   90 ' wait for write completed 
-  100 SPISEL 1:SPIWR 5:S =SPIRD :SPISEL 0
-  110 IF AND (S ,1):GOTO 100
-  120 RETURN 
-  200 PRINT "Echec activation bit WEL dans l'EEPROM"
-  210 SPISEL 0
-  220 SPIEN 0,0
-
->run
- $3F $99 $19 $73 $4C $FE $B1 $66 $88 $7F $31 $FD $AD $BA $78 $1B $78 $2F $23 $59 $7D $C6 $2E $D0 $80 $7A $19 $E8 $53 $BC  $5 $AC
->run
- $A0 $AE $DD $32 $C5 $D6 $DB $43 $90 $CA $CF $60 $37 $B9 $D8 $C0  $7 $3B $AE $B2 $58 $5F $B5 $33 $8D $1D $7D $3F $94 $7D $FF $F3
->
 ```
 
 [index](#index)

@@ -5,6 +5,14 @@ https://github.com/picatout/stm32-tbi
 -->
 #### 2021-03-18
 
+* Ajout de la commande **RANDOMIZE** et de sa docmentation. 
+
+* Ajout de la documentation pour les commandes **SPI_xxx** dans [tbi_reference.md](tbi_reference.md).
+
+* Réécriture de [spi-test.bas](tb_progs/spi-test.bas).
+
+* Complété et testé les commandes du groupes **SPI_xxx**. 
+
 * Added constants for GPIO modes in [stm32f103.inc](stm32f103.inc). 
 
 #### 2021-03-17
