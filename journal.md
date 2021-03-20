@@ -5,6 +5,9 @@ https://github.com/picatout/stm32-tbi
 -->
 #### 2021-03-19
 
+* Complété [refman.md](docs/refman.md).
+#### 2021-03-19
+
 * Modifié **PUT** pour inverser l'ordre des arguments, maintenant **PUT slot,value**.
 
 * Modifié **GET** pour remplacer le **mul** par un **lsl**. 

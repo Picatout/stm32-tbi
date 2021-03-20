@@ -28,9 +28,9 @@ https://github.com/picatout/stm32-tbi
 
 * [Installation](#install)
 
-* [Using it](#utilisation)
+* [Using it](#usage)
 
-* [file transfert](#xmodem)
+* [sending a file](#send)
 
 * [source files](#sources)
 
@@ -605,7 +605,7 @@ READY
 [index](#index)
 <a id="dump"></a>
 ### DUMP adr,count {C}
-This is a debuging to examine the containt of memory. The dump start at *adr* and a multiple of 16 bytes are displayed &gt;=*count*.
+This is a debuging to examine the content of memory. The dump start at *adr* and a multiple of 16 bytes are displayed &gt;=*count*.
 ```
 DUMP $20000210,48
            00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 
@@ -980,7 +980,7 @@ HEX ? PEEKB($8000000), PEEKH($8000000), PEEKW($8000000)
 $0 $5000 $20005000 
 READY
 ```
-This command line example read address 0x800000 which containt the initialisation value of **SP** register. As integer are store in little indian format, the first byte contain 0x0, the 16 bits word contain 0x5000 and the 32 bits value is 0x20005000. This is the address after end of RAM. The first value pushed on stack is stored at 0x20004fffc as **SP** is decremented before the value is pushed.
+This command line example read address 0x800000 which content the initialisation value of **SP** register. As integer are store in little indian format, the first byte contain 0x0, the 16 bits word contain 0x5000 and the 32 bits value is 0x20005000. This is the address after end of RAM. The first value pushed on stack is stored at 0x20004fffc as **SP** is decremented before the value is pushed.
 
 See also [POKEx](#pokex).
 
@@ -1266,5 +1266,428 @@ This command place the MCU in stop mode. In this mode consumtion is at minimum. 
 This command is used inside [PRINT](#print) to move terminal cursor right *n* spaces.
 
 [index](#index)
-<a id="spi-init></a>
+<a id="spi-dsel"></a>
+### SPI_DSEL *channel* {C,P}
+This command is used to deselect an SPI **channel**. The channel as previously been initialized using [SP_INIT](#spi-init) command.
+
+
+[index](#index)
+<a id="spi-init"></a>
 ### SPI_INIT *channel* {C,P}
+This command is used to initialize SPI peripheral. There is 2 SPI channels {1,2}. Channel 1 can be clocked at a maximum frequency of 36Mhz whil channel 2 is limited to 18Mhz.  
+
+**channels pinout**
+signal|ch1 pin|ch2 pin
+--|-|-
+NSS|PA4|PB12
+SCK|PA5|PB13 
+MISO|PA6|PB14
+MOSI|PA7|PB15
+
+
+
+
+See also [SPI_DSEL](#spi-dsel), [SPI_SEL](#spi-sel), [SPI_READ](#spi-read) and [SPI_WRITE](#spi-write).<br/> In the example below an SPI channel is use to access a [25LC640A](http://ww1.microchip.com/downloads/en/DeviceDoc/21830F.pdf) EEPROM.
+<a id="spi-example"></a>
+```
+1 REM  EEPROM 25LC640A write,read test
+2 REM  Vdd=3.3 EEPROM Fck max is 5Mhz at this Vdd 
+3 REM  Fpclk for SPI(1) is 72Mhz, set divisor 16
+4 REM  Fpclk for SPI(2) is 36Mhz, set divisor 8 
+5 REM  0->DIV=2, 1->DIV=4, 2->div=8, 3->div=16
+6 REM  EEPROM write cycle time 5msec max.  
+7 INPUT "channel (1|2)? "C 
+8 D =3 :IF C =2 THEN D =D-1 :REM  clock divisor Fsck=4.5Mhz
+10 SPI_INIT C ,D :SPI_SEL C :PRINT CHAR (13 ),"channel ",C 
+18 REM  write to eeprom 
+20 REM  send WREN cmd # 6
+30 POKEB PAD ,6 
+40 SPI_WRITE C ,1 ,PAD :SPI_DSEL C 
+48 REM  can program up to 32 bytes, WR cmd # 2 
+50 SPI_SEL C 
+60 RANDOMIZE 
+64 INPUT "EEPROM address? "A 
+70 POKEB PAD ,2 POKEB PAD +1 ,RSHIFT (A ,8 )POKEB PAD +2 ,AND (A ,8 )
+80 FOR I =3 TO 12 R =RND (255 )PRINT R ,:POKEB PAD +I ,R NEXT I 
+90 SPI_WRITE C ,13 ,PAD 
+100 SPI_DSEL C :PAUSE 5 :PRINT CHAR (13 ),"Write completed."
+110 SPI_SEL C 
+118 PRINT "reading back"
+120 POKEB PAD ,3 POKEB PAD +1 ,RSHIFT (A ,8 )POKEB PAD +2 ,AND (A ,8 )
+130 SPI_WRITE C ,3 ,PAD 
+140 FOR I =1 TO 10 PRINT SPI_READ (C ),:NEXT I 
+150 SPI_DSEL C 
+160 END 
+READY
+run
+channel (1|2)? =1
+
+channel 1 
+EEPROM address? =2048
+3 98 116 200 3 2 228 191 156 126 
+Write completed.
+reading back
+3 98 116 200 3 2 228 191 156 126 
+READY
+```
+
+[index](#index)
+<a id="spi-read"></a>
+### SPI_READ(*channel*) {C,P}
+This command is used to read a byte from an SPI device. *channel* designate one of the 2 channels. See [example](#spi-example) above.  See also [SPI_INIT](#spi-init), [SPI_WRITE](#spi-WRITE),[SPI_SEL](#spi-sel) and [SPI_DSEL](#spi-dsel).
+
+[index](#index)
+<a id="spi-sel"></a>
+### SPI_SEL *channel*  {C,P}
+An SPI channel must be selected before sending command to it. The channel as been previously initialized. See [example](#spi-example) above.  See also [SPI_INIT](#spi-init), [SPI_READ](#spi-read),[SPI_WRITE](#spi-write) and [SPI_DSEL](#spi-dsel).
+
+[index](#index)
+<a id="spi-write"></a>
+### SPI_WRITE *channel*,*count*,*buffer*  {C,P}
+Write *count* bytes to *channel*. The bytes to write are stored in *buffer*. [PAD](#pad) can be used as data buffer.  See [example](#spi-example) above. See also [SPI_INIT](#spi-init), [SPI_READ](#spi-read),[SPI_SEL](#spi-sel) and [SPI_DSEL](#spi-dsel).
+
+
+[index](#index)
+<a id="step"></a>
+### STEP *expr* 
+This keyword is part of  [FOR...NEXT](#for) loop control structure. 
+
+[index](#index)
+<a id="stop"></a>
+### STOP {P}
+This keyword is used to stop execution of a program, falling down to command line. The states of the program are kept so that a [RUN](#run) command can be used to restart it where it was stopped. This is a debugging aid as from command line variables states can be verified.
+
+[index](#index)
+<a id="store"></a>
+### STORE *adr*,*expr* {C,P}
+This command is used to store a word (32 bits) in user flash memory. This user flash is 1024 bytes reserved in flash. The address of this user flash is returned by function [UFLASH](#uflash).
+
+[index](#index)
+<A id="tab"></a>
+### TAB(*n*) {C,P}
+This command is only used inside a [PRINT](#print) command to move terminal cursor at designated column *n*. See also [SPC](#space)
+```
+? "Hello",TAB(12),"world!"
+Hello      world!
+READY
+```
+[index](#index)
+<a id="then"></a>
+### THEN *statement* {C,P}
+This keyword is part of [IF..THEN](#if) flow control statement. Its usage is optional as the boundaries of the *relation* that follow the **IF** are well defined. It is only used for clarity. 
+```
+input "age"a : if a>60 then ? "OK! boomer."
+age=60
+READY
+input "age"a : if a>60 then ? "OK! boomer."
+age=61
+OK! boomer
+READY
+```
+
+[index](#index)
+<a id="ticks"></a>
+### TICKS {C,P}
+The system maintain millisecond counter. This function return the actual value of this counter. 
+```
+? ticks : pause 100 : ? ticks
+3211964 
+3212064 
+READY
+```
+[index](#index)
+<a id="timeout"></a>
+### TIMEOUT {C,P}
+Check if the count down [TIMER](#timer) as expired. If so return *true* else return *false*. 
+```
+TIMER 10:DO ?"timer running" UNTIL TIMEOUT: ?"timer stopped"
+timer running
+timer running
+timer running
+timer running
+timer running
+timer running
+timer running
+timer running
+timer stopped
+READY
+```
+[index](#index)
+<a id="timer"></a>
+### TIMER *expr* {C,P}
+Initialize a count down timer with the value of *expr*. The timer is decremented at every millisecond until it reach **0**. 
+
+[index](#index)
+<a id="to"></a>
+### TO *expr* {C,P}
+This keyword is part of [FOR...NEXT](#for) control loop. *expr* fix the limit of the loop counter. The loop terminate when the limit is crossed. 
+
+[index](#index)
+<a id="tone"></a>
+### TONE *freq*,*duration* {C,P}
+Generate a tonality on pin B6. The tone generator must have been previously initialized with [TONE_INIT](#tone-init)
+```
+TONE_INIT: TONE 500,100 REM 500 Hertz tone for 100 msec.
+```
+[index](#index)
+<a id="tone-init"></a>
+### TONE_INIT {C,P}
+This command is used to initialize the tone generator. The output of which is on pin **B6**. The tone generator is in conflic with servomotor channels 5 and 6. They can be used at the same time. See also [TONE](#tone).
+
+[index](#index)
+<a id="trace"></a>
+### TRACE 0|1|2|3 {P}
+The command is a debugging tool. It can be inserted anywhere in a program. When activated it print information on the terminal while the progam is executing.
+
+* **0**  Trace is disabled. 
+* **1**  Line number in execution is printed. 
+* **2**  Line number and argument stack content are printed. 
+* **3**  Line number, argument stack and return stack are printed.
+```
+5 REM  trace example
+10 PRINT "now trace is disabled"
+20 PRINT "now trace is at level 1"
+30 TRACE 1 
+32 PUSH 32 
+40 PRINT "now trace at level 2"
+50 TRACE 2 
+60 PRINT "now trace is at level 3"
+70 TRACE 3 
+72 DROP 1 
+80 TRACE 0 
+90 PRINT "now trace is disabled"
+100 END 
+READY
+run
+now trace is disabled
+now trace is at level 1
+
+32 
+
+40 
+now trace at level 2
+
+50 
+
+60 
+dstack: 32 
+now trace is at level 3
+
+70 
+dstack: 32 
+
+72 
+dstack: 32 
+rstack: 134224921 134224899 5 
+
+80 
+dstack: 
+rstack: 134224921 134224899 5 
+now trace is disabled
+READY
+```
+[index](#index)
+<a id="ubound"></a>
+### UBOUND {C,P}
+This function return the upper bound of **@** array variable. The **@** is indiced from {1..UBOUND}. The **@** is using RAM left out by the program in memory hence its size is variable and un program must use **UBOUND** to know the limit of the array. 
+```
+new
+READY
+? ubound
+4840 
+READY
+5 ' Blink blue pill GREEN LED. 
+10 BLINK
+20 OUT GPIOC,13,0
+30 PAUSE 200 
+40 OUT GPIOC,13,1
+50 PAUSE 200 
+60 GOTO BLINK 
+
+?ubound
+4805 
+READY
+```
+[index](#index)
+<a id="uflash"></a>
+### UFLASH 
+This function return address of user flash memory. The user flash memory is a 1024 bytes area in flash memory reserved for persistant storage of program data. The first 16 bytes are reserved for the [AUTORUN](#autorun) command. The rest is free to be used by programs. See also [ERASE](#erase) command. 
+
+[index](#index)
+<a id="until"></a>
+### UNTIL *relation*
+This keyword is part of [DO...UNTIL](#do) loop control structure. The loop is exited when the *relation* that follow **UNTIL** become **true**. Any value other than **0** is **true**. 
+
+[index](#index)
+<a id="wait"></a>
+### WAIT *adr*,*expr1*[,*expr2*] {C,P}
+This command wait until one of these apply:
+* __*adr&expr1&lt;&gt;0__ 
+* __*adr&expr1^expr2=0__ 
+```
+5 REM connect a 10K resistor between Vdd and B8
+6 REM connect a 100nF capacitor between gnd and B8
+7 REM run this program
+10 PMODE GPIOB ,8 ,INPUT_FLOAT 
+14 PRINT "connect the resistor to 0 volt"
+20 WAIT GPIOB +8 ,256 ,256 REM  wait input pin to 0
+24 PRINT "reconnect to Vdd"
+30 WAIT GPIOB +8 ,256 REM  wait input pin to 1
+READY
+run
+connect a resistor between Vdd and B8
+connec the resistor to 0volt
+reconnect to Vdd
+READY
+```
+For this example to work connect a 100nF capacitor between 0volt and B8. Connect a 10K pullup resistor between Vdd and B8. Run program. The first wait command block until input fall to 0 volt. **GPIOB+8** is the addres of **IDR** (Input Data Register).
+
+[index](#index)
+<a id="words"></a>
+### WORDS 
+Display in alphabetically sorted the list of words in dictionary.
+```
+words
+ABS ANA ADC AND ASC AUTORUN AWU BIT BRES BSET BTEST BTOGL CHAR CLS CONST DATA 
+DEC DIR DO DROP DUMP END ERASE FOR FORGET FREE GET GOSUB GOTO GPIOA GPIOB GPIOC 
+HEX IF IN INPUT INPUT_ANA INPUT_FLOAT INPUT_PD INPUT_PU INVERT KEY LET LIST LOAD 
+LOCATE LSHIFT NEW NEXT NOT OR OUT OUTPUT_AFOD OUTPUT_AFPP OUTPUT_OD OUTPUT_PP PAD 
+PAUSE PEEKB PEEKH PEEKW PMODE POKEB POKEH POKEW POP PRINT PUSH PUT QKEY RANDOMIZE 
+READ REM RESTORE RETURN RND RSHIFT RUN SAVE SERVO_INIT SERVO_OFF SERVO_POS SLEEP 
+SPC SPI_DSEL SPI_INIT SPI_READ SPI_SEL SPI_WRITE STEP STOP STORE TAB THEN TICKS 
+TIMEOUT TIMER TO TONE TONE_INIT TRACE UBOUND UFLASH UNTIL WAIT WORDS XOR XPOS YPOS 
+109 words in dictionary
+READY
+```
+[index](#index)
+<a id="xor"></a>
+### XOR(*expr1*,*expr2*)
+Execute a binary exclusive OR between the 2 expressions. 
+```
+hex A=$A5 ? XOR(A,$FF), XOR(A,$A5)
+$5A $0 
+READY
+```
+See also [OR](#or) and [AND](#and). 
+
+[index](#index)
+<a id="xpos"></a>
+### XPOS {c,p}
+This function return the terminal cursor column position. 
+```
+cls ? xpos
+1 
+READY
+locate 20,10 ? xpos
+         10 
+READY
+```
+[index](#index)
+<a id="ypos"></a>
+### YPOS {c,p}
+This function return the terminal cursor line position.
+```
+cls locate 10,20 ? ypos 
+               20
+READY 
+```
+
+[index](#index)
+
+[main index](#index-princ)
+
+## Installation 
+If the project is cloned from git the last binary is in **build** directory. Once the blue pill and and st-linkV2 are connected.
+* Modify the **STV2_DUNGLE_SN** variable in the [Makefile](../Makefile). To get this serial number do this command: <br/>**st-info --probe**.
+```
+~/github/stm32-tbi$ st-info --probe
+Found 1 stlink programmers
+ serial: 483f6e066772574857351967
+openocd: "\x48\x3f\x6e\x06\x67\x72\x57\x48\x57\x35\x19\x67"
+  flash: 65536 (pagesize: 1024)
+   sram: 20480
+ chipid: 0x0410
+  descr: F1 Medium-density device
+~/github/stm32-tbi$
+```
+* Flash the *blue pill tinyBASIC*<br/>**make flash** 
+```
+~/github/stm32-tbi$ make flash
+st-flash --serial=483f6e066772574857351967 erase 
+st-flash 1.6.0
+2021-03-20T14:58:29 INFO common.c: Loading device parameters....
+2021-03-20T14:58:29 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
+2021-03-20T14:58:29 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
+Mass erasing
+st-flash  --serial=483f6e066772574857351967  write build/stm32-tbi.bin 0x8000000
+st-flash 1.6.0
+2021-03-20T14:58:29 INFO common.c: Loading device parameters....
+2021-03-20T14:58:29 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
+2021-03-20T14:58:29 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
+2021-03-20T14:58:29 INFO common.c: Ignoring 1024 bytes of 0xff at end of file
+2021-03-20T14:58:29 INFO common.c: Attempting to write 18432 (0x4800) bytes to stm32 address: 134217728 (0x8000000)
+Flash page at addr: 0x08004400 erased
+2021-03-20T14:58:29 INFO common.c: Finished erasing 18 pages of 1024 (0x400) bytes
+2021-03-20T14:58:29 INFO common.c: Starting Flash write for VL/F0/F3/F1_XL core id
+2021-03-20T14:58:29 INFO flash_loader.c: Successfully loaded flash loader in sram
+ 18/18 pages written
+2021-03-20T14:58:30 INFO common.c: Starting verification of write complete
+2021-03-20T14:58:30 INFO common.c: Flash written and verified! jolly good!
+~/github/stm32-tbi$ 
+```
+* The blue pill is now ready to by used. Connect pin **A9**(TX), **A10**(RX) and **G** to RS-232 level adaptor which is connected to PC serial port. 
+
+* open you terminal emulator software and connect it to the serial port.
+![terminal](gtkterm-capture.png)
+
+
+[main index](#index-princ)
+<a id="usage"></a>
+## Usage 
+Programs can be entered from the terminal. Each line that begin with a line number is tokenized and store in RAM progam area. The program can be [LIST](#list)ed and edited. 
+
+* To edit a line enter its number followed by **CTRL-E**. This will display the line.
+* To erase a line enter its number followed by **ENTER**. 
+* The editor as 2 modes *insert* **CTRL-I** and *overwrite* **CTRL-O**.
+* You can use **HOME**,**END**,**LEFT ARROW** and **RIGHT ARROW** to move the cursor on the line. 
+* **ENTER** end line edition.  
+
+[main index](#index-princ)
+<a id="sending"></a>
+## Sending a file 
+The directory **sendFile** contain a command line utility to send BASIC programs like those in [tb_progs](../tb_progs) to the blue pill. From the root directory any program in this directory can be transferred to the blue pill. The terminal emulator must be open for the transfert. The lines sent will scroll on terminal. To send a file from project root directory do: <br/>
+**./send file-name** 
+```
+~/github/stm32-tbi$ ./send blink.bas
+port=/dev/ttyS0, baud=115200,delay=50 
+Sending file tb_progs/blink.bas
+9 lines sent
+
+~/github/stm32-tbi$ 
+```
+[main index](#index-princ)
+<a id="sources"></a>
+## Sources files 
+All code is written is assembly. 
+* [stm32-tbi.s](../stm32-tbi.s)  Hardware initialization and low level uart1 driver.
+* [tinyBasic.s](../tinyBasic.s) BASIC interpreter.
+* [terminal.s](../terminal.s) Terminal communication.
+* [stm32f103.inc](../stm32f103.inc) Hardware definitions for the  **blue pill** MCU. 
+* [tbi_macros.inc](../tbi_macros.inc) Assembly macros and system constants.
+* [cmd_index.inc](../cmd_index.inc) Commands and functions token value. 
+* [ascii.inc](../ascii.inc) Constantes du jeu de caractères ASCII.
+* [stm32f103c8t6.ld](../stm32f103c8t6.ld) linker script.
+* [Makefile](../Makefile) Makefile for gmake.
+
+### directories 
+* **build**  files generated by the build process. 
+* **docs** All documentations files.
+* **sendFile** Command line utility to transfert BASIC programs to blue pill.
+* **tb_progs** BASIC examples and test programs.
+
+[main index](#index-princ)
+
+## Documentation 
+
+* [refman.md](refman.md) this reference manual.
+* [user-manual.md](user-manual.md) TinyBASIC user manual.
