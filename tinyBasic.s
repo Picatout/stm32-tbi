@@ -4838,25 +4838,22 @@ dict_words: .asciz "words in dictionary"
     cmp r0,#1 
     bne syntax_error 
     _POP r0
-    mov r1,#4 
-    mul r0,r1 
+    lsl r0,#2 
     ldr r1,[DP,r0]
     mov r0,#TK_INTGR
     _RET 
 
 /*************************************
-  BASIC: PUT value,n  
+  BASIC: PUT slot,value  
   store value at nth position on stack
 **************************************/
     _FUNC put
     _CALL arg_list 
     cmp r0,#2 
     bne syntax_error 
-    _POP r0 
-    mov r1,#4 
-    mul r0,r1 
-    _POP r1
-    str r1,[DP,r0]
+    ldmia DP!,{r0,r1} // value,slot 
+    lsl r1,#2 
+    str r0,[DP,r1]
     _RET 
 
 

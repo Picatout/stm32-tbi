@@ -3,6 +3,14 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+#### 2021-03-19
+
+* Modifié **PUT** pour inverser l'ordre des arguments, maintenant **PUT slot,value**.
+
+* Modifié **GET** pour remplacer le **mul** par un **lsl**. 
+
+* Travail sur [refman.md](docs/refman.md).
+
 #### 2021-03-18
 
 * Ajout de la commande **RANDOMIZE** et de sa docmentation. 

@@ -233,7 +233,8 @@ name|short form
 [KEY](#key)|KE
 [LET](#let)|LE
 [LIST](#list)|LI
-[LOCATE](#locate)|LO
+[LOAD](#load)|LO
+[LOCATE](#locate)|LOA
 [LSHIFT](#lshift)|LS
 [NEW](#new)|NEW
 [NEXT](#next)|NE
@@ -626,7 +627,7 @@ READY
 This command erase the 1KB of user flash memory. All data store there is lost included [AUTORUN](#autorun) information. 
 
 [index](#index)
-<a id="FOR"></a>
+<a id="for"></a>
 ### FOR {C,P}
 This keyword introduce a **FOR _var=expr_ TO _expr_ [STEP _expr_]** control structure. This is a loop with counter. The loop execute at least once and terminate when _var_ cross the limit.
 ```
@@ -858,32 +859,361 @@ This command is use to display the program in RAM on terminal. Without argument 
 The program is stored in tokenized form. To list it must be decompiled. The output may differ from what was typed by the user. Among difference **?** is listed as **PRINT** and **'** is listed as **REM**. Some system constants may also bear the wrong name if 2 system constants have the same value the first one found see its name displayed. This is so because the decompiler search dictionary by token type and token attribute (i.e. value). All system constants have the **TK_SCONST** type and their attribute is their value. Hence the first entry that match **TK_SCONST** and **value** is a good match. 
 
 [index](#index)
+<a id="load"></a>
+### LOAD "file-name" {C}
+This command is to load in RAM a program saved in flash file system. 
+```
+new
+READY
+list
+READY
+load "data-test"
+file size: 95 bytes
+
+READY
+list
+10 RESTORE 40 
+20 PRINT READ 
+22 RESTORE 
+24 PRINT READ ,READ ,READ ,READ 
+28 DATA -1 ,-2 
+30 DATA 1 ,2 
+40 DATA 3 ,4 
+READY
+```
+See also [DIR](#dir),[FORGET](#forget) and [SAVE](#save).
+
+[index](#index)
 <a id="locate"></a>
 ### LOCATE *line*,*column*
-This command is used to move the terminal cursor at a specified position at *line*, *column* coordinates. The following program use this command to display LED intensity a top left corner on terminal.
+This command is used to move the terminal cursor at a specified position at *line*, *column* coordinates. The following program use this command (line 600) to display LED intensity a top left corner on terminal.
 ```
-5 REM Software PWM, controle LED verte sur carte blue pill 
-7 CLS :PRINT #6 ,
-10 R =511 :PRINT R ,
-20 K =0 
-30 IF R THEN OUT GPIOC ,13 ,0 
-40 FOR A =0 TO R :NEXT A 
-50 OUT GPIOC ,13 ,1 
-60 FOR A =A TO 1023 :NEXT A 
-70 IF QKEY THEN K =ASC (KEY )
-80 IF K =ASC (\u)THEN GOTO 200 
-84 IF K =ASC (\f)THEN R =1023 :GOTO 600 REM  pleine intensite 
-90 IF K =ASC (\d)THEN GOTO 400 
-94 IF K =ASC (\o)THEN R =0 :GOTO 600 REM  eteindre
-100 IF K =ASC (\q)THEN END 
-110 GOTO 20 
-200 IF R <1023 THEN R =R +1 :GOTO 600 
-210 GOTO 20 
-400 IF R >0 THEN R =R -1 :GOTO 600 
-410 GOTO 20 
-600 LOCATE 1,1 :PRINT R ,"   "
-610 GOTO 20 
+5 REM  random display
+10 RANDOM 
+20 CLS 
+30 LOCATE RND (25 ),RND (80 )
+40 PRINT CHAR (RND (97 )+32 )
+50 GOTO 30 
+READY
 ```
+[index](#index)
+<a id="lshift"></a>
+###  LSHIFT(*expr1*,*expr2*) {C,P}
+This function left shift *expr1* value of *expr2* bits. This is equialent to a multiplication by a power of 2. 
+```
+? lshift(1,2), lshift (64,3)
+4 512 
+READY
+```
+[index](#index)
+<a id="new"></a>
+### NEW  {C}
+This command is used to clear program space before writing a new program.
+
+[index](#index)
+<a id=""></a>
+### NEXT 
+Keyword that close [FOR...NEXT](#for) loop. 
+
+[index](#index)
+<a id="not"></a>
+### NOT *relation* 
+Keyword use to negate de result of a releation after a [IF](#if) or an [UNTIL](#until).  This is a logical negation not a binary negation. For a binary negation see [INVERT](#invert).
+
+[index](#index)
+<a id="or"></a>
+### OR(*expr1*,*expr2*) {C,P}
+This function do a binary **OR** between the 2 *expr* given as arguments. 
+```
+hex ? or(&101,&10), or(-&101,&10)
+$7 $FFFFFFFB 
+READY
+```
+[index](#index)
+<a id="out"></a>
+### OUT *gpiox*,*pin*,*0|1*  {C,P}
+This command set the state of a digital output pin to **0** or **1**. [gpiox](#gpiox) is one of the system constant that identify the port. *pin* is one of the board pin {0..15}.
+```
+PMODE GPIOC,13,OUTPUT_OD : GREEN LED PIN
+READY
+OUT GPIOC,13,0 : REM LED ON 
+READY
+OUT GPIOC,13,1 : REM LED OFF
+READY
+``` 
+[index](#index)
+<a id="output-xxx"></a>
+### OUTPUT_xxx {C,P}
+There is 4 system constants that define digital pin output mode:
+
+* **OUTPUT_OD**  Open drain digital output mode. 
+* **OUTPUT_PP**  Push pull digital output mode. 
+* **OUTPUT_AFOD** Alternate function open drain digital output.
+* **OUTPUT_AFPP** Alternate function push pull digital output.
+
+This constants are to be used with [PMODE](#pmode) command.
+
+[index](#index)
+<a id="pad"></a>
+### PAD {C,P}
+The pad is a 128 bytes memory buffer used by the interpreter but can also be used by application program as a transaction buffer, for example see [spi example](#spi-example). This keyword return the address of this memory buffer.
+
+[index](#index)
+<a id="pause"></a>
+### PAUSE *expr* {C,P}
+This command is to suspend execution for *expr* milliseconds. 
+```
+DO OUT GPIOC,13,1 PAUSE 50 OUT GPIOC,13,0 PAUSE 50 UNTIL QKEY K=ASC(KEY)
+READY
+```
+This command line example blink the board LED 10/sec until a key is pressed.
+
+[index](#index)
+<a id="peekx"></a>
+### PEEKx(*adr*) {C,P}
+These functions group is to read values from memory or peripheral registers. 
+* **PEEKB(*adr*)** Read byte at address *adr*.
+* **PEEKH(*adr*)** Read a 16 bits word at *adr*.
+* **PEEKW(*adr*)** Read a 32 bits word at *adr*. 
+```
+HEX ? PEEKB($8000000), PEEKH($8000000), PEEKW($8000000)
+$0 $5000 $20005000 
+READY
+```
+This command line example read address 0x800000 which containt the initialisation value of **SP** register. As integer are store in little indian format, the first byte contain 0x0, the 16 bits word contain 0x5000 and the 32 bits value is 0x20005000. This is the address after end of RAM. The first value pushed on stack is stored at 0x20004fffc as **SP** is decremented before the value is pushed.
+
+See also [POKEx](#pokex).
+
+[index](#index)
+<a id="pmode"></a>
+### PMODE *gpiox*,*pin*,*mode*  
+This command is used to configure a digital pin.
+* **gpiox** Is one of [GPIOx](#gpiox) system constant identifying the port.
+* **pin** Is board pin number {0..15}.
+* **mode** Is one of [OUTPUT_xxx](output-xxx) or [INPUT_xxx](#input-xxx) system constant identifying pin configuration mode.
+```
+5 REM  GPIO test 
+10 INPUT "gpio:a,b,c?"G ,"pin"P 
+20 G =GPIOA +(G -65 )*1024 :P =AND (P ,15 )
+30 PMODE G ,P ,OUTPUT_PP 
+40 OUT G ,P ,1 
+50 PAUSE 100 
+60 OUT G ,P ,0 
+70 PAUSE 100 
+80 IF NOT QKEY THEN GOTO 30 
+90 GOTO 10 
+READY
+run
+gpio:a,b,c?=a
+pin=5
+READY
+```
+The program about configure a pin selected by the user and configure it in **OUTPUT_PP** mode and swith its state between **0** and **1** 5 times/sec.
+
+[index](#index)
+<a id="pokex"></a>
+### POKEx *adr*,*expr* {C,P}
+This command is use to set a memory address or peripheral register to specified value *expr*. There 3 such command. 
+* **POKEB** To set a byte value.
+* **POKEH** To set a 16 bits word value. 
+* **POKEW** To set a 32 bits value. 
+
+See also [PEEKx](#peekx).
+
+[index](#index)
+<a id="pop"></a>
+### POP {C,P}
+This function remove to top value from argument stack and return it. This part of commands and functions used to manipulate argument stack.
+```
+push 1,2,3 : ? pop,pop,pop
+3 2 1 
+READY
+```
+As seen above arguments are pop'd in reverse order they where push'd. A stack is a last in, first out data structure. 
+
+[index](#index)
+<a id="print"></a>
+### PRINT|?  *arg_list* {C,P} 
+This command is the most complex of all. It is used to send information to be displayed on terminal. *arg_list* is list of items to be print to terminal. These items are separated by *,* or *;*. The comma separator does nothing special except if it is the last item of the command. In that case it disable the print of a carriabe return. The semi-colon separator on the contrary send the cursor to next colon. Column width may be set anywhere in a print statement by using the **#n** format where *n* is column width in characters. This setting persist until another **#n** is used or to the next warm_start. Other elements of **PRINT** are:
+* Numerical expression.
+* String. 
+* Character or character function. 
+* TAB(n) command to move cursor to specified column. 
+* SPC(n) command to move cursor right a specified number of spaces.
+```
+5 REM  PRINT command test
+10 REM  set colum width to 6 
+20 PRINT #6 
+30 REM  PRINT 5 INTEGER aligned to column.
+40 FOR I =1 TO 10 :PRINT RND (1000 );:NEXT I 
+50 REM  move cursor to column 20 before printing 
+60 PRINT CHAR (13 ),TAB (20 ),"Hello world!"
+70 REM  move cursor right 5 spaces
+80 PRINT "hello",SPC (5 ),"world!"
+90 REM  characters argument 
+100 PRINT \A,\ ,\B,\ ,\C
+READY
+run
+
+882   658   514   991   927   32    41    999   876   704   
+                   Hello world!
+hello     world!
+A B C
+READY
+```
+The number formating is dependant for the value of system variable **BASE** see [HEX](#hex) and [DEC](#dec) for more information. 
+
+[index](#index)
+<a id="push"></a>
+### PUSH *expr* *[,expr]* {C,P}
+This is a command to push a list of integers on arguments stack. 
+```
+10 INPUT A ,B 
+20 PUSH A ,B GOSUB PROD 
+30 PRINT POP 
+40 GOTO 10 
+50 PROD PUSH POP *POP RETURN 
+READY
+run
+A=10
+B=20
+200 
+A=
+READY
+```
+This program compute the product of 2 user entered integers.
+
+**CTRL-B** can be used to exit this program. 
+
+See also [POP](#pop).
+
+[index](#index)
+<a id="put"></a>
+### PUT *slot*,*expr* {C,P}
+This is another command to manipulate argument stack. It is used when some values have already been [PUSH](#push)ed on stack. These previously pushed values can be replaced by new values using this command. *slot* is the position where to put the new value. Top of stack is slot **0** and this increment by one going down stack.
+```
+PUSH 1,2,3 : PUT 0,4 : PUT 1,5 : ? POP,POP,POP
+4 5 1 
+READY
+```
+Here **3** as been replaced by **4** and **2** by **5**. 
+The result is unpredictable if values are put in slots not previously loaded by [PUSH](#push). See also [GET](#get).
+
+[index](#index)
+<a id="qkey"></a>
+### QKEY {C,P}
+This function is used to check if there is a character available from terminal. 
+It return **true** if so.
+```
+DO ? "press a key when you have enough of it." UNTIL QKEY K=ASC(KEY)
+press a key when you have enough of it.
+press a key when you have enough of it.
+press a key when you have enough of it.
+press a key when you have enough of it.
+READY 
+```
+
+[index](#index)
+<a id="randomize"></a>
+### RANDOMIZE {C,P}
+This command is used to give a new seed to the pseudo random number generator. It is a good practice to use **RANDOMIZE** at the beginning of a program that use [RND](#rnd) function.
+
+[index](#index)
+<a id="read"></a>
+### READ {P}
+This function return the next [DATA](#data) element. It is a fatal error to read past the last element. 
+<a id="data-example"></a>
+```
+10 RESTORE 40 
+20 PRINT READ 
+22 RESTORE 
+24 PRINT READ ,READ ,READ ,READ 
+28 DATA -1 ,-2 
+30 DATA 1 ,2 
+40 DATA 3 ,4 
+READY
+run
+3 
+-1 -2 1 2 
+READY
+```
+See also [DATA](#data) and [RESTORE](#restore).
+
+[index](#index)
+<a id="remark"></a>
+### REM|' {C,P}
+This keyword introduce a comment. Comment end with end of line and are skipped by the interpreter. The tick character can be used in place of keyword **REM**.
+
+[index](#index)
+<a id="restore"></a>
+### RESTORE *[line]*
+This command is used to reset [DATA](#data) pointer to first data element if there is no argument or to specified line number if one given. [example](#data-example).
+See also [DATA](#data) and [READ](#read).
+
+[index](#index)
+<a id="return"></a>
+### RETURN {P}
+This keyword is used to exit from a sub-routine invoked with [GOSUB](#gosub).
+
+[index](#index)
+<a id="rnd"></a>
+### RND(*expr*)  {C,P}
+This function return a pseudo random integer between **0** and the value of *expr*-1.
+```
+for i=1 to 10 ? rnd(100), : next i
+82 58 14 91 27 32 41 99 76 4 
+READY
+```
+
+[index](#index)
+<a id="rshift"></a>
+### RSHIFT(*expr1*,*expr2*) {C,P}
+This function shift *expr1* *expr2* bits right. This is a logical shift not an arithmetic one. Bit 31 is replaced by **0**. 
+```
+a=4096 for i=10 to 1 step -1 a=rshift(a,1) ? a, next i
+2048 1024 512 256 128 64 32 16 8 4 
+READY
+hex a=$ffffffff for i=10to 1 step -1 a=rshift(a,1) ?a, next i
+$7FFFFFFF $3FFFFFFF $1FFFFFFF $FFFFFFF $7FFFFFF $3FFFFFF $1FFFFFF $FFFFFF $7FFFFF $3FFFFF 
+READY
+```
+
+[index](#index)
+<a id="run"></a>
+### RUN {C}
+This command launch the execution of a program already in memory. 
+
+[index](#index)
+<a id="save"></a>
+### SAVE "file-name" {C}
+This command is used to save program in memory to flash file system. 
+```
+list
+10 RESTORE 40 
+20 PRINT READ 
+22 RESTORE 
+24 PRINT READ ,READ ,READ ,READ 
+28 DATA -1 ,-2 
+30 DATA 1 ,2 
+40 DATA 3 ,4 
+READY
+dir
+
+               0 files
+
+READY
+save "data-test"
+file size: 95 bytes
+
+READY
+dir
+data-test      95 
+
+               1 files
+
+READY
+```
+See also [LOAD](#load), [DIR](#dir) and [FORGET](#forget).
 
 [index](#index)
 <a id="servo-init"></a>
@@ -926,3 +1256,15 @@ This command is to turn off a servo-motor channel. See also [SERVO_INIT](#servo-
 Thi command is to control servo-motor position. Usual values for small servo-motors is in {1000...2000} range. See also [SERVO_INIT](#servo-init).
 
 [index](#index)
+<a id="sleep"></a>
+### SLEEP  {C,P}
+This command place the MCU in stop mode. In this mode consumtion is at minimum. A reset must be used to restart the MCU.
+
+[index](#index)
+<a id="space"></a>
+### SPC(*n*)  {C,P}
+This command is used inside [PRINT](#print) to move terminal cursor right *n* spaces.
+
+[index](#index)
+<a id="spi-init></a>
+### SPI_INIT *channel* {C,P}

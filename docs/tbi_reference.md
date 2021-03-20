@@ -972,6 +972,15 @@ READY
 <a id="locate"></a>
 ### LOCATE ligne,colonne {C,P}
 Sert à déplacer le curseur du terminal à une position déterminée. Les numéro de ligne et colonnne débute à **1** et non **0**.
+```
+5 REM  random display
+10 RANDOM 
+20 CLS 
+30 LOCATE RND (25 ),RND (80 )
+40 PRINT CHAR (RND (97 )+32 )
+50 GOTO 30 
+READY
+```
 
 [index](#index)
 <a id="load"></a>
@@ -1224,7 +1233,7 @@ READY
 ```
 [index](#index)
 <a id="put"></a>
-### PUT *position, expr* {C,P}
+### PUT *position*,*expr* {C,P}
 Insère sur la pile à la position donnée la valeur d'*expr*. Voir aussi [GET](#get).
 ```
 list

@@ -5932,7 +5932,7 @@ ARM GAS  tinyBasic.s 			page 1
  3807 0dfe 00B5FFF7 	    _CALL print_int 
  3807      FEFF5DF8 
  3807      04EB
- 3808 0e08 DFF83C0B 	    ldr r0,=fcount 
+ 3808 0e08 DFF8300B 	    ldr r0,=fcount 
  3809 0e0c 00B5FFF7 	    _CALL uart_puts 
  3809      FEFF5DF8 
  3809      04EB
@@ -6022,7 +6022,7 @@ ARM GAS  tinyBasic.s 			page 1
  3871 0ec8 013B     	    subs r3,#1 
  3872 0eca F9D1     	    bne 2b 
  3873              	// report file size 
- 3874 0ecc DFF87C0A 	    ldr r0,=fsize 
+ 3874 0ecc DFF8700A 	    ldr r0,=fsize 
  3875 0ed0 00B5FFF7 	    _CALL uart_puts
  3875      FEFF5DF8 
  3875      04EB
@@ -6033,7 +6033,7 @@ ARM GAS  tinyBasic.s 			page 1
  3880 0ee6 00B5FFF7 	    _CALL print_int 
  3880      FEFF5DF8 
  3880      04EB
- 3881 0ef0 DFF85C0A 	    ldr r0,=data_bytes 
+ 3881 0ef0 DFF8500A 	    ldr r0,=data_bytes 
  3882 0ef4 00B5FFF7 	    _CALL uart_puts      
  3882      FEFF5DF8 
  3882      04EB
@@ -6150,7 +6150,7 @@ ARM GAS  tinyBasic.s 			page 1
  3965      FEFF5DF8 
  3965      04EB
  3966 0ffc E062     	    str r0,[UPP,#FSFREE]
- 3967 0ffe DFF84C09 	    ldr r0,=fsize
+ 3967 0ffe DFF84009 	    ldr r0,=fsize
  3968 1002 00B5FFF7 	    _CALL uart_puts
  3968      FEFF5DF8 
  3968      04EB
@@ -6159,7 +6159,7 @@ ARM GAS  tinyBasic.s 			page 1
  3971 1012 00B5FFF7 	    _CALL print_int 
  3971      FEFF5DF8 
  3971      04EB
- 3972 101c DFF83009 	    ldr r0,=data_bytes 
+ 3972 101c DFF82409 	    ldr r0,=data_bytes 
  3973 1020 00B5FFF7 	    _CALL uart_puts  
  3973      FEFF5DF8 
  3973      04EB
@@ -6195,14 +6195,14 @@ ARM GAS  tinyBasic.s 			page 1
  3997 105e 03D5     	    bpl 1f 
  3998 1060 4FF00100 	    mov r0,#ERR_MEM_FULL 
  3999 1064 FFF7FEBF 	    b tb_error 
- 4000 1068 DFF8E808 	1:  ldr r0,=user
+ 4000 1068 DFF8DC08 	1:  ldr r0,=user
  4001 106c 4146     	    mov r1,T1 
  4002 106e 4FF48062 	    mov r2,#PAGE_SIZE 
  4003 1072 00B5FFF7 	    _CALL cmove 
  4003      FEFF5DF8 
  4003      04EB
  4004              	    // erase page 
- 4005 107c DFF8D408 	    ldr r0,=user 
+ 4005 107c DFF8C808 	    ldr r0,=user 
  4006 1080 00B5FFF7 	    _CALL erase_page
  4006      FEFF5DF8 
  4006      04EB
@@ -6233,7 +6233,7 @@ ARM GAS  tinyBasic.s 			page 1
  4026      04EB
  4027              	write_back:
  4028 10cc 4046     	    mov r0,T1
- 4029 10ce DFF88418 	    ldr r1,=user 
+ 4029 10ce DFF87818 	    ldr r1,=user 
  4030 10d2 00B5FFF7 	    _CALL write_page
  4030      FEFF5DF8 
  4030      04EB
@@ -6249,7 +6249,7 @@ ARM GAS  tinyBasic.s 			page 1
  4037              	    load and execute it.
  4038              	*****************************/
  4039 10e2 00BF     	    _FUNC exec_autorun
- 4040 10e4 DFF86C28 	    ldr r2,=user 
+ 4040 10e4 DFF86028 	    ldr r2,=user 
  4041 10e8 5FF80E10 	    ldr r1,arun_sign 
  4042 10ec 1068     	    ldr r0,[r2]
  4043 10ee 8842     	    cmp r0,r1 
@@ -6305,7 +6305,7 @@ ARM GAS  tinyBasic.s 			page 1
  4084 1142 F9D5     	    bpl 0b
  4085 1144 A1F10103 	    sub r3,r1,#1
  4086              	1:  // configure port pin
- 4087 1148 DFF80C28 	    ldr r2,=servo_param
+ 4087 1148 DFF80028 	    ldr r2,=servo_param
  4088 114c 4FEA0311 	    lsl r1,r3,#4
  4089 1150 0A44     	    add r2,r1  
  4090 1152 52F8040B 	    ldr r0,[r2],#4 //GPIOx_BASE_ADR
@@ -6314,7 +6314,7 @@ ARM GAS  tinyBasic.s 			page 1
  4093 115c 00B5FFF7 	    _CALL gpio_config 
  4093      5DFC5DF8 
  4093      04EB
- 4094 1166 DFF8F007 	    ldr r0,=servo_param 
+ 4094 1166 DFF8E407 	    ldr r0,=servo_param 
  4095 116a 4FEA0311 	    lsl r1,r3,#4
  4096 116e 01F10801 	    add r1,#8
  4097 1172 0844     	    add r0,r1 
@@ -6506,7 +6506,7 @@ ARM GAS  tinyBasic.s 			page 1
  4248 1326 F9D5     	    bpl 0b 
  4249 1328 A1F10101 	    sub r1,#1 // channel {0..5}
  4250 132c 4FEA0111 	    lsl r1,#4 // channel*16
- 4251 1330 DFF82436 	    ldr r3,=servo_param 
+ 4251 1330 DFF81836 	    ldr r3,=servo_param 
  4252 1334 0B44     	    add r3,r1 
  4253              	    // reconfigure GPIO 
  4254 1336 53F8040B 	    ldr r0,[r3],#4 // GPIO_BASE_ADR 
@@ -6546,7 +6546,7 @@ ARM GAS  tinyBasic.s 			page 1
  4281 1386 03D4     	    bmi 1f 
  4282 1388 4FF00A00 	    mov r0,#ERR_BAD_VALUE
  4283 138c FFF7FEBF 	    b tb_error 
- 4284 1390 DFF8C435 	1:  ldr r3,=servo_param 
+ 4284 1390 DFF8B835 	1:  ldr r3,=servo_param 
  4285 1394 0139     	    subs r1,#1
  4286 1396 4FEA0111 	    lsl r1,#4
  4287 139a 01F10801 	    add r1,#8
@@ -6611,7 +6611,7 @@ ARM GAS  tinyBasic.s 			page 1
  4333      04EB
  4334 140e 1B28     	    cmp r0,#TK_INTGR
  4335 1410 7FF4FEAF 	    bne syntax_error 
- 4336 1414 DFF84435 	    ldr r3,=spi_param 
+ 4336 1414 DFF83835 	    ldr r3,=spi_param 
  4337 1418 A1F10101 	    sub r1,#1
  4338 141c 4FF01802 	    mov r2,#24
  4339 1420 02FB01F1 	    mul r1,r2
@@ -6655,7 +6655,7 @@ ARM GAS  tinyBasic.s 			page 1
  4374 147c 42EA0302 	    orr r2,r3 
  4375 1480 0A50     	    str r2,[r1,r0]
  4376              	    // spi config 
- 4377 1482 DFF8D834 	    ldr r3,=spi_param 
+ 4377 1482 DFF8CC34 	    ldr r3,=spi_param 
  4378 1486 A9F10101 	    sub r1,T2,#1 
  4379 148a 4FF01802 	    mov r2,#24
 ARM GAS  tinyBasic.s 			page 112
@@ -6738,7 +6738,7 @@ ARM GAS  tinyBasic.s 			page 1
  4433 1552 A1F10101 	    sub r1,#1
  4434 1556 4FF01802 	    mov r2,#24
  4435 155a 02FB01F1 	    mul r1,r2 
- 4436 155e FF4B     	    ldr r3,=spi_param 
+ 4436 155e FC4B     	    ldr r3,=spi_param 
  4437 1560 0B44     	    add r3,r1 
  4438 1562 1B68     	    ldr r3,[R3]
  4439 1564 80EA0000 	    eor r0,r0 
@@ -6763,7 +6763,7 @@ ARM GAS  tinyBasic.s 			page 1
  4456      04EB
  4457 158a 1B28     	    cmp r0,#TK_INTGR
  4458 158c 7FF4FEAF 	    bne syntax_error
- 4459 1590 F24B     	    ldr r3,=spi_param 
+ 4459 1590 EF4B     	    ldr r3,=spi_param 
  4460 1592 A1F10101 	    sub r1,#1 
  4461 1596 4FF01802 	    mov r2,#24
  4462 159a 02FB01F1 	    mul r1,r2 
@@ -6801,7 +6801,7 @@ ARM GAS  tinyBasic.s 			page 1
  4489 15d4 A3F10100 	    sub r0,r3,#1 
  4490 15d8 4FF01803 	    mov r3,#24
  4491 15dc 03FB00F0 	    mul r0,r3  
- 4492 15e0 DE4B     	    ldr r3,=spi_param 
+ 4492 15e0 DB4B     	    ldr r3,=spi_param 
  4493 15e2 0344     	    add r3,r0 
  4494 15e4 1B68     	    ldr r3,[r3] //SPI_BASE_ADR 
  4495 15e6 11F8010B 	1:  ldrb r0,[r1],#1
@@ -7022,7 +7022,7 @@ ARM GAS  tinyBasic.s 			page 1
 
 
  4678 1772 00BF     	    _FUNC uflash
- 4679 1774 7749     	    ldr r1,=user
+ 4679 1774 7449     	    ldr r1,=user
  4680 1776 4FF01B00 	    mov r0,#TK_INTGR 
  4681 177a 7047     	    _RET 
  4682              	
@@ -7084,7 +7084,7 @@ ARM GAS  tinyBasic.s 			page 1
  4730      010F03D0 
  4730      4FF00700 
  4730      FFF7FEBF 
- 4731 17e0 DFF87C81 	    ldr T1,=kword_dict
+ 4731 17e0 DFF87081 	    ldr T1,=kword_dict
  4732 17e4 89EA0909 	    eor T2,T2
  4733 17e8 82EA0202 	    eor r2,r2  
  4734              	1:  
@@ -7122,7 +7122,7 @@ ARM GAS  tinyBasic.s 			page 1
  4756 184e 00B5FFF7 	    _CALL print_int 
  4756      FEFF5DF8 
  4756      04EB
- 4757 1858 4248     	    ldr r0,=dict_words
+ 4757 1858 3F48     	    ldr r0,=dict_words
  4758 185a 00B5FFF7 	    _CALL uart_puts  
  4758      FEFF5DF8 
  4758      04EB
@@ -7230,49 +7230,46 @@ ARM GAS  tinyBasic.s 			page 1
  4838 1902 0128     	    cmp r0,#1 
  4839 1904 7FF4FEAF 	    bne syntax_error 
  4840 1908 5CF8040B 	    _POP r0
- 4841 190c 4FF00401 	    mov r1,#4 
- 4842 1910 01FB00F0 	    mul r0,r1 
- 4843 1914 5CF80010 	    ldr r1,[DP,r0]
- 4844 1918 4FF01B00 	    mov r0,#TK_INTGR
- 4845 191c 7047     	    _RET 
- 4846              	
- 4847              	/*************************************
- 4848              	  BASIC: PUT value,n  
- 4849              	  store value at nth position on stack
- 4850              	**************************************/
- 4851 191e 00BF     	    _FUNC put
- 4852 1920 00B5FFF7 	    _CALL arg_list 
- 4852      FEFF5DF8 
- 4852      04EB
- 4853 192a 0228     	    cmp r0,#2 
- 4854 192c 7FF4FEAF 	    bne syntax_error 
- 4855 1930 5CF8040B 	    _POP r0 
- 4856 1934 4FF00401 	    mov r1,#4 
- 4857 1938 01FB00F0 	    mul r0,r1 
- 4858 193c 5CF8041B 	    _POP r1
- 4859 1940 4CF80010 	    str r1,[DP,r0]
- 4860 1944 7047     	    _RET 
- 4861              	
- 4862              	
- 4863 1946 0000     	  .section .rodata.user
- 4864              	  .p2align 10 
- 4865              	user:
- 4866 0000 FFFFFFFF 	  .space 1024,255
+ 4841 190c 4FEA8000 	    lsl r0,#2 
+ 4842 1910 5CF80010 	    ldr r1,[DP,r0]
+ 4843 1914 4FF01B00 	    mov r0,#TK_INTGR
+ 4844 1918 7047     	    _RET 
+ 4845              	
+ 4846              	/*************************************
+ 4847              	  BASIC: PUT slot,value  
+ 4848              	  store value at nth position on stack
+ 4849              	**************************************/
+ 4850 191a 00BF     	    _FUNC put
+ 4851 191c 00B5FFF7 	    _CALL arg_list 
+ 4851      FEFF5DF8 
+ 4851      04EB
+ 4852 1926 0228     	    cmp r0,#2 
+ 4853 1928 7FF4FEAF 	    bne syntax_error 
+ 4854 192c BCE80300 	    ldmia DP!,{r0,r1} // value,slot 
+ 4855 1930 4FEA8101 	    lsl r1,#2 
+ 4856 1934 4CF80100 	    str r0,[DP,r1]
+ 4857 1938 7047     	    _RET 
+ 4858              	
+ 4859              	
+ 4860 193a 0000     	  .section .rodata.user
+ 4861              	  .p2align 10 
+ 4862              	user:
+ 4863 0000 FFFFFFFF 	  .space 1024,255
+ 4863      FFFFFFFF 
+ 4863      FFFFFFFF 
+ 4863      FFFFFFFF 
 ARM GAS  tinyBasic.s 			page 122
 
 
- 4866      FFFFFFFF 
- 4866      FFFFFFFF 
- 4866      FFFFFFFF 
- 4866      FFFFFFFF 
- 4867              	
- 4868              	/*************************************************
- 4869              	   extra FLASH memory not used by Tiny BASIC
- 4870              	   is used to save BASIC programs.
- 4871              	************************************************/
- 4872              	  .p2align 10  // align to 1KB, smallest erasable segment 
- 4873              	  .section .rodata.fs
- 4874              	FILE_SYSTEM: // file system start here
+ 4863      FFFFFFFF 
+ 4864              	
+ 4865              	/*************************************************
+ 4866              	   extra FLASH memory not used by Tiny BASIC
+ 4867              	   is used to save BASIC programs.
+ 4868              	************************************************/
+ 4869              	  .p2align 10  // align to 1KB, smallest erasable segment 
+ 4870              	  .section .rodata.fs
+ 4871              	FILE_SYSTEM: // file system start here
 ARM GAS  tinyBasic.s 			page 123
 
 
@@ -7928,7 +7925,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2126   .text:0000000000001176 $t
          tinyBasic.s:2146   .text:000000000000118c set_array_element
          tinyBasic.s:2182   .text:00000000000011b0 set_var
-         tinyBasic.s:4874   .rodata.fs:0000000000000000 FILE_SYSTEM
+         tinyBasic.s:4871   .rodata.fs:0000000000000000 FILE_SYSTEM
          tinyBasic.s:2218   .rodata:0000000000000050 $d
          tinyBasic.s:2231   .rodata.dictionary:0000000000000000 kword_end
          tinyBasic.s:2230   *ABS*:0000000000000000 link
@@ -7997,7 +7994,7 @@ DEFINED SYMBOLS
 
 
          tinyBasic.s:4806   .text.basic:00000000000018c4 cmd_push
-         tinyBasic.s:4851   .text.basic:0000000000001920 put
+         tinyBasic.s:4850   .text.basic:000000000000191c put
          tinyBasic.s:3604   .text.basic:0000000000000c04 qkey
          tinyBasic.s:3616   .text.basic:0000000000000c20 randomize
          tinyBasic.s:2723   .text.basic:0000000000000350 read
@@ -8048,7 +8045,7 @@ DEFINED SYMBOLS
          tinyBasic.s:2857   .text.basic:0000000000000488 print_dump_header
          tinyBasic.s:2915   .text.basic:0000000000000538 user_space
          tinyBasic.s:2915   .text.basic:0000000000000538 $d
-         tinyBasic.s:4865   .rodata.user:0000000000000000 user
+         tinyBasic.s:4862   .rodata.user:0000000000000000 user
          tinyBasic.s:2922   .text.basic:000000000000053c $t
          tinyBasic.s:3006   .text.basic:0000000000000606 target
          tinyBasic.s:3136   .text.basic:0000000000000764 str_buffer
@@ -8097,10 +8094,10 @@ DEFINED SYMBOLS
          tinyBasic.s:4761   .text.basic:0000000000001866 dict_words
          tinyBasic.s:4761   .text.basic:0000000000001866 $d
          tinyBasic.s:4768   .text.basic:000000000000187a $t
-         tinyBasic.s:4864   .rodata.user:0000000000000000 $d
-         tinyBasic.s:4863   .text.basic:0000000000001946 $d
-         tinyBasic.s:4874   .text.basic:0000000000001948 $d
-         tinyBasic.s:4874   .text:00000000000011c0 $d
+         tinyBasic.s:4861   .rodata.user:0000000000000000 $d
+         tinyBasic.s:4860   .text.basic:000000000000193a $d
+         tinyBasic.s:4871   .text.basic:000000000000193c $d
+         tinyBasic.s:4871   .text:00000000000011c0 $d
          tinyBasic.s:247    .text:0000000000000195 $d
          tinyBasic.s:247    .text:0000000000000196 $t
          tinyBasic.s:269    .text:00000000000001e9 $d
