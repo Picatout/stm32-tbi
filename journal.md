@@ -4,6 +4,8 @@ Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
 #### 2021-03-19
+* Optimisation: Le compte des arguments est maintenant vérifié dans arg_list 
+  plutôt que dans chaque commande ou fonction BASIC.
 
 * Complété [refman.md](docs/refman.md).
 #### 2021-03-19

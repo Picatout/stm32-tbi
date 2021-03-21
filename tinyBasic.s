@@ -1839,15 +1839,17 @@ interpreter:
     func_args 
     get function arguments list 
   input:
-    none 
+    r0    required arguments count  
   output:
     r0    arg. count 
   use:
 
 ************************************/
     _FUNC func_args 
+    mov r3,r0 
     mov r0,#TK_LPAREN 
-    _CALL expect 
+    _CALL expect
+    mov r0,r3  
     _CALL arg_list 
     push {r0}
     mov r0,#TK_RPAREN 
@@ -1859,7 +1861,7 @@ interpreter:
     arg_list 
     get arguments list on dstack 
   input:
-    none 
+    r0  required arguments count  
   output:
     r0    arg count
   use:
@@ -1867,7 +1869,8 @@ interpreter:
 ***********************************/
     _FUNC arg_list 
     push {T1}
-    eor T1,T1 
+    eor T1,T1
+    mov r3,r0 // required count  
 1:  _CALL expression 
     cmp R0,#TK_INTGR  
     bne 2f
@@ -1877,7 +1880,9 @@ interpreter:
     cmp r0,#TK_COMMA 
     beq 1b 
 2:  _UNGET_TOKEN 
-9:  mov r0,T1 
+9:  mov r0,T1
+    cmp r0,r3 
+    bmi syntax_error 
     pop {T1}
     _RET 
 
@@ -1889,7 +1894,7 @@ interpreter:
 			 integer | function |
 			 '('expression')' 
   input: 
-    none 
+    none
   output:
     r0   token attribute 
     r1   token value 
@@ -2386,11 +2391,9 @@ fn_table:
     none 
 ******************************/
     _FUNC abs 
+    mov r0,#1
     _CALL arg_list
-    cmp r0,#1 
-    beq 1f 
-    b syntax_error 
-1:  _POP r1 
+    _POP r1 
     tst r1,#(1<<31)
     beq 9f
     rsb r1,#0 
@@ -2402,9 +2405,8 @@ fn_table:
   read analog input 
 *************************************/
     _FUNC analog_read
+    mov r0,#1
     _CALL func_args
-    cmp r0,#1 
-    bne syntax_error 
     _MOV32 R1,ADC1_BASE_ADR
     _POP r2 // channel
     and r2,#31
@@ -2426,9 +2428,8 @@ adc_loop:
   freq -> of conversion
 *****************************************/
     _FUNC adc 
+    mov r0,#1
     _CALL arg_list 
-    cmp r0,#1 
-    bne syntax_error 
     _POP r1 
 1:  cbz r1,adc_off 
 adc_on:
@@ -2467,9 +2468,8 @@ adc_off:
   logical ANND bit to between expr1,expr2
 ************************************/
     _FUNC bit_and
+    mov r0,#2 
     _CALL func_args 
-    cmp r0,#2 
-    bne syntax_error 
     _POP r0 
     _POP r1 
     and r1,r0 
@@ -2508,9 +2508,8 @@ adc_off:
   deep sleep. IDWG wakeup MCU 
 ******************************************/
     _FUNC awu
+    mov r0,#1
     _CALL arg_list
-    cmp r0,#1 
-    bne syntax_error 
     _MOV32 r1,RCC_BASE_ADR
     ldr r0,[r1,#RCC_CSR]
 // enable LSI 
@@ -2550,9 +2549,8 @@ adc_off:
   to create 1 bit mask at that position
 *******************************************/
     _FUNC bitmask
+    mov r0,#1
     _CALL func_args
-    cmp r0,#1 
-    bne syntax_error 
     _POP r0
     mov r1,#1
     lsl r1,r0 
@@ -2571,12 +2569,10 @@ adc_off:
       T1   temp
       T2   temp 
 *******************************/     
-  _FUNC bit_reset
+    _FUNC bit_reset
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    beq 1f 
-    b syntax_error 
-1:  _POP r1 //mask 
+    _POP r1 //mask 
     _POP r0 //address 
     ldr T2,[r0] 
     eor r1,#-1 // ~mask 
@@ -2597,11 +2593,9 @@ adc_off:
       T2   temp  
 *******************************/     
     _FUNC bit_set
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    beq 1f 
-    b syntax_error 
-1:  _POP r1 //mask 
+    _POP r1 //mask 
     _POP r0 //address 
     ldr T2,[r0] 
     orr r1,T2
@@ -2620,12 +2614,10 @@ adc_off:
       T1   temp
       T2   temp  
 *******************************/     
-  _FUNC bit_toggle
+    _FUNC bit_toggle
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    beq 1f 
-    b syntax_error 
-1:  _POP r1 //mask 
+    _POP r1 //mask 
     _POP r0 //address 
     ldr T2,[r0] 
     eor r1,T2
@@ -2637,9 +2629,8 @@ adc_off:
   return bit state at address
 ********************************/
     _FUNC bit_test
+    mov r0,#2 
     _CALL func_args
-    cmp r0,#2 
-    bne syntax_error 
     _POP r1
     mov r0,#1
     and r1,#31  
@@ -2669,9 +2660,8 @@ adc_off:
   convert expr in character 
 ********************************/
     _FUNC char
+    mov r0,#1
     _CALL func_args
-    cmp r0,#1
-    bne syntax_error 
     _POP r1 
     and r1,#127 
     mov r0,#TK_CHAR
@@ -2838,9 +2828,8 @@ no_data_line:
 ****************************************/
     _FUNC dump 
     _CLO 
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2
-    bne syntax_error 
     _POP r2   // count 
     _POP  r0  // adr
 dump01:
@@ -2889,9 +2878,8 @@ dump01:
   write value to user space in flash memory 
 *********************************************/
     _FUNC store 
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    bne syntax_error 
     ldmia DP!,{r0,r1}
     ldr r2,user_space
     cmp r1,r2 
@@ -3141,9 +3129,8 @@ str_buffer: .word _pad
   return 1's complement of expr
 ****************************************/
     _FUNC invert
+    mov r0,#1
     _CALL func_args
-    cmp r0,#1 
-    bne syntax_error
     _POP r1  
     mvn r1,r1
     mov r0,#TK_INTGR
@@ -3264,9 +3251,8 @@ out_buff: .word _tib
   return log base 2 of expr 
 ********************************/
     _FUNC locate
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    bne syntax_error
     _POP r1
     _POP r0  
     _CALL set_curpos 
@@ -3278,9 +3264,8 @@ out_buff: .word _tib
   shift right expr1 of expr2 bits 
 ****************************************/
     _FUNC lshift
+    mov r0,#2
     _CALL func_args
-    cmp r0,#2
-    bne syntax_error 
     ldmia DP!,{r0,r1}
     lsl r1,r0 
     mov r0,#TK_INTGR
@@ -3313,9 +3298,8 @@ out_buff: .word _tib
   binary OR between 2 expressions
 ******************************************/
     _FUNC bit_or
+    mov r0,#2
     _CALL func_args
-    cmp r0,#2
-    bne syntax_error
     _POP r0 
     _POP r1
     orr r1,r0 
@@ -3327,9 +3311,8 @@ out_buff: .word _tib
   read gpio_idr selected pin  
 ***************************************/
     _FUNC pin_input 
+    mov r0,#2
     _CALL func_args 
-    cmp r0,#2 
-    bne syntax_error  
     ldmia DP!,{r0,r1}
     mov r2,#GPIO_IDR 
     ldr r2,[r1,r2]
@@ -3345,9 +3328,8 @@ out_buff: .word _tib
    output to gpio_odr
 ***************************************/
     _FUNC out
+    mov r0,#3
     _CALL arg_list 
-    cmp r0,#3 
-    bne syntax_error 
     ldmia DP!,{r0,r1,r2} // value,pin,gpio 
     cbnz r0,1f 
     add r1,#16 
@@ -3396,9 +3378,8 @@ pad_adr: .word _pad
       OUTPUT_AFOD,OUTPUT_AFPP,OUTPUT_OD,OUTPUT_PP 
 ***************************************************/
     _FUNC pin_mode
+    mov r0,#3
     _CALL arg_list
-    cmp r0,#3 
-    bne syntax_error 
     _POP r2 // mode 
     _POP r1 // pin 
     _POP r0 // gpio 
@@ -3452,9 +3433,8 @@ pad_adr: .word _pad
   return byte value at address 
 *****************************************/
     _FUNC peek8
+    mov r0,#1
     _CALL func_args  
-    cmp r0,#1
-    bmi syntax_error
     _POP r1 
     ldrb r1,[r1]
     mov r0,#TK_INTGR     
@@ -3465,9 +3445,8 @@ pad_adr: .word _pad
   return byte value at address 
 *****************************************/
     _FUNC peek16
+    mov r0,#1
     _CALL func_args  
-    cmp r0,#1
-    bmi syntax_error
     _POP r1 
     ldrh r1,[r1]
     mov r0,#TK_INTGR     
@@ -3478,9 +3457,8 @@ pad_adr: .word _pad
   return byte value at address 
 *****************************************/
     _FUNC peek32
+    mov r0,#1
     _CALL func_args  
-    cmp r0,#1
-    bmi syntax_error
     _POP r1 
     ldr r1,[r1]
     mov r0,#TK_INTGR     
@@ -3492,9 +3470,8 @@ pad_adr: .word _pad
   store byte at addr   
 **********************************/
     _FUNC poke8
+    mov r0,#2
     _CALL arg_list
-    cmp r0,#2 
-    bne syntax_error
     ldmia DP!,{r0,r1} 
     strb r0,[r1]
     _RET 
@@ -3504,9 +3481,8 @@ pad_adr: .word _pad
   store hword at addr   
 **********************************/
     _FUNC poke16
+    mov r0,#2
     _CALL arg_list
-    cmp r0,#2 
-    bne syntax_error
     ldmia DP!,{r0,r1} 
     strh r0,[r1]
     _RET 
@@ -3516,9 +3492,8 @@ pad_adr: .word _pad
   store word at addr   
 **********************************/
     _FUNC poke32
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    bne syntax_error
     ldmia DP!,{r0,r1} 
     str r0,[r1]
     _RET 
@@ -3623,9 +3598,8 @@ print_exit:
   generate random number between 0..expr-1
 ******************************************/
     _FUNC random
+    mov r0,#1
     _CALL func_args 
-    cmp r0,#1
-    bne syntax_error
     tst r1,#(1<<31)
     beq 1f 
     mov r0,#ERR_BAD_VALUE 
@@ -3650,9 +3624,8 @@ print_exit:
   shift left expr1 de expr2 bits 
 ****************************************/
     _FUNC rshift
+    mov r0,#2
     _CALL func_args
-    cmp r0,#2 
-    bne syntax_error
     ldmia DP!,{r0,r1}
     lsr r1,r0  
     mov r0,#TK_INTGR
@@ -4273,9 +4246,8 @@ servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
   set servo position 
 *********************************/
     _FUNC servo_pos 
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2
-    bne syntax_error 
     ldr r1,[DP,#4] // servo channel 
     cmp r1,#7
     bmi 1f 
@@ -4315,9 +4287,8 @@ servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
   mov cursor right expr spaces 
 ***********************************/
     _FUNC spc 
+    mov r0,#1
     _CALL func_args 
-    cmp r0,#1
-    bne syntax_error 
     ldr r0,[UPP,#FLAGS]
     tst r0,#FPRINT 
     _POP r0 
@@ -4358,9 +4329,8 @@ servo_param: .word GPIOA_BASE_ADR,15,TIMER2_BASE_ADR,1
   enable SPI channel 1|2
 *********************************/
     _FUNC spi_init 
+    mov r0,#2
     _CALL arg_list
-    cmp r0,#2 
-    bne syntax_error
     // enable peripheral clock 
     ldmia DP!,{T1,T2} // T1=BR, T2=channel 
     _MOV32 r1,RCC_BASE_ADR 
@@ -4426,9 +4396,8 @@ spi_param:
 **************************************/
     _FUNC spi_read
     push {r2,r3}
+    mov r0,#1
     _CALL func_args 
-    cmp r0,#1
-    bne syntax_error
     _POP r1 
     sub r1,#1
     mov r2,#24
@@ -4482,9 +4451,8 @@ spi_param:
   use:
 ********************************/
     _FUNC spi_write
+    mov r0,#3
     _CALL arg_list 
-    cmp r0,#3 
-    bne syntax_error
     ldmia DP!,{r1,r2,r3} // *buffer, count, channel 
     sub r0,r3,#1 
     mov r3,#24
@@ -4535,9 +4503,8 @@ spi_param:
   move cursor column expr 
 **************************/
     _FUNC tab 
+    mov r0,#1
     _CALL func_args  
-    cmp r0,#1 
-    bne syntax_error 
     ldr r0,[UPP,#FLAGS]
     tst r0,#FPRINT
     _POP r0 
@@ -4585,9 +4552,8 @@ spi_param:
   in milliseconds
 ***********************************************/
     _FUNC tone
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    bne syntax_error
     _MOV32 r2,TIMER4_BASE_ADR
     ldr r0,[DP,#4] // freq
     _MOV32 r1,4500000
@@ -4702,12 +4668,12 @@ spi_param:
   or until (*addr&expr1)^expr2 is null 
 ***************************************/
     _FUNC wait
+    mov r0,#2
     _CALL arg_list 
     cmp r0,#2
     beq 2f 
     cmp r0,#3
     beq 4f
-    b syntax_error 
 2:  ldmia DP!,{r0,r1}
 3:  ldrh r2,[r1]
     ands r2,r0 
@@ -4766,9 +4732,8 @@ dict_words: .asciz "words in dictionary"
   binary exclusive or between 2 expressions
 **************************************/
     _FUNC bit_xor
+    mov r0,#2
     _CALL func_args
-    cmp r0,#2
-    bne syntax_error
     _POP r0
     _POP r1 
     eor r1,r0 
@@ -4803,7 +4768,8 @@ dict_words: .asciz "words in dictionary"
   BASIC PUSH expr[,expr] 
   push integers on stack 
 *********************************/
-    _FUNC cmd_push 
+    _FUNC cmd_push
+    mov r0,#1
     _CALL arg_list
     _RET 
 
@@ -4834,9 +4800,8 @@ dict_words: .asciz "words in dictionary"
   retreive nth element from stack 
 ********************************/
     _FUNC get 
+    mov r0,#1
     _CALL func_args
-    cmp r0,#1 
-    bne syntax_error 
     _POP r0
     lsl r0,#2 
     ldr r1,[DP,r0]
@@ -4848,9 +4813,8 @@ dict_words: .asciz "words in dictionary"
   store value at nth position on stack
 **************************************/
     _FUNC put
+    mov r0,#2
     _CALL arg_list 
-    cmp r0,#2 
-    bne syntax_error 
     ldmia DP!,{r0,r1} // value,slot 
     lsl r1,#2 
     str r0,[DP,r1]

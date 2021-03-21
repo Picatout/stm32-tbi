@@ -18,190 +18,88 @@ L'objectif de ce manuel est de présenter les fonctionnalités du langage à tra
 Il est aussi recommander de lire en pré-requis de ce manuel la [référence du langage Tiny BASIC](tbi_reference.md)
 
 ### abbréviation des commandes 
-Le nom des commandes peut-être abrégé au plus court à 2 lettres. Cependant même si vous entrez votre texte avec les abbréviation lorsque vous utilisez la commande LIST pour afficher votre programme les noms sont affichés dans toute leur longueur à l'exception de la commande **REMARK** qui s'affiche comme une apostrophe.
+Le nom des commandes peut-être abrégé au plus court à 2 lettres. Cependant même si vous entrez votre texte avec les abbréviation lorsque vous utilisez la commande LIST pour afficher votre programme les noms sont affichés dans toute leur longueur.
 
-La commande **WORDS** affiche la liste complète des mots qui sont dans le dictionnaires. 
-
-nom|abrévation
--|-
-ABS|AB
-ADCON|ADCO
-ADCREAD|ADCR
-AND|AN
-ASC|AS
-AUTORUN|AU
-AWU|AW 
-BIT|BI
-BRES|BR
-BSET|BS
-BTEST|BTE
-BTOGL|BTO
-BYE|BY
-CHAR|CH
-CRH|CRH
-CRL|CRL
-DATA|DATA
-DATALN|DATAL
-DDR|DD
-DEC|DE
-DIR|DI
-DO|DO
-DREAD|DR
-DWRITE|DW
-EEPROM|EE
-END|EN
-FCPU|FC 
-FOR|FO
-FORGET|FORG
-GOSUB|GOS
-GOTO|GOT
-GPIO|GP
-HEX|HE
-IDR|ID
-IF|IF
-INPUT|IN
-INVERT|INV
-IWDGEN|IDGE
-IWDGREF|IWGR
-KEY|KE
-LET|LE
-LIST|LI
-LOAD|LO
-LOG|LOG
-LSHIFT|LS
-MULDIV|MU
-NEW|NEW
-NEXT|NE
-NOT|NO
-ODR|OD
-OR|OR
-PAD|PA
-PAUSE|PA
-PEEK|PE
-PINP|PI
-PMODE|PM
-POKE|PO
-POUT|POU
-PRINT|?
-PRTA|PRTA
-PRTB|PRTB
-PRTC|PRTC
-PRTD|PRTD
-PRTE|PRTE
-PRTF|PRTF
-PRTG|PRTG
-PRTH|PRTH
-PRTI|PRTI
-QKEY|QK
-READ|REA
-REBOOT|REB
-REMARK|'
-RESTORE|RES
-RETURN|RET
-RND|RN
-RSHIFT|RS
-RUN|RU
-SAVE|SA
-SHOW|SH
-SIZE|SI
-SLEEP|SL
-SPIEN|SPIE
-SPIRD|SPIR
-SPISEL|SPIS
-SPIWR|SPIW
-STEP|STE
-STOP|ST
-TICKS|TI
-TIMER|TIMER
-TIMEOUT|TIMEO
-TO|TO
-TONE|TON
-UBOUND|UB
-UFLASH|UF
-UNTIL|UN
-USR|US
-WAIT|WA
-WORDS|WO
-WRITE|WR
-XOR|XO
-XRCV|XR
-XTRMT|XT
+La commande **WORDS** affiche la liste complète des mots qui sont dans le dictionnaire. Pour plus d'informations consultez le [manuel de référence](tbi_reference.md).
 
 ### exécution des programmes
-Si une ligne de commande est saisie sans numéro de ligne elle est compilée et exécutée immédiatement. Par contre si le texte commence par un entier entre 1 et 32767 cette ligne est considérée comme faisant partie d'un programme est après sa compilation elle est insérée dans la zone texte réservée au progammes BASIC. Les programmes sont exécutés à partir de la mémoire RAM. Pour le STM8S208RB il y a 6Ko de mémoire RAM une partie ce cette mémoire est utilisée par l'interpréteur et il reste environ 5740 octets disponibles pour les progammes. Il serait possible d'exécuter un programme à partir de la mémoire FLASH mais la version 1 de Tiny BASIC pour STM8 ne supporte pas ce mode. 
+Si une ligne de commande est saisie sans numéro de ligne elle est compilée et exécutée immédiatement. Par contre si le texte commence par un entier entre 1 et 65535 cette ligne est considérée comme faisant partie d'un programme est après sa compilation elle est insérée dans la zone texte réservée au progammes BASIC. Les programmes sont exécutés à partir de la mémoire RAM. Pour le STM32f103C8 il y a 20Ko de mémoire RAM une partie ce cette mémoire est utilisée par l'interpréteur et il reste environ 19360 octets disponibles pour les progammes. Il serait possible d'exécuter un programme à partir de la mémoire FLASH mais la version 1 de blue pill tiny BASIC ne supporte pas ce mode. 
 
-## exemple 1 blinky 
-Sur la carte il y a une LED indentifiée **LD2**. Cette LED est connecté à la broche qui correspond au bit 5 du GPIO C. Cette GPIO   est pré-configurée en mode sortie par le système Tiny BASIC. Pour contrôler son état il suffit donc de modifier l'éatt du bit 5 du registre **ODR** du GPIO C. Dans ce premier exemple nous allons faire clignoer cette LED au rythme de 1 fois par seconde.
+## exemple blink.bas  
+Sur la carte il y a une LED verte branchée sur **PC13**. Cette GPIO   est pré-configurée en mode sortie drain ouvert par le système Tiny BASIC. Pour contrôler son état il suffit donc de modifier l'éat du bit 13 de GPIO C. Dans ce premier exemple nous allons faire clignoer cette LED au rythme de 1 fois par seconde.
 ```
-   10 btoggle gpio(2,odr),32
-   20 pause 500
-   30 goto 10
+5 ' CLIGNOTE LED VERTE DE LA CARTE BLUE PILL 
+10 BLINK
+20 OUT GPIOC,13,0
+30 PAUSE 100 
+40 OUT GPIOC,13,1
+50 PAUSE 100 
+60 GOTO BLINK 
 ```
 Notez que vous pouvez saisir le texte aussi bien en minuscules qu'en majuscules. l'interpréteur convertie en majuscules. La commande LIST affiche ceci:
 ```
->list
-   10 BTOGL GPIO ( 2 ,ODR ), 32 
-   20 PAUSE  500 
-   30 GOTO  10 
-```
-Une autre méthode pour faire clignoter LD2 est d'utiliser la commande **DWRITE** comme illustré dans l'exemple suivant:
-```
-    5 ' enfoncez bouton USER pour arreter
-    7 ' clignote 3 fois par seconde
-   10 B = 1 
-   20 FOR A = 0 TO  0 STEP  0 ' boucle infinie
-   30 DWRITE  13 ,B 
-   40 B = 1 -B 
-   50 PAUSE  333 
-   60 NEXT A 
-
+list
+5 REM  CLIGNOTE LED VERTE DE LA CARTE BLUE PILL 
+10 BLINK 
+20 OUT GPIOC ,13 ,0 
+30 PAUSE 100 
+40 OUT GPIOC ,13 ,1 
+50 PAUSE 100 
+60 GOTO BLINK 
+READY
 ```
 
 ## exemple 2 PWM logiciel
 
 Dans cet exemple l'intensité de la LED est contrôlée par PWM logiciel.
 ```
-    5 'Software PWM, controle LD2 sur carte
-    7 PRINT # 6,
-   10 R = 511 :PRINT R ,
-   20 K = 0 
-   30 IF R :BSET GPIO ( 2 ,ODR ), 32 
-   40 FOR A = 0 TO R :NEXT A 
-   50 BRES GPIO ( 2 ,ODR ), 32 
-   60 FOR A =A TO  1023 :NEXT A 
-   70 IF QKEY :K =KEY 
-   80 IF K =ASC (\u):GOTO  200
-   84 if K =ASC (\f):R =1023: GOTO 600 ' pleine intensite 
-   90 IF K =ASC (\d):GOTO  400 
-   94 IF K =ASC (\o):R=0:GOTO 600 ' eteindre
-  100 IF K =ASC (\q):END 
-  110 GOTO  20 
-  200 IF R < 1023 :R =R + 1 :GOTO  600 
-  210 GOTO  20 
-  400 IF R > 0 :R =R - 1 :GOTO  600 
-  410 GOTO  20 
-  600 PRINT "\b\b\b\b\b",R ,
-  610 GOTO  20 
+5 'Software PWM, controle LED verte sur carte blue pill 
+7 CLS : PRINT #6,
+10 R = 511 :PRINT R ,
+20 K = 0 
+30 IF R THEN OUT GPIOC,13,0  
+40 FOR A = 0 TO R :NEXT A 
+50 OUT GPIOC,13,1 
+60 FOR A =A TO  1023 :NEXT A 
+70 IF QKEY THEN K =ASC(KEY)  
+80 IF K =ASC (\u) THEN GOTO  200
+84 if K =ASC (\f) THEN R =1023: GOTO 600 ' pleine intensite 
+90 IF K =ASC (\d) THEN GOTO  400 
+94 IF K =ASC (\o) THEN R=0:GOTO 600 ' eteindre
+100 IF K =ASC (\q) THEN END 
+110 GOTO  20 
+200 IF R < 1023 THEN R =R + 1 :GOTO  600 
+210 GOTO  20 
+400 IF R > 0 THEN R =R - 1 :GOTO  600 
+410 GOTO  20 
+600 CLS : PRINT R,
+610 GOTO  20 
 ```
-L'intensité de la LED est contrôlée à partir du terminal avec les touches **u** pour augmenter l'intensitée et **d** pour la réduire. La variable **R** contrôle l'intensitée. 
+L'intensité de la LED est contrôlée à partir du terminal avec les touches **u** pour augmenter l'intensitée et **d** pour la réduire, **f** pleine intensité, **o** éteinte et **q** pour quitter le programme. La variable **R** contrôle l'intensitée. 
+L'Intensité s'affiche dans le coin supérieur gauche du terminal.
 
 ## exemple 3 lecture analogique
 Dans cet exemple il s'agit encore de contrôler l'intensité de LD2 mais cette fois l'intensité est déterminée par la lecture d'un potentimètre. Il faut brancher un potentiomètre de 10Ko entre **GND**,**V3,3** et **CN4-A5**. **CN4-A5** est branchée à l'entrée analogique **AN0** du MCU.
 ```
->li
-    5 'demo lecture analogique
-   10 K = 0 :PRINT # 6 ,:PWRADC  1 
-   20 R =RDADC ( 0 )
-   30 IF R :BSET GPIO ( 2 ,ODR ), 32 
-   40 FOR A = 0 TO R :NEXT A 
-   50 BRES GPIO ( 2 ,ODR ), 32 
-   60 FOR A =A TO  1023 :NEXT A 
-   70 IF QKEY :K =KEY 
-   80 IF K =ASC (\q):PWRADC  0 :END
-   90 PRINT "\b\b\b\b\b\b",R ,
-  100 GOTO  20 
-
->run
-   981
+5 REM TEST CONVERTISSEUR ANALOG/DIGITAL 
+10 CLS 
+20 ADC 1
+30 T=0 B=ANA(16) PAUSE 100 
+40 D=B
+50 T=ANA(16) LOCATE 1,1 ? "TEMP:", T ;"DELTA:",D,"    "
+60 D=ABS(T-B)
+70 B=T 
+80 PAUSE 500 
+90 IF NOT QKEY THEN GOTO 50 
+100 K=ASC(KEY)
+110 CLS 
+120 B=ANA(0)  D=0 PAUSE 100   
+130 A=ANA(0) LOCATE 1,1 ? "ANA0:",A,"   DELTA: ",D,"   "
+140 D=ABS(A-B) B=A 
+150 PAUSE 500
+160 IF NOT QKEY THEN GOTO 130 
+170 K=ASC(KEY)
+180 ADC 0 
+190 END 
  ```
- Le programme peut-être interrompue par le bouton **USER** de la carte ou par le terminal en enfonçant la touche **q**. 
+Dans la première partie le programme affiche la lecture de la sonde de température interne du MCU qui est sur le canal 16. Dans la deuxième parti il affiche la valeur lue sur l'entrée **PA0** qui correspond au canal **0**. Il suffit de presser une touche pour passer à la deuxième parti. Presser une touche pour la deuxième fois termine le programme.
