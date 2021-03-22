@@ -2243,6 +2243,9 @@ kword_end:
   _dict_entry TK_CMD,UNTIL,UNTIL_IDX //until 
   _dict_entry TK_IFUNC,UFLASH,UFLASH_IDX //uflash 
   _dict_entry TK_IFUNC,UBOUND,UBOUND_IDX //ubound
+  _dict_entry TK_CMD,UART_PUTC,UART_PUTC_IDX // ser_putc 
+  _dict_entry TK_CMD,UART_INIT,UART_INIT_IDX // ser_init
+  _dict_entry TK_IFUNC,UART_GETC,UART_GETC_IDX //ser_getc
   _dict_entry TK_CMD,TRACE,TRACE_IDX // trace 
   _dict_entry TK_CMD,TONE_INIT,TONE_INIT_IDX // tone_init
   _dict_entry TK_CMD,TONE,TONE_IDX // tone 
@@ -2368,7 +2371,8 @@ fn_table:
 	.word qkey,randomize,read,skip_line
 	.word restore,return, random,rshift,run,save,servo_init,servo_off,servo_pos 
 	.word sleep,spc,spi_deselect,spi_init,spi_read,spi_select,spi_write,step,stop,store,tab
-	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace,ubound,uflash,until
+	.word then,get_ticks,set_timer,timeout,to,tone,tone_init,trace
+  .word ser_getc,ser_init,ser_putc,ubound,uflash,until
 	.word wait,words,bit_xor,xpos,ypos 
 	.word 0 
 
@@ -4638,6 +4642,119 @@ spi_param:
     _RET 
 
 /****************************
+  BASIC: UART_GETC(channel)
+  read a character from uart 
+****************************/
+    _FUNC ser_getc
+    mov r0,#1 
+    _CALL func_args
+    _POP r2 
+    sub r2,#2 
+    lsl r2,#4
+    ldr r0,=uart_param 
+    add r2,r0
+    ldr r2,[r2] 
+1:  ldr r0,[r2,#USART_SR]
+    tst r0,#(1<<5) // RXNE 
+    beq 1b 
+    ldrb r1,[r2,#USART_DR]
+    mov r0,#TK_INTGR 
+    _RET 
+
+/********************************
+  BASIC: UART_INIT channel,baud 
+  channel {2,3}
+********************************/
+    _FUNC ser_init 
+    mov r0,#2 
+    _CALL arg_list 
+    ldmia DP!,{T1,T2} // T1=BAUD,T2=channel 
+    sub T2,#2 
+    lsl T2,#4
+    ldr r0,=uart_param 
+    add T2,r0 
+    // gpio config 
+    ldr r0,[T2,#4] //GPIO_BASE_ADR
+    ldr r1,[T2,#8] // tx pin 
+    mov r2,#OUTPUT_AFPP //pin mode
+    _CALL gpio_config 
+    ldr r0,[T2,#4] // GPIO_BASE_ADR
+    LDR R1,[T2,#12] // rx pin 
+    mov r2,#INPUT_PU // mode 
+    _CALL gpio_config 
+    // config usart no flow control 1 stop, no parity 
+    // first enable clock 
+    mov r0,#(1<<17) // USART2EN in APB1ENR 
+    tst T2,#(1<<4)
+    beq 1f  
+    lsl r0,#1 // USART3EN in APB1ENR 
+1:  _MOV32 r2,RCC_BASE_ADR 
+    ldr r1,[r2,#RCC_APB1ENR]
+    orr r1,r0 
+    str r1,[r2,#RCC_APB1ENR]
+    ldr r2,[T2] // USART_BASE_ADR 
+    // baud rate 
+    mov r0,T1 
+    mov r1,r2 
+    _CALL uart_baud 
+    // enable usart 
+    mov r0,#(1<<2)+(1<<3)+(1<<13) //RE+TE+UE
+    str r0,[r2,#USART_CR1] 
+    _RET 
+
+/*************************************
+   uart_baud
+   set USART baud rate for USART2|3
+   input:
+      r0  baud 
+      r1  usart_base_adr 
+*************************************/
+    _FUNC uart_baud
+    push {r2,r3} 
+    mov r3,r0 // baud rate
+    // compute divisor values 
+    _MOV32 r0,2250000 // Fpck/16 
+    mov r2,r0   // keep a copy 
+    udiv r0,r3  // Fck/baud_rate 
+    lsl r0,#4 // divisor mantissa bits [15:4] 
+    str r0,[r1,#USART_BRR]
+    lsr r0,#4 
+    mul r0,r3 
+    sub r2,r0 // division remainder  
+    lsl r2,#4 // R*16 
+    udiv r2,r3 // fraction=R*16/baud_rate 
+    ldr r0,[r1,#USART_BRR] 
+    orr r0,r2 // mantissa[15:4],fraction[3:0] 
+    str r0,[r1,#USART_BRR]
+    pop {r2,r3} 
+    _RET 
+
+
+uart_param: // USART_BASE_ADR,GPIO_BASE_ADR,tx_pin,rx_pin
+    .word USART2_BASE_ADR,GPIOA_BASE_ADR,2,3 //USART2 
+    .word USART3_BASE_ADR,GPIOB_BASE_ADR,10,11 //USART3
+
+
+/********************************
+  BASIC: UART_PUTC channel,char 
+********************************/
+    _FUNC ser_putc 
+    mov r0,#2
+    _CALL arg_list
+    ldmia DP!,{r1,r2}
+    sub r2,#2 
+    lsl r2,#4 
+    ldr r0,=uart_param 
+    add r2,r0 
+    ldr r2,[r2]
+1:  ldr r0,[r2,#USART_SR]
+    tst r0,#(1<<7) // TXE
+    beq 1b
+    str r1,[r2,#USART_DR]     
+    _RET 
+
+
+/****************************
   BASIC: UFLASH 
   return user flash address
 *****************************/
@@ -4690,7 +4807,10 @@ spi_param:
   BASIC: WORDS 
   print list of BASIC WORDS in dictionary 
   use:
-    r0,r1,r2,T1,T2  
+    r0,r1 temp
+    r2  words counter 
+    T1  name field pointer 
+    T2  cursor column counter 
 ********************************************/
     _FUNC words
     _CLO 
@@ -4702,7 +4822,7 @@ spi_param:
     _CALL strlen
     cbz r0,4f 
     add T2,r0 
-    cmp T2,#80 
+    cmp T2,#70 
     bmi 2f
     eor T2,T2  
     _CALL cr 
@@ -4712,12 +4832,13 @@ spi_param:
     add T2,#1  
     _CALL uart_putc
     add r2,#1 
-    ldr T1,[T1,#-12]
+    ldr T1,[T1,#-12] // follow link
     b 1b 
 4:  ands T2,T2
     beq 5f 
     _CALL cr 
-5:  mov r0,r2 
+5:  // print words count 
+    mov r0,r2 
     mov r1,#10
     _CALL print_int 
     ldr r0,=dict_words

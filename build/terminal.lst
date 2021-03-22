@@ -145,7 +145,7 @@ ARM GAS  terminal.s 			page 1
   99              	   .equ OUTPUT_AFOD,GPIO_AFOD+OSPEED 
  100              	  // input ODR 
  101              	   .equ PULLDOWN,0
- 102              	   .equ PULLUPP,1
+ 102              	   .equ PULLUP,1
  103              	  // input CNF field 
  104              	   .equ ANALOG,0
  105              	   .equ FLOATING,(1<<2) 
@@ -169,164 +169,167 @@ ARM GAS  terminal.s 			page 1
  123              	   
  124              	    /* USART1 registers */
  125              	    .equ USART1_BASE_ADR, 0x40013800
- 126              	    /* USARTx registers offset */
- 127              	    .equ USART_SR, 0
- 128              	    .equ USART_DR,4
- 129              	    .equ USART_BRR,8
- 130              	    .equ USART_CR1,12
- 131              	    .equ USART_CR2,16
- 132              	    .equ USART_CR3,20
- 133              	    .equ USART_GTPR,24
- 134              	
+ 126              	    .equ USART2_BASE_ADR, 0x40004400
+ 127              	    .equ USART3_BASE_ADR, 0x40004800
+ 128              	
+ 129              	    /* USARTx registers offset */
+ 130              	    .equ USART_SR, 0
+ 131              	    .equ USART_DR,4
+ 132              	    .equ USART_BRR,8
+ 133              	    .equ USART_CR1,12
+ 134              	    .equ USART_CR2,16
 ARM GAS  terminal.s 			page 4
 
 
- 135              	   /* systick */
- 136              	    .equ STK_BASE_ADR, 0xE000E010
- 137              	    /* registers offset */
- 138              	    .equ STK_CTL, 0
- 139              	    .equ STK_LOAD, 4
- 140              	    .equ STK_VAL, 8
- 141              	    .equ STK_CALIB, 12
- 142              	
- 143              	   /* system control block */
- 144              	   .equ SCB_BASE_ADR, 0xE000ED00
- 145              	   /* registers offset */
- 146              	   .equ SCB_CPUID, 0
- 147              	   .equ SCB_ICSR, 4 
- 148              	   .equ SCB_VTOR, 8
- 149              	   .equ SCB_AIRCR, 12
- 150              	   .equ SCB_SCR, 16
- 151              	   .equ SCB_CCR, 20
- 152              	   .equ SCB_SHPR1,24
- 153              	   .equ SCB_SHPR2,28
- 154              	   .equ SCB_SHPR3,32
- 155              	   .equ SCB_SHCRS,36
- 156              	   .equ SCB_CFSR,40
- 157              	   .equ SCB_HFSR,44
- 158              	   .equ SCB_MMAR,52
- 159              	   .equ SCB_BFAR,56
- 160              	   // key to to write in SCB_AIRCR 
- 161              	   .equ SCB_VECTKEY,0x5fa 
- 162              	   
- 163              	   /* NVIC block */
- 164              	   .equ NVIC_BASE_ADR, 0xE000E100
- 165              	   .equ NVIC_ISER0, 0
- 166              	   .equ NVIC_ISER1, 4
- 167              	   .equ NVIC_ISER2, 8
- 168              	   .equ NVIC_ICER0, 0x80
- 169              	   .equ NVIC_ICER1, 0x84 
- 170              	   .equ NVIC_ICER2, 0x88 
- 171              	   .equ NVIC_ISPR0, 0x100
- 172              	   .equ NVIC_ISPR1, 0x104
- 173              	   .equ NVIC_ISPR2, 0x108 
- 174              	   .equ NVIC_ICPR0, 0x180
- 175              	   .equ NVIC_ICPR1, 0x184
- 176              	   .equ NVIC_ICPR2, 0x188
- 177              	   .equ NVIC_IABR0, 0x200
- 178              	   .equ NVIC_IABR1, 0x204
- 179              	   .equ NVIC_IABR2, 0x208
- 180              	   .equ NVIC_IPR_BASE, 0x300 
- 181              	
- 182              	/* system control register */
- 183              	.equ SCR_BASE_ADR,0xE000ED10
- 184              	.equ SCR_SLEEPONEXIT,(1<<1)
- 185              	.equ SCR_SLEEPDEEP,(1<<2)
- 186              	.equ SCR_SEVONPEND,(1<<4)
- 187              	
- 188              	/* power control register */
- 189              	.equ PWR_CR_ADR,0x40007000
- 190              	.equ PWR_CR_LPDS,(1<<0)
- 191              	.equ PWR_CR_PDDS,(1<<1)
+ 135              	    .equ USART_CR3,20
+ 136              	    .equ USART_GTPR,24
+ 137              	
+ 138              	   /* systick */
+ 139              	    .equ STK_BASE_ADR, 0xE000E010
+ 140              	    /* registers offset */
+ 141              	    .equ STK_CTL, 0
+ 142              	    .equ STK_LOAD, 4
+ 143              	    .equ STK_VAL, 8
+ 144              	    .equ STK_CALIB, 12
+ 145              	
+ 146              	   /* system control block */
+ 147              	   .equ SCB_BASE_ADR, 0xE000ED00
+ 148              	   /* registers offset */
+ 149              	   .equ SCB_CPUID, 0
+ 150              	   .equ SCB_ICSR, 4 
+ 151              	   .equ SCB_VTOR, 8
+ 152              	   .equ SCB_AIRCR, 12
+ 153              	   .equ SCB_SCR, 16
+ 154              	   .equ SCB_CCR, 20
+ 155              	   .equ SCB_SHPR1,24
+ 156              	   .equ SCB_SHPR2,28
+ 157              	   .equ SCB_SHPR3,32
+ 158              	   .equ SCB_SHCRS,36
+ 159              	   .equ SCB_CFSR,40
+ 160              	   .equ SCB_HFSR,44
+ 161              	   .equ SCB_MMAR,52
+ 162              	   .equ SCB_BFAR,56
+ 163              	   // key to to write in SCB_AIRCR 
+ 164              	   .equ SCB_VECTKEY,0x5fa 
+ 165              	   
+ 166              	   /* NVIC block */
+ 167              	   .equ NVIC_BASE_ADR, 0xE000E100
+ 168              	   .equ NVIC_ISER0, 0
+ 169              	   .equ NVIC_ISER1, 4
+ 170              	   .equ NVIC_ISER2, 8
+ 171              	   .equ NVIC_ICER0, 0x80
+ 172              	   .equ NVIC_ICER1, 0x84 
+ 173              	   .equ NVIC_ICER2, 0x88 
+ 174              	   .equ NVIC_ISPR0, 0x100
+ 175              	   .equ NVIC_ISPR1, 0x104
+ 176              	   .equ NVIC_ISPR2, 0x108 
+ 177              	   .equ NVIC_ICPR0, 0x180
+ 178              	   .equ NVIC_ICPR1, 0x184
+ 179              	   .equ NVIC_ICPR2, 0x188
+ 180              	   .equ NVIC_IABR0, 0x200
+ 181              	   .equ NVIC_IABR1, 0x204
+ 182              	   .equ NVIC_IABR2, 0x208
+ 183              	   .equ NVIC_IPR_BASE, 0x300 
+ 184              	
+ 185              	/* system control register */
+ 186              	.equ SCR_BASE_ADR,0xE000ED10
+ 187              	.equ SCR_SLEEPONEXIT,(1<<1)
+ 188              	.equ SCR_SLEEPDEEP,(1<<2)
+ 189              	.equ SCR_SEVONPEND,(1<<4)
+ 190              	
+ 191              	/* power control register */
 ARM GAS  terminal.s 			page 5
 
 
- 192              	.equ PWR_CR_CWUF,(1<<2)
- 193              	.equ PWR_CR_CSBF,(1<<3)
- 194              	.equ PWR_CR_PVDE,(1<<4)
- 195              	.equ PWR_CR_PLS,(1<<5)
- 196              	.equ PWR_CR_DBP,(1<<8)
- 197              	
- 198              	/* power control and statut register */
- 199              	.equ PWR_CSR_ADR,0x40007004 
- 200              	.equ PWR_CSR_WUF,(1<<0)
- 201              	.equ PWR_CSR_SBF,(1<<1)
- 202              	.equ PWR_CSR_PVDO,(1<<2)
- 203              	.equ PWR_CSR_EWUP,(1<<8)
- 204              	
- 205              	/* Window watchdog (WWDG) */
- 206              	.equ WWDG_BASE_ADR,0x40002C00
- 207              	.equ WWDG_CR,0
- 208              	.equ WWDG_CFR,4
- 209              	.equ WWDG_SR,8
- 210              	
- 211              	/* Independent watchdog (IWDG) */
- 212              	.equ IWDG_BASE_ADR,0x40003000
- 213              	.equ IWDG_KR,0 
- 214              	.equ IWDG_PR,4
- 215              	.equ IWDG_RLR,8
- 216              	.equ IWDG_SR,12
- 217              	
- 218              	/*   ADC1 registers */
- 219              	.equ ADC1_BASE_ADR, 0x40012400
- 220              	.equ ADC_SR,0
- 221              	.equ ADC_CR1,0X4
- 222              	.equ ADC_CR2,0X8
- 223              	.equ ADC_SMPR1,0XC
- 224              	.equ ADC_SMPR2,0X10
- 225              	.equ ADC_JOFR1,0X14
- 226              	.equ ADC_JOFR2,0X18
- 227              	.equ ADC_JOFR3,0X1C
- 228              	.equ ADC_JOFR4,0X20
- 229              	.equ ADC_HTR,0X24
- 230              	.equ ADC_LTR,0X28
- 231              	.equ ADC_SQR1,0X2C
- 232              	.equ ADC_SQR2,0X30
- 233              	.equ ADC_SQR3,0X34
- 234              	.equ ADC_JSQR,0X38
- 235              	.equ ADC_JDR1,0X3C
- 236              	.equ ADC_JDR2,0X40
- 237              	.equ ADC_JDR3,0X44
- 238              	.equ ADC_JDR4,0X48
- 239              	.equ ADC_DR,0X4C
- 240              	
- 241              	/* timer registers */
- 242              	.equ TIMER1_BASE_ADR,0X40012C00
- 243              	.equ TIMER2_BASE_ADR,0x40000000
- 244              	.equ TIMER3_BASE_ADR,0x40000400
- 245              	.equ TIMER4_BASE_ADR,0x40000800
- 246              	
- 247              	.equ TIM_CR1,0
- 248              	.equ TIM_CR2,4
+ 192              	.equ PWR_CR_ADR,0x40007000
+ 193              	.equ PWR_CR_LPDS,(1<<0)
+ 194              	.equ PWR_CR_PDDS,(1<<1)
+ 195              	.equ PWR_CR_CWUF,(1<<2)
+ 196              	.equ PWR_CR_CSBF,(1<<3)
+ 197              	.equ PWR_CR_PVDE,(1<<4)
+ 198              	.equ PWR_CR_PLS,(1<<5)
+ 199              	.equ PWR_CR_DBP,(1<<8)
+ 200              	
+ 201              	/* power control and statut register */
+ 202              	.equ PWR_CSR_ADR,0x40007004 
+ 203              	.equ PWR_CSR_WUF,(1<<0)
+ 204              	.equ PWR_CSR_SBF,(1<<1)
+ 205              	.equ PWR_CSR_PVDO,(1<<2)
+ 206              	.equ PWR_CSR_EWUP,(1<<8)
+ 207              	
+ 208              	/* Window watchdog (WWDG) */
+ 209              	.equ WWDG_BASE_ADR,0x40002C00
+ 210              	.equ WWDG_CR,0
+ 211              	.equ WWDG_CFR,4
+ 212              	.equ WWDG_SR,8
+ 213              	
+ 214              	/* Independent watchdog (IWDG) */
+ 215              	.equ IWDG_BASE_ADR,0x40003000
+ 216              	.equ IWDG_KR,0 
+ 217              	.equ IWDG_PR,4
+ 218              	.equ IWDG_RLR,8
+ 219              	.equ IWDG_SR,12
+ 220              	
+ 221              	/*   ADC1 registers */
+ 222              	.equ ADC1_BASE_ADR, 0x40012400
+ 223              	.equ ADC_SR,0
+ 224              	.equ ADC_CR1,0X4
+ 225              	.equ ADC_CR2,0X8
+ 226              	.equ ADC_SMPR1,0XC
+ 227              	.equ ADC_SMPR2,0X10
+ 228              	.equ ADC_JOFR1,0X14
+ 229              	.equ ADC_JOFR2,0X18
+ 230              	.equ ADC_JOFR3,0X1C
+ 231              	.equ ADC_JOFR4,0X20
+ 232              	.equ ADC_HTR,0X24
+ 233              	.equ ADC_LTR,0X28
+ 234              	.equ ADC_SQR1,0X2C
+ 235              	.equ ADC_SQR2,0X30
+ 236              	.equ ADC_SQR3,0X34
+ 237              	.equ ADC_JSQR,0X38
+ 238              	.equ ADC_JDR1,0X3C
+ 239              	.equ ADC_JDR2,0X40
+ 240              	.equ ADC_JDR3,0X44
+ 241              	.equ ADC_JDR4,0X48
+ 242              	.equ ADC_DR,0X4C
+ 243              	
+ 244              	/* timer registers */
+ 245              	.equ TIMER1_BASE_ADR,0X40012C00
+ 246              	.equ TIMER2_BASE_ADR,0x40000000
+ 247              	.equ TIMER3_BASE_ADR,0x40000400
+ 248              	.equ TIMER4_BASE_ADR,0x40000800
 ARM GAS  terminal.s 			page 6
 
 
- 249              	.equ TIM_SMCR,8
- 250              	.equ TIM_DIER,0xc
- 251              	.equ TIM_SR,0X10
- 252              	.equ TIM_EGR,0X14
- 253              	.equ TIM_CCMR1,0X18
- 254              	.equ TIM_CCMR2,0X1C
- 255              	.equ TIM_CCER,0X20
- 256              	.equ TIM_CNT,0X24
- 257              	.equ TIM_PSC,0X28
- 258              	.equ TIM_ARR,0X2C
- 259              	.equ TIM_CCR1,0X34
- 260              	.equ TIM_CCR2,0X38
- 261              	.equ TIM_DCR,0X48
- 262              	.equ TIM_DMAR,0X4C
- 263              	
- 264              	/* SPI registers */
- 265              	.equ SPI1_BASE_ADR, 0x40013000
- 266              	.equ SPI2_BASE_ADR, 0x40003800
- 267              	
- 268              	.equ SPI_CR1, 0
- 269              	.equ SPI_CR2, 4
- 270              	.equ SPI_SR,  8
- 271              	.equ SPI_DR,  12
- 272              	.equ SPI_CRCPR, 16
- 273              	.equ SPI_RXCRCR, 20
- 274              	.equ SPI_TXCRCR, 24
+ 249              	
+ 250              	.equ TIM_CR1,0
+ 251              	.equ TIM_CR2,4
+ 252              	.equ TIM_SMCR,8
+ 253              	.equ TIM_DIER,0xc
+ 254              	.equ TIM_SR,0X10
+ 255              	.equ TIM_EGR,0X14
+ 256              	.equ TIM_CCMR1,0X18
+ 257              	.equ TIM_CCMR2,0X1C
+ 258              	.equ TIM_CCER,0X20
+ 259              	.equ TIM_CNT,0X24
+ 260              	.equ TIM_PSC,0X28
+ 261              	.equ TIM_ARR,0X2C
+ 262              	.equ TIM_CCR1,0X34
+ 263              	.equ TIM_CCR2,0X38
+ 264              	.equ TIM_DCR,0X48
+ 265              	.equ TIM_DMAR,0X4C
+ 266              	
+ 267              	/* SPI registers */
+ 268              	.equ SPI1_BASE_ADR, 0x40013000
+ 269              	.equ SPI2_BASE_ADR, 0x40003800
+ 270              	
+ 271              	.equ SPI_CR1, 0
+ 272              	.equ SPI_CR2, 4
+ 273              	.equ SPI_SR,  8
+ 274              	.equ SPI_DR,  12
+ 275              	.equ SPI_CRCPR, 16
+ 276              	.equ SPI_RXCRCR, 20
+ 277              	.equ SPI_TXCRCR, 24
   38              	  .include "ascii.inc"
    1              	////
    2              	// Copyright Jacques Deschênes 2021
@@ -355,12 +358,12 @@ ARM GAS  terminal.s 			page 1
   25              		.equ SOH, CTRL_A  // start of heading 
   26              		.equ CTRL_B ,  2
   27              		.equ STX, CTRL_B  // start of text 
-  28              		.equ CTRL_C ,  3
-  29              		.equ ETX, CTRL_C  // end of text 
-  30              		.equ CTRL_D ,  4
 ARM GAS  terminal.s 			page 7
 
 
+  28              		.equ CTRL_C ,  3
+  29              		.equ ETX, CTRL_C  // end of text 
+  30              		.equ CTRL_D ,  4
   31              		.equ EOT, CTRL_D  // end of transmission 
   32              		.equ CTRL_E ,  5
   33              		.equ ENQ, CTRL_E  // enquery 
@@ -415,12 +418,12 @@ ARM GAS  terminal.s 			page 1
   82              		.equ RS, 30  // record separator 
   83              		.equ US, 31  // unit separator 
   84              		.equ SPACE ,  32
-  85              		.equ COMMA ,  44 
-  86              		.equ SHARP ,  35
-  87              		.equ TICK ,  39
 ARM GAS  terminal.s 			page 8
 
 
+  85              		.equ COMMA ,  44 
+  86              		.equ SHARP ,  35
+  87              		.equ TICK ,  39
   39              	  .include "tbi_macros.inc"
    1              	//---------------------------------------------------------------------------
    2              	// Copyright Jacques Deschênes 2021 
@@ -475,12 +478,12 @@ ARM GAS  terminal.s 			page 1
   51              	  .equ TK_GT,14        // '>'   relop 
   52              	  .equ TK_LT,15        // '<'   relop 
   53              	  .equ TK_GE,16        // '>='  relop 
-  54              	  .equ TK_LE,17        // '<='  relop
-  55              	  .equ TK_NE,18        // '<>'  relop 
-  56              	// tokens with .byte attribute 
 ARM GAS  terminal.s 			page 9
 
 
+  54              	  .equ TK_LE,17        // '<='  relop
+  55              	  .equ TK_NE,18        // '<>'  relop 
+  56              	// tokens with .byte attribute 
   57              	  .equ TK_CHAR,19      // ASCII character 
   58              	  .equ TK_VAR,20       // variable index 
   59              	  .equ TK_IFUNC,21     // BASIC integer function
@@ -535,12 +538,12 @@ ARM GAS  terminal.s 			page 1
  108              	    DP   .req r12   //  parameter stack pointer 
  109              	
  110              	/***************************
- 111              	  SYSTEM variables offset 
- 112              	  from UPP  
- 113              	***************************/ 
 ARM GAS  terminal.s 			page 10
 
 
+ 111              	  SYSTEM variables offset 
+ 112              	  from UPP  
+ 113              	***************************/ 
  114              	
  115              	  .equ IN_SAVED,0 // set by get_token before parsing next token, used by unget_token
  116              	  .equ COUNT, IN_SAVED+4  // current BASIC line length and tib text length  
@@ -595,12 +598,12 @@ ARM GAS  terminal.s 			page 1
  165              		.macro	_RET /* return from subroutine */
  166              		BX	LR
  167              		.endm
- 168              	
- 169              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
- 170              		MOV \REG, #\LITERAL&0xffff
 ARM GAS  terminal.s 			page 11
 
 
+ 168              	
+ 169              		.macro _MOV32 REG LITERAL   /* load register with 32 bits literal */
+ 170              		MOV \REG, #\LITERAL&0xffff
  171              		MOVT \REG, #\LITERAL>>16
  172              		.endm
  173              	
@@ -655,12 +658,12 @@ ARM GAS  terminal.s 			page 1
  222              	 // create a text data 
  223              	 .macro _TEXT label,text
  224              	 \label: .asciz "\text"
- 225              	 .p2align 2 
- 226              	 .endm 
- 227              	
 ARM GAS  terminal.s 			page 12
 
 
+ 225              	 .p2align 2 
+ 226              	 .endm 
+ 227              	
  228              	// command line only 
  229              	  .macro _CLO 
  230              	  ldr r0,[UPP,#FLAGS]
@@ -715,12 +718,12 @@ ARM GAS  terminal.s 			page 1
   68      FEFF5DF8 
   68      04EB
   69 0022 DFF8E027 	    ldr r2,=convert_table
-  70              	2:
-  71 0026 1178     	    ldrb r1,[r2]
-  72 0028 0940     	    ands r1,r1 
 ARM GAS  terminal.s 			page 13
 
 
+  70              	2:
+  71 0026 1178     	    ldrb r1,[r2]
+  72 0028 0940     	    ands r1,r1 
   73 002a F1D0     	    beq 0b 
   74 002c 8842     	    cmp r0,r1 
   75 002e 02D0     	    beq 4f
@@ -775,12 +778,12 @@ ARM GAS  terminal.s 			page 1
  120 006a 28B1     	    cbz r0,9f 
  121 006c 00B5FFF7 	    _CALL uart_putc 
  121      FEFF5DF8 
- 121      04EB
- 122 0076 F6E7     	    b 1b 
- 123 0078 5DF8048B 	9:  pop {T1}
 ARM GAS  terminal.s 			page 14
 
 
+ 121      04EB
+ 122 0076 F6E7     	    b 1b 
+ 123 0078 5DF8048B 	9:  pop {T1}
  124 007c 7047     	    _RET 
  125              	
  126              	/***********************************
@@ -835,12 +838,12 @@ ARM GAS  terminal.s 			page 1
  175 00c4 00F12000 	    add r0,#SPACE 
  176 00c8 09F8010D 	    strb r0,[T2,#-1]!
  177 00cc 80EA0000 	    eor r0,r0 
- 178 00d0 B8F10A0F 	    cmp T1,#10 
- 179 00d4 04D1     	    bne 0f 
- 180 00d6 17F00040 	    ands r0,r7,#(1<<31)
 ARM GAS  terminal.s 			page 15
 
 
+ 178 00d0 B8F10A0F 	    cmp T1,#10 
+ 179 00d4 04D1     	    bne 0f 
+ 180 00d6 17F00040 	    ands r0,r7,#(1<<31)
  181 00da 01D0     	    beq 0f 
  182 00dc C7F10007 	    rsb r7,#0 
  183 00e0 01B4     	0:  push {r0}
@@ -895,12 +898,12 @@ ARM GAS  terminal.s 			page 1
  226              	/********************************
  227              	// print byte  in hexadecimal 
  228              	// on console
- 229              	// input:
- 230              	//   r0		byte to print
- 231              	// output:
 ARM GAS  terminal.s 			page 16
 
 
+ 229              	// input:
+ 230              	//   r0		byte to print
+ 231              	// output:
  232              	     none 
  233              	   use:
  234              	     none 
@@ -955,12 +958,12 @@ ARM GAS  terminal.s 			page 1
  273              	    none 
  274              	  use:
  275              	    T1    shape
- 276              	*******************************/
- 277 019e 00BF     	    _GBL_FUNC cursor_shape
- 278 01a0 4DF8048D 	    push {T1}
 ARM GAS  terminal.s 			page 17
 
 
+ 276              	*******************************/
+ 277 019e 00BF     	    _GBL_FUNC cursor_shape
+ 278 01a0 4DF8048D 	    push {T1}
  279 01a4 00B500F0 	    _CALL send_escape
  279      3BF85DF8 
  279      04EB
@@ -1015,12 +1018,12 @@ ARM GAS  terminal.s 			page 1
  316              	    _FUNC delete_nchar
  317 0208 48B1     		cbz r0,2f 
  318 020a 04B4     	    push {r2}
- 319 020c 0246     	    mov r2,r0  
- 320              	1:	
- 321 020e 00B5FFF7 	    _CALL  bksp 
 ARM GAS  terminal.s 			page 18
 
 
+ 319 020c 0246     	    mov r2,r0  
+ 320              	1:	
+ 321 020e 00B5FFF7 	    _CALL  bksp 
  321      E4FF5DF8 
  321      04EB
  322 0218 013A     	    subs r2,#1 
@@ -1075,12 +1078,12 @@ ARM GAS  terminal.s 			page 1
  367 0244 2DE90201 	    push {r1,T1}
  368 0248 4FF00008 	    mov T1,#0
  369 024c 4FF00A01 	1:  mov r1,#10  
- 370 0250 00B5FFF7 	    _CALL digit 
- 370      15FF5DF8 
- 370      04EB
 ARM GAS  terminal.s 			page 19
 
 
+ 370 0250 00B5FFF7 	    _CALL digit 
+ 370      15FF5DF8 
+ 370      04EB
  371 025a 08F10108 	    add T1,#1 
  372 025e 01B4     	    push {r0}
  373 0260 0846     	    mov r0,r1 
@@ -1135,12 +1138,12 @@ ARM GAS  terminal.s 			page 1
  413      B8FF5DF8 
  413      04EB
  414 02b4 00B5FFF7 	    _CALL  send_parameter 
- 414      C5FF5DF8 
- 414      04EB
- 415 02be 4FF04300 	    mov r0,#'C' 
 ARM GAS  terminal.s 			page 20
 
 
+ 414      C5FF5DF8 
+ 414      04EB
+ 415 02be 4FF04300 	    mov r0,#'C' 
  416 02c2 00B5FFF7 	    _CALL  uart_putc 
  416      FEFF5DF8 
  416      04EB
@@ -1195,12 +1198,12 @@ ARM GAS  terminal.s 			page 1
  463              	    inc a 
  464              	    ld acc8,a 
  465              	    clr acc16
- 466              	    _CALL  move
- 467              	    ldw y,#tib 
- 468              	    ld a,(IPOS,sp)
 ARM GAS  terminal.s 			page 21
 
 
+ 466              	    _CALL  move
+ 467              	    ldw y,#tib 
+ 468              	    ld a,(IPOS,sp)
  469              	    ld acc8,a 
  470              	    addw y,acc16 
  471              	    ld a,(CHAR,sp)
@@ -1255,12 +1258,12 @@ ARM GAS  terminal.s 			page 1
  520              	/********************************
  521              	// send ANSI sequence to delete
  522              	// whole line. Cursor position
- 523              	// is not updated.
- 524              	// ANSI: ESC[2K
- 525              	// input:
 ARM GAS  terminal.s 			page 22
 
 
+ 523              	// is not updated.
+ 524              	// ANSI: ESC[2K
+ 525              	// input:
  526              	//   none
  527              	// output:
  528              	//   none 
@@ -1315,12 +1318,12 @@ ARM GAS  terminal.s 			page 1
  563              	  input:
  564              	    none 
  565              	  output:
- 566              	    none 
- 567              	  use:
- 568              	    r0
 ARM GAS  terminal.s 			page 23
 
 
+ 566              	    none 
+ 567              	  use:
+ 568              	    r0
  569              	*************************************/
  570              	    _GBL_FUNC cursor_home 
  571 0358 01B4     	    push {r0}
@@ -1375,12 +1378,12 @@ ARM GAS  terminal.s 			page 1
  606 03b8 01BC     	    pop {r0} 
  607 03ba 00B5FFF7 	    _CALL uart_puts
  607      FEFF5DF8 
- 607      04EB
- 608 03c4 7047     	    _RET 
- 609              	
 ARM GAS  terminal.s 			page 24
 
 
+ 607      04EB
+ 608 03c4 7047     	    _RET 
+ 609              	
  610              	/*************************************
  611              	  readln 
  612              	  read a line of text from terminal
@@ -1435,12 +1438,12 @@ ARM GAS  terminal.s 			page 1
  655              	0:
  656 0408 0828     	  cmp r0,#BS 
  657 040a 2DD1     	  bne 2f 
- 658              	//delete char. left  
- 659 040c 3F40     	  ands r7,r7 
- 660 040e F3D0     	  beq readln_loop 
 ARM GAS  terminal.s 			page 25
 
 
+ 658              	//delete char. left  
+ 659 040c 3F40     	  ands r7,r7 
+ 660 040e F3D0     	  beq readln_loop 
  661 0410 AF42     	  cmp r7,r5 
  662 0412 1FD0     	  beq 1f
  663              	// in middle of line 
@@ -1495,12 +1498,12 @@ ARM GAS  terminal.s 			page 1
  699      FEFF5DF8 
  699      04EB
  700 04aa 0029     	  cmp r1,#0 // not found 
- 701 04ac A4D1     	  bne readln_loop 
- 702 04ae 3146     	  mov r1,r6 
- 703 04b0 00B5FFF7 	  _CALL decompile_line
 ARM GAS  terminal.s 			page 26
 
 
+ 701 04ac A4D1     	  bne readln_loop 
+ 702 04ae 3146     	  mov r1,r6 
+ 703 04b0 00B5FFF7 	  _CALL decompile_line
  703      FEFF5DF8 
  703      04EB
  704 04ba 00B5FFF7 	  _CALL strlen 
@@ -1555,12 +1558,12 @@ ARM GAS  terminal.s 			page 1
  739 053e 8228     	   cmp r0,#HOME 
  740 0540 08D1     	   bne try_end
  741 0542 3846     	   mov r0,r7 
- 742 0544 00B5FFF7 	   _call move_left 
- 742      9BFE5DF8 
- 742      04EB
 ARM GAS  terminal.s 			page 27
 
 
+ 742 0544 00B5FFF7 	   _call move_left 
+ 742      9BFE5DF8 
+ 742      04EB
  743 054e 87EA0707 	   eor r7,r7  
  744 0552 51E7     	   b readln_loop 
  745              	try_end:
@@ -1615,12 +1618,12 @@ ARM GAS  terminal.s 			page 1
  784      04EB
  785 05de 07EB0300 	   add  r0,r7,r3 
  786 05e2 00B5FFF7 	   _CALL cursor_x 
- 786      FEFF5DF8 
- 786      04EB
- 787 05ec 04E7     	   b readln_loop      
 ARM GAS  terminal.s 			page 28
 
 
+ 786      FEFF5DF8 
+ 786      04EB
+ 787 05ec 04E7     	   b readln_loop      
  788              	character:
  789 05ee AF42     	   cmp r7,r5 
  790 05f0 39D0     	   beq 5f // cursor at eol 
@@ -1675,12 +1678,12 @@ ARM GAS  terminal.s 			page 1
  829 0672 F055     	   strb r0,[r6,r7] 
  830 0674 00B5FFF7 	   _CALL uart_putc
  830      FEFF5DF8 
- 830      04EB
- 831 067e 07F10107 	   add r7,#1
- 832 0682 3D46     	   mov r5,r7
 ARM GAS  terminal.s 			page 29
 
 
+ 830      04EB
+ 831 067e 07F10107 	   add r7,#1
+ 832 0682 3D46     	   mov r5,r7
  833 0684 B8E6     	   b readln_loop  
  834              	readln_exit:
  835 0686 00B5FFF7 	  _CALL uart_putc 
@@ -1735,12 +1738,12 @@ ARM GAS  terminal.s 			page 1
  878              	  use:
  879              	    r2
  880              	    r3 
- 881              	*******************************/
- 882 06d2 00BF     	    _GBL_FUNC get_curpos 
- 883 06d4 0CB4     	    push {r2,r3}   
 ARM GAS  terminal.s 			page 30
 
 
+ 881              	*******************************/
+ 882 06d2 00BF     	    _GBL_FUNC get_curpos 
+ 883 06d4 0CB4     	    push {r2,r3}   
  884 06d6 00B5FFF7 	    _CALL uart_flush_queue 
  884      FEFF5DF8 
  884      04EB
@@ -1795,12 +1798,12 @@ ARM GAS  terminal.s 			page 1
  915 0758 00B5FFF7 	    _CALL uart_putc 
  915      FEFF5DF8 
  915      04EB
- 916 0762 0846     	    mov r0,r1 
- 917 0764 00B5FFF7 	    _CALL send_parameter 
- 917      6DFD5DF8 
 ARM GAS  terminal.s 			page 31
 
 
+ 916 0762 0846     	    mov r0,r1 
+ 917 0764 00B5FFF7 	    _CALL send_parameter 
+ 917      6DFD5DF8 
  917      04EB
  918 076e 4FF04800 	    mov r0,#'H' 
  919 0772 00B5FFF7 	    _CALL uart_putc     
@@ -1855,12 +1858,12 @@ ARM GAS  terminal.s 			page 1
  956              	/********************************
  957              	    clear_screen
  958              	********************************/
- 959              	    _GBL_FUNC clear_screen 
- 960 07d8 4FF00100 	    mov r0,#1 
- 961 07dc 4FF00101 	    mov r1,#1
 ARM GAS  terminal.s 			page 32
 
 
+ 959              	    _GBL_FUNC clear_screen 
+ 960 07d8 4FF00100 	    mov r0,#1 
+ 961 07dc 4FF00101 	    mov r1,#1
  962 07e0 00B5FFF7 	    _CALL set_curpos
  962      FEFF5DF8 
  962      04EB
@@ -1946,13 +1949,14 @@ DEFINED SYMBOLS
        stm32f103.inc:97     *ABS*:0000000000000005 OUTPUT_OD
        stm32f103.inc:98     *ABS*:0000000000000009 OUTPUT_AFPP
        stm32f103.inc:101    *ABS*:0000000000000000 PULLDOWN
-       stm32f103.inc:102    *ABS*:0000000000000001 PULLUPP
+       stm32f103.inc:102    *ABS*:0000000000000001 PULLUP
        stm32f103.inc:104    *ABS*:0000000000000000 ANALOG
        stm32f103.inc:105    *ABS*:0000000000000004 FLOATING
        stm32f103.inc:106    *ABS*:0000000000000008 PULL_RESISTOR
        stm32f103.inc:107    *ABS*:0000000000000000 INPUT_ANA
        stm32f103.inc:108    *ABS*:0000000000000004 INPUT_FLOAT
        stm32f103.inc:109    *ABS*:0000000000000010 INPUT_PD
+       stm32f103.inc:110    *ABS*:0000000000000011 INPUT_PU
        stm32f103.inc:113    *ABS*:0000000040010000 AFIO_BASE_ADR
        stm32f103.inc:116    *ABS*:0000000000000000 AFIO_EVCR
        stm32f103.inc:117    *ABS*:0000000000000004 AFIO_MAPR
@@ -1962,133 +1966,135 @@ DEFINED SYMBOLS
        stm32f103.inc:121    *ABS*:0000000000000014 AFIO_EXTICR4
        stm32f103.inc:122    *ABS*:000000000000001c AFIO_MAPR2
        stm32f103.inc:125    *ABS*:0000000040013800 USART1_BASE_ADR
-       stm32f103.inc:127    *ABS*:0000000000000000 USART_SR
-       stm32f103.inc:128    *ABS*:0000000000000004 USART_DR
-       stm32f103.inc:129    *ABS*:0000000000000008 USART_BRR
-       stm32f103.inc:130    *ABS*:000000000000000c USART_CR1
-       stm32f103.inc:131    *ABS*:0000000000000010 USART_CR2
-       stm32f103.inc:132    *ABS*:0000000000000014 USART_CR3
-       stm32f103.inc:133    *ABS*:0000000000000018 USART_GTPR
-       stm32f103.inc:136    *ABS*:00000000e000e010 STK_BASE_ADR
-       stm32f103.inc:138    *ABS*:0000000000000000 STK_CTL
-       stm32f103.inc:139    *ABS*:0000000000000004 STK_LOAD
-       stm32f103.inc:140    *ABS*:0000000000000008 STK_VAL
-       stm32f103.inc:141    *ABS*:000000000000000c STK_CALIB
-       stm32f103.inc:144    *ABS*:00000000e000ed00 SCB_BASE_ADR
-       stm32f103.inc:146    *ABS*:0000000000000000 SCB_CPUID
-       stm32f103.inc:147    *ABS*:0000000000000004 SCB_ICSR
-       stm32f103.inc:148    *ABS*:0000000000000008 SCB_VTOR
-       stm32f103.inc:149    *ABS*:000000000000000c SCB_AIRCR
-       stm32f103.inc:150    *ABS*:0000000000000010 SCB_SCR
-       stm32f103.inc:151    *ABS*:0000000000000014 SCB_CCR
-       stm32f103.inc:152    *ABS*:0000000000000018 SCB_SHPR1
-       stm32f103.inc:153    *ABS*:000000000000001c SCB_SHPR2
-       stm32f103.inc:154    *ABS*:0000000000000020 SCB_SHPR3
-       stm32f103.inc:155    *ABS*:0000000000000024 SCB_SHCRS
-       stm32f103.inc:156    *ABS*:0000000000000028 SCB_CFSR
-       stm32f103.inc:157    *ABS*:000000000000002c SCB_HFSR
-       stm32f103.inc:158    *ABS*:0000000000000034 SCB_MMAR
-       stm32f103.inc:159    *ABS*:0000000000000038 SCB_BFAR
-       stm32f103.inc:161    *ABS*:00000000000005fa SCB_VECTKEY
-       stm32f103.inc:164    *ABS*:00000000e000e100 NVIC_BASE_ADR
-       stm32f103.inc:165    *ABS*:0000000000000000 NVIC_ISER0
-       stm32f103.inc:166    *ABS*:0000000000000004 NVIC_ISER1
+       stm32f103.inc:126    *ABS*:0000000040004400 USART2_BASE_ADR
+       stm32f103.inc:127    *ABS*:0000000040004800 USART3_BASE_ADR
+       stm32f103.inc:130    *ABS*:0000000000000000 USART_SR
+       stm32f103.inc:131    *ABS*:0000000000000004 USART_DR
+       stm32f103.inc:132    *ABS*:0000000000000008 USART_BRR
+       stm32f103.inc:133    *ABS*:000000000000000c USART_CR1
+       stm32f103.inc:134    *ABS*:0000000000000010 USART_CR2
+       stm32f103.inc:135    *ABS*:0000000000000014 USART_CR3
+       stm32f103.inc:136    *ABS*:0000000000000018 USART_GTPR
+       stm32f103.inc:139    *ABS*:00000000e000e010 STK_BASE_ADR
+       stm32f103.inc:141    *ABS*:0000000000000000 STK_CTL
+       stm32f103.inc:142    *ABS*:0000000000000004 STK_LOAD
+       stm32f103.inc:143    *ABS*:0000000000000008 STK_VAL
+       stm32f103.inc:144    *ABS*:000000000000000c STK_CALIB
+       stm32f103.inc:147    *ABS*:00000000e000ed00 SCB_BASE_ADR
+       stm32f103.inc:149    *ABS*:0000000000000000 SCB_CPUID
+       stm32f103.inc:150    *ABS*:0000000000000004 SCB_ICSR
+       stm32f103.inc:151    *ABS*:0000000000000008 SCB_VTOR
+       stm32f103.inc:152    *ABS*:000000000000000c SCB_AIRCR
+       stm32f103.inc:153    *ABS*:0000000000000010 SCB_SCR
+       stm32f103.inc:154    *ABS*:0000000000000014 SCB_CCR
+       stm32f103.inc:155    *ABS*:0000000000000018 SCB_SHPR1
+       stm32f103.inc:156    *ABS*:000000000000001c SCB_SHPR2
+       stm32f103.inc:157    *ABS*:0000000000000020 SCB_SHPR3
+       stm32f103.inc:158    *ABS*:0000000000000024 SCB_SHCRS
+       stm32f103.inc:159    *ABS*:0000000000000028 SCB_CFSR
+       stm32f103.inc:160    *ABS*:000000000000002c SCB_HFSR
+       stm32f103.inc:161    *ABS*:0000000000000034 SCB_MMAR
+       stm32f103.inc:162    *ABS*:0000000000000038 SCB_BFAR
+       stm32f103.inc:164    *ABS*:00000000000005fa SCB_VECTKEY
 ARM GAS  terminal.s 			page 35
 
 
-       stm32f103.inc:167    *ABS*:0000000000000008 NVIC_ISER2
-       stm32f103.inc:168    *ABS*:0000000000000080 NVIC_ICER0
-       stm32f103.inc:169    *ABS*:0000000000000084 NVIC_ICER1
-       stm32f103.inc:170    *ABS*:0000000000000088 NVIC_ICER2
-       stm32f103.inc:171    *ABS*:0000000000000100 NVIC_ISPR0
-       stm32f103.inc:172    *ABS*:0000000000000104 NVIC_ISPR1
-       stm32f103.inc:173    *ABS*:0000000000000108 NVIC_ISPR2
-       stm32f103.inc:174    *ABS*:0000000000000180 NVIC_ICPR0
-       stm32f103.inc:175    *ABS*:0000000000000184 NVIC_ICPR1
-       stm32f103.inc:176    *ABS*:0000000000000188 NVIC_ICPR2
-       stm32f103.inc:177    *ABS*:0000000000000200 NVIC_IABR0
-       stm32f103.inc:178    *ABS*:0000000000000204 NVIC_IABR1
-       stm32f103.inc:179    *ABS*:0000000000000208 NVIC_IABR2
-       stm32f103.inc:180    *ABS*:0000000000000300 NVIC_IPR_BASE
-       stm32f103.inc:183    *ABS*:00000000e000ed10 SCR_BASE_ADR
-       stm32f103.inc:184    *ABS*:0000000000000002 SCR_SLEEPONEXIT
-       stm32f103.inc:185    *ABS*:0000000000000004 SCR_SLEEPDEEP
-       stm32f103.inc:186    *ABS*:0000000000000010 SCR_SEVONPEND
-       stm32f103.inc:189    *ABS*:0000000040007000 PWR_CR_ADR
-       stm32f103.inc:190    *ABS*:0000000000000001 PWR_CR_LPDS
-       stm32f103.inc:191    *ABS*:0000000000000002 PWR_CR_PDDS
-       stm32f103.inc:192    *ABS*:0000000000000004 PWR_CR_CWUF
-       stm32f103.inc:193    *ABS*:0000000000000008 PWR_CR_CSBF
-       stm32f103.inc:194    *ABS*:0000000000000010 PWR_CR_PVDE
-       stm32f103.inc:195    *ABS*:0000000000000020 PWR_CR_PLS
-       stm32f103.inc:196    *ABS*:0000000000000100 PWR_CR_DBP
-       stm32f103.inc:199    *ABS*:0000000040007004 PWR_CSR_ADR
-       stm32f103.inc:200    *ABS*:0000000000000001 PWR_CSR_WUF
-       stm32f103.inc:201    *ABS*:0000000000000002 PWR_CSR_SBF
-       stm32f103.inc:202    *ABS*:0000000000000004 PWR_CSR_PVDO
-       stm32f103.inc:203    *ABS*:0000000000000100 PWR_CSR_EWUP
-       stm32f103.inc:206    *ABS*:0000000040002c00 WWDG_BASE_ADR
-       stm32f103.inc:207    *ABS*:0000000000000000 WWDG_CR
-       stm32f103.inc:208    *ABS*:0000000000000004 WWDG_CFR
-       stm32f103.inc:209    *ABS*:0000000000000008 WWDG_SR
-       stm32f103.inc:212    *ABS*:0000000040003000 IWDG_BASE_ADR
-       stm32f103.inc:213    *ABS*:0000000000000000 IWDG_KR
-       stm32f103.inc:214    *ABS*:0000000000000004 IWDG_PR
-       stm32f103.inc:215    *ABS*:0000000000000008 IWDG_RLR
-       stm32f103.inc:216    *ABS*:000000000000000c IWDG_SR
-       stm32f103.inc:219    *ABS*:0000000040012400 ADC1_BASE_ADR
-       stm32f103.inc:220    *ABS*:0000000000000000 ADC_SR
-       stm32f103.inc:221    *ABS*:0000000000000004 ADC_CR1
-       stm32f103.inc:222    *ABS*:0000000000000008 ADC_CR2
-       stm32f103.inc:223    *ABS*:000000000000000c ADC_SMPR1
-       stm32f103.inc:224    *ABS*:0000000000000010 ADC_SMPR2
-       stm32f103.inc:225    *ABS*:0000000000000014 ADC_JOFR1
-       stm32f103.inc:226    *ABS*:0000000000000018 ADC_JOFR2
-       stm32f103.inc:227    *ABS*:000000000000001c ADC_JOFR3
-       stm32f103.inc:228    *ABS*:0000000000000020 ADC_JOFR4
-       stm32f103.inc:229    *ABS*:0000000000000024 ADC_HTR
-       stm32f103.inc:230    *ABS*:0000000000000028 ADC_LTR
-       stm32f103.inc:231    *ABS*:000000000000002c ADC_SQR1
-       stm32f103.inc:232    *ABS*:0000000000000030 ADC_SQR2
-       stm32f103.inc:233    *ABS*:0000000000000034 ADC_SQR3
-       stm32f103.inc:234    *ABS*:0000000000000038 ADC_JSQR
-       stm32f103.inc:235    *ABS*:000000000000003c ADC_JDR1
+       stm32f103.inc:167    *ABS*:00000000e000e100 NVIC_BASE_ADR
+       stm32f103.inc:168    *ABS*:0000000000000000 NVIC_ISER0
+       stm32f103.inc:169    *ABS*:0000000000000004 NVIC_ISER1
+       stm32f103.inc:170    *ABS*:0000000000000008 NVIC_ISER2
+       stm32f103.inc:171    *ABS*:0000000000000080 NVIC_ICER0
+       stm32f103.inc:172    *ABS*:0000000000000084 NVIC_ICER1
+       stm32f103.inc:173    *ABS*:0000000000000088 NVIC_ICER2
+       stm32f103.inc:174    *ABS*:0000000000000100 NVIC_ISPR0
+       stm32f103.inc:175    *ABS*:0000000000000104 NVIC_ISPR1
+       stm32f103.inc:176    *ABS*:0000000000000108 NVIC_ISPR2
+       stm32f103.inc:177    *ABS*:0000000000000180 NVIC_ICPR0
+       stm32f103.inc:178    *ABS*:0000000000000184 NVIC_ICPR1
+       stm32f103.inc:179    *ABS*:0000000000000188 NVIC_ICPR2
+       stm32f103.inc:180    *ABS*:0000000000000200 NVIC_IABR0
+       stm32f103.inc:181    *ABS*:0000000000000204 NVIC_IABR1
+       stm32f103.inc:182    *ABS*:0000000000000208 NVIC_IABR2
+       stm32f103.inc:183    *ABS*:0000000000000300 NVIC_IPR_BASE
+       stm32f103.inc:186    *ABS*:00000000e000ed10 SCR_BASE_ADR
+       stm32f103.inc:187    *ABS*:0000000000000002 SCR_SLEEPONEXIT
+       stm32f103.inc:188    *ABS*:0000000000000004 SCR_SLEEPDEEP
+       stm32f103.inc:189    *ABS*:0000000000000010 SCR_SEVONPEND
+       stm32f103.inc:192    *ABS*:0000000040007000 PWR_CR_ADR
+       stm32f103.inc:193    *ABS*:0000000000000001 PWR_CR_LPDS
+       stm32f103.inc:194    *ABS*:0000000000000002 PWR_CR_PDDS
+       stm32f103.inc:195    *ABS*:0000000000000004 PWR_CR_CWUF
+       stm32f103.inc:196    *ABS*:0000000000000008 PWR_CR_CSBF
+       stm32f103.inc:197    *ABS*:0000000000000010 PWR_CR_PVDE
+       stm32f103.inc:198    *ABS*:0000000000000020 PWR_CR_PLS
+       stm32f103.inc:199    *ABS*:0000000000000100 PWR_CR_DBP
+       stm32f103.inc:202    *ABS*:0000000040007004 PWR_CSR_ADR
+       stm32f103.inc:203    *ABS*:0000000000000001 PWR_CSR_WUF
+       stm32f103.inc:204    *ABS*:0000000000000002 PWR_CSR_SBF
+       stm32f103.inc:205    *ABS*:0000000000000004 PWR_CSR_PVDO
+       stm32f103.inc:206    *ABS*:0000000000000100 PWR_CSR_EWUP
+       stm32f103.inc:209    *ABS*:0000000040002c00 WWDG_BASE_ADR
+       stm32f103.inc:210    *ABS*:0000000000000000 WWDG_CR
+       stm32f103.inc:211    *ABS*:0000000000000004 WWDG_CFR
+       stm32f103.inc:212    *ABS*:0000000000000008 WWDG_SR
+       stm32f103.inc:215    *ABS*:0000000040003000 IWDG_BASE_ADR
+       stm32f103.inc:216    *ABS*:0000000000000000 IWDG_KR
+       stm32f103.inc:217    *ABS*:0000000000000004 IWDG_PR
+       stm32f103.inc:218    *ABS*:0000000000000008 IWDG_RLR
+       stm32f103.inc:219    *ABS*:000000000000000c IWDG_SR
+       stm32f103.inc:222    *ABS*:0000000040012400 ADC1_BASE_ADR
+       stm32f103.inc:223    *ABS*:0000000000000000 ADC_SR
+       stm32f103.inc:224    *ABS*:0000000000000004 ADC_CR1
+       stm32f103.inc:225    *ABS*:0000000000000008 ADC_CR2
+       stm32f103.inc:226    *ABS*:000000000000000c ADC_SMPR1
+       stm32f103.inc:227    *ABS*:0000000000000010 ADC_SMPR2
+       stm32f103.inc:228    *ABS*:0000000000000014 ADC_JOFR1
+       stm32f103.inc:229    *ABS*:0000000000000018 ADC_JOFR2
+       stm32f103.inc:230    *ABS*:000000000000001c ADC_JOFR3
+       stm32f103.inc:231    *ABS*:0000000000000020 ADC_JOFR4
+       stm32f103.inc:232    *ABS*:0000000000000024 ADC_HTR
+       stm32f103.inc:233    *ABS*:0000000000000028 ADC_LTR
+       stm32f103.inc:234    *ABS*:000000000000002c ADC_SQR1
+       stm32f103.inc:235    *ABS*:0000000000000030 ADC_SQR2
 ARM GAS  terminal.s 			page 36
 
 
-       stm32f103.inc:236    *ABS*:0000000000000040 ADC_JDR2
-       stm32f103.inc:237    *ABS*:0000000000000044 ADC_JDR3
-       stm32f103.inc:238    *ABS*:0000000000000048 ADC_JDR4
-       stm32f103.inc:239    *ABS*:000000000000004c ADC_DR
-       stm32f103.inc:242    *ABS*:0000000040012c00 TIMER1_BASE_ADR
-       stm32f103.inc:243    *ABS*:0000000040000000 TIMER2_BASE_ADR
-       stm32f103.inc:244    *ABS*:0000000040000400 TIMER3_BASE_ADR
-       stm32f103.inc:245    *ABS*:0000000040000800 TIMER4_BASE_ADR
-       stm32f103.inc:247    *ABS*:0000000000000000 TIM_CR1
-       stm32f103.inc:248    *ABS*:0000000000000004 TIM_CR2
-       stm32f103.inc:249    *ABS*:0000000000000008 TIM_SMCR
-       stm32f103.inc:250    *ABS*:000000000000000c TIM_DIER
-       stm32f103.inc:251    *ABS*:0000000000000010 TIM_SR
-       stm32f103.inc:252    *ABS*:0000000000000014 TIM_EGR
-       stm32f103.inc:253    *ABS*:0000000000000018 TIM_CCMR1
-       stm32f103.inc:254    *ABS*:000000000000001c TIM_CCMR2
-       stm32f103.inc:255    *ABS*:0000000000000020 TIM_CCER
-       stm32f103.inc:256    *ABS*:0000000000000024 TIM_CNT
-       stm32f103.inc:257    *ABS*:0000000000000028 TIM_PSC
-       stm32f103.inc:258    *ABS*:000000000000002c TIM_ARR
-       stm32f103.inc:259    *ABS*:0000000000000034 TIM_CCR1
-       stm32f103.inc:260    *ABS*:0000000000000038 TIM_CCR2
-       stm32f103.inc:261    *ABS*:0000000000000048 TIM_DCR
-       stm32f103.inc:262    *ABS*:000000000000004c TIM_DMAR
-       stm32f103.inc:265    *ABS*:0000000040013000 SPI1_BASE_ADR
-       stm32f103.inc:266    *ABS*:0000000040003800 SPI2_BASE_ADR
-       stm32f103.inc:268    *ABS*:0000000000000000 SPI_CR1
-       stm32f103.inc:269    *ABS*:0000000000000004 SPI_CR2
-       stm32f103.inc:270    *ABS*:0000000000000008 SPI_SR
-       stm32f103.inc:271    *ABS*:000000000000000c SPI_DR
-       stm32f103.inc:272    *ABS*:0000000000000010 SPI_CRCPR
-       stm32f103.inc:273    *ABS*:0000000000000014 SPI_RXCRCR
-       stm32f103.inc:274    *ABS*:0000000000000018 SPI_TXCRCR
+       stm32f103.inc:236    *ABS*:0000000000000034 ADC_SQR3
+       stm32f103.inc:237    *ABS*:0000000000000038 ADC_JSQR
+       stm32f103.inc:238    *ABS*:000000000000003c ADC_JDR1
+       stm32f103.inc:239    *ABS*:0000000000000040 ADC_JDR2
+       stm32f103.inc:240    *ABS*:0000000000000044 ADC_JDR3
+       stm32f103.inc:241    *ABS*:0000000000000048 ADC_JDR4
+       stm32f103.inc:242    *ABS*:000000000000004c ADC_DR
+       stm32f103.inc:245    *ABS*:0000000040012c00 TIMER1_BASE_ADR
+       stm32f103.inc:246    *ABS*:0000000040000000 TIMER2_BASE_ADR
+       stm32f103.inc:247    *ABS*:0000000040000400 TIMER3_BASE_ADR
+       stm32f103.inc:248    *ABS*:0000000040000800 TIMER4_BASE_ADR
+       stm32f103.inc:250    *ABS*:0000000000000000 TIM_CR1
+       stm32f103.inc:251    *ABS*:0000000000000004 TIM_CR2
+       stm32f103.inc:252    *ABS*:0000000000000008 TIM_SMCR
+       stm32f103.inc:253    *ABS*:000000000000000c TIM_DIER
+       stm32f103.inc:254    *ABS*:0000000000000010 TIM_SR
+       stm32f103.inc:255    *ABS*:0000000000000014 TIM_EGR
+       stm32f103.inc:256    *ABS*:0000000000000018 TIM_CCMR1
+       stm32f103.inc:257    *ABS*:000000000000001c TIM_CCMR2
+       stm32f103.inc:258    *ABS*:0000000000000020 TIM_CCER
+       stm32f103.inc:259    *ABS*:0000000000000024 TIM_CNT
+       stm32f103.inc:260    *ABS*:0000000000000028 TIM_PSC
+       stm32f103.inc:261    *ABS*:000000000000002c TIM_ARR
+       stm32f103.inc:262    *ABS*:0000000000000034 TIM_CCR1
+       stm32f103.inc:263    *ABS*:0000000000000038 TIM_CCR2
+       stm32f103.inc:264    *ABS*:0000000000000048 TIM_DCR
+       stm32f103.inc:265    *ABS*:000000000000004c TIM_DMAR
+       stm32f103.inc:268    *ABS*:0000000040013000 SPI1_BASE_ADR
+       stm32f103.inc:269    *ABS*:0000000040003800 SPI2_BASE_ADR
+       stm32f103.inc:271    *ABS*:0000000000000000 SPI_CR1
+       stm32f103.inc:272    *ABS*:0000000000000004 SPI_CR2
+       stm32f103.inc:273    *ABS*:0000000000000008 SPI_SR
+       stm32f103.inc:274    *ABS*:000000000000000c SPI_DR
+       stm32f103.inc:275    *ABS*:0000000000000010 SPI_CRCPR
+       stm32f103.inc:276    *ABS*:0000000000000014 SPI_RXCRCR
+       stm32f103.inc:277    *ABS*:0000000000000018 SPI_TXCRCR
            ascii.inc:24     *ABS*:0000000000000001 CTRL_A
            ascii.inc:25     *ABS*:0000000000000001 SOH
            ascii.inc:26     *ABS*:0000000000000002 CTRL_B
@@ -2110,12 +2116,12 @@ DEFINED SYMBOLS
            ascii.inc:42     *ABS*:000000000000000a CTRL_J
            ascii.inc:43     *ABS*:000000000000000a LF
            ascii.inc:44     *ABS*:000000000000000b CTRL_K
-           ascii.inc:45     *ABS*:000000000000000b VT
-           ascii.inc:46     *ABS*:000000000000000c CTRL_L
-           ascii.inc:47     *ABS*:000000000000000c FF
 ARM GAS  terminal.s 			page 37
 
 
+           ascii.inc:45     *ABS*:000000000000000b VT
+           ascii.inc:46     *ABS*:000000000000000c CTRL_L
+           ascii.inc:47     *ABS*:000000000000000c FF
            ascii.inc:48     *ABS*:000000000000000d CTRL_M
            ascii.inc:49     *ABS*:000000000000000d CR
            ascii.inc:50     *ABS*:000000000000000e CTRL_N
@@ -2170,12 +2176,12 @@ DEFINED SYMBOLS
       tbi_macros.inc:39     *ABS*:0000000000000002 TK_COMMA
       tbi_macros.inc:40     *ABS*:0000000000000003 TK_SEMIC
       tbi_macros.inc:41     *ABS*:0000000000000004 TK_SHARP
-      tbi_macros.inc:42     *ABS*:0000000000000005 TK_LPAREN
-      tbi_macros.inc:43     *ABS*:0000000000000006 TK_RPAREN
-      tbi_macros.inc:44     *ABS*:0000000000000007 TK_PLUS
 ARM GAS  terminal.s 			page 38
 
 
+      tbi_macros.inc:42     *ABS*:0000000000000005 TK_LPAREN
+      tbi_macros.inc:43     *ABS*:0000000000000006 TK_RPAREN
+      tbi_macros.inc:44     *ABS*:0000000000000007 TK_PLUS
       tbi_macros.inc:45     *ABS*:0000000000000008 TK_MINUS
       tbi_macros.inc:46     *ABS*:0000000000000009 TK_MULT
       tbi_macros.inc:47     *ABS*:000000000000000a TK_DIV
@@ -2230,12 +2236,12 @@ DEFINED SYMBOLS
       tbi_macros.inc:125    *ABS*:0000000000000028 FSPTR
       tbi_macros.inc:126    *ABS*:000000000000002c FSFREE
       tbi_macros.inc:127    *ABS*:0000000000000030 TXTBGN
-      tbi_macros.inc:128    *ABS*:0000000000000034 TXTEND
-      tbi_macros.inc:129    *ABS*:0000000000000038 LOOP_DEPTH
-      tbi_macros.inc:130    *ABS*:000000000000003c ARRAY_SIZE
 ARM GAS  terminal.s 			page 39
 
 
+      tbi_macros.inc:128    *ABS*:0000000000000034 TXTEND
+      tbi_macros.inc:129    *ABS*:0000000000000038 LOOP_DEPTH
+      tbi_macros.inc:130    *ABS*:000000000000003c ARRAY_SIZE
       tbi_macros.inc:131    *ABS*:0000000000000040 FLAGS
       tbi_macros.inc:132    *ABS*:0000000000000044 TAB_WIDTH
       tbi_macros.inc:133    *ABS*:0000000000000048 RX_HEAD
@@ -2290,12 +2296,12 @@ DEFINED SYMBOLS
           terminal.s:570    .text:0000000000000358 cursor_home
           terminal.s:553    .text:0000000000000334 cursor_x
           terminal.s:583    .text:0000000000000378 delete_right
-          terminal.s:601    .text:00000000000003a0 update_line
-          terminal.s:639    .text:00000000000003c8 readln
-          terminal.s:882    .text:00000000000006d4 get_curpos
 ARM GAS  terminal.s 			page 40
 
 
+          terminal.s:601    .text:00000000000003a0 update_line
+          terminal.s:639    .text:00000000000003c8 readln
+          terminal.s:882    .text:00000000000006d4 get_curpos
           terminal.s:650    .text:00000000000003f8 readln_loop
           terminal.s:834    .text:0000000000000686 readln_exit
           terminal.s:788    .text:00000000000005ee character
@@ -2312,7 +2318,6 @@ DEFINED SYMBOLS
 
 UNDEFINED SYMBOLS
 GPIO_AFOD
-PULLUP
 uart_getc
 uart_putc
 _pad

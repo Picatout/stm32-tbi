@@ -290,6 +290,9 @@ name|short form
 [TONE](#tone)|TON
 [TONE_INIT](#toneinit)|TONE_
 [TRACE](#trace)|TR
+[UART_GETC](#uart-getc)|UART_G
+[UART_INIT](#uart-init)|UART_I
+[UART_PUTC](#uart-putc)|UART_P 
 [UBOUND](#ubound)|UB
 [UFLASH](#uflash)|UF
 [UNTIL](#until)|UN
@@ -1487,6 +1490,43 @@ now trace is disabled
 READY
 ```
 [index](#index)
+<a id="uart-getc"></a>
+### UART_GETC(*channel)
+This function read a byte from selected uart channel {2,3}. It return a **#TK_INTGR** not a **TK_CHAR**. See also [UART_INIT](#uart-init) and [UART_PUTC](#uart-putc).
+```
+uart_init 3,115200
+READY
+uart_putc 3,asc(\B) ? char(uart_getc(3))
+B
+READY
+```
+
+[index](#index)
+<a id="uart-init"></a>
+### UART_INIT *channel*,*baudrate*
+This command initialize a UART channel. *channel* number are {2,3}. *baurate* is communication speed. There is no flow control configured only pins **TX* and **RX**.
+
+* **UART2**  TX on PA2,  RX on PA3 
+* **UART3**  TX on PB10, RX on PB11
+
+[index](#index)
+<a id="uart-putc"></a>
+### UART_PUTC *channel*,*expr*
+This command send a byte to serial port. *channel* is {2,3}. *expr* value is {0..255}. See also [UART_INIT](#uart-init) and [UART_GETC](#uart_getc).
+```
+REM jump pin PA2 and PA3 together.
+READY
+uart_init 2,115200
+READY
+uart_putc 2,67 ? char(uart_getc(2))
+C
+READY
+uart_putc 2,255 ? uart_getc(2)
+255 
+READY
+```
+
+[index](#index)
 <a id="ubound"></a>
 ### UBOUND {C,P}
 This function return the upper bound of **@** array variable. The **@** is indiced from {1..UBOUND}. The **@** is using RAM left out by the program in memory hence its size is variable and un program must use **UBOUND** to know the limit of the array. 
@@ -1653,7 +1693,7 @@ Programs can be entered from the terminal. Each line that begin with a line numb
 * **ENTER** end line edition.  
 
 [main index](#index-princ)
-<a id="sending"></a>
+<a id="send"></a>
 ## Sending a file 
 The directory **sendFile** contain a command line utility to send BASIC programs like those in [tb_progs](../tb_progs) to the blue pill. From the root directory any program in this directory can be transferred to the blue pill. The terminal emulator must be open for the transfert. The lines sent will scroll on terminal. To send a file from project root directory do: <br/>
 **./send file-name** 

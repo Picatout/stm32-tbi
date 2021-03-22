@@ -99,7 +99,7 @@
    .equ OUTPUT_AFOD,GPIO_AFOD+OSPEED 
   // input ODR 
    .equ PULLDOWN,0
-   .equ PULLUPP,1
+   .equ PULLUP,1
   // input CNF field 
    .equ ANALOG,0
    .equ FLOATING,(1<<2) 
@@ -123,6 +123,9 @@
    
     /* USART1 registers */
     .equ USART1_BASE_ADR, 0x40013800
+    .equ USART2_BASE_ADR, 0x40004400
+    .equ USART3_BASE_ADR, 0x40004800
+
     /* USARTx registers offset */
     .equ USART_SR, 0
     .equ USART_DR,4

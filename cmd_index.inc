@@ -112,8 +112,11 @@
     .equ TONE_IDX,TO_IDX+1
     .equ TONE_INIT_IDX,TONE_IDX+1 
     .equ TRACE_IDX,TONE_INIT_IDX+1
-    .equ UBOUND_IDX, TRACE_IDX+1 // 
-    .equ UFLASH_IDX, UBOUND_IDX+1 // 
+    .equ UART_GETC_IDX,TRACE_IDX+1 // 
+    .equ UART_INIT_IDX,UART_GETC_IDX+1//
+    .equ UART_PUTC_IDX,UART_INIT_IDX+1//
+    .equ UBOUND_IDX, UART_PUTC_IDX+1 //
+    .equ UFLASH_IDX, UART_PUTC_IDX+1 // 
     .equ UNTIL_IDX, UFLASH_IDX+1 // 
     .equ WAIT_IDX, UNTIL_IDX+1 // 
     .equ WORDS_IDX, WAIT_IDX+1 // 

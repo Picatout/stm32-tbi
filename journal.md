@@ -3,7 +3,19 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
-#### 2021-03-19
+#### 2021-03-21
+
+* Mise à jour documentation [tbi_reference.md](docs/tbi_reference.md) et [refman.md](docs/refman.md).
+
+* Mots ajoutés:  **UART_GETC**, **UART_INIT** et **UART_PUTC**. 
+
+* Ajout support UART2 et UART3. 
+
+* Modifié **WORDS** pour réduire la limite avant le retour à la ligne a 70 au lieu de 80. 
+
+* Renommé programme pwm_soft.bas en [pwm-soft.bas](tb_progs/pwm-soft.bas) et modifié code. Maintenant commandes insensible à la casse. 
+
+#### 2021-03-20
 * Optimisation: Le compte des arguments est maintenant vérifié dans arg_list 
   plutôt que dans chaque commande ou fonction BASIC.
 

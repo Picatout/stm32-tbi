@@ -290,6 +290,9 @@ nom|abrévation
 [TONE](#tone)|TON
 [TONE_INIT](#toneinit)|TONE_
 [TRACE](#trace)|TR
+[UART_GETC](#uart-getc)|UART_G
+[UART_INIT](#uart-init)|UART_I
+[UART_PUTC](#uart-putc)|UART_P
 [UBOUND](#ubound)|UB
 [UFLASH](#uflash)|UF
 [UNTIL](#until)|UN
@@ -1640,6 +1643,45 @@ Cette commande est un outil de débogage des programmes.
 * **3**&nbsp;&nbsp; Trace affiche le numéro de ligne, le contenu de la pile des arguments et de la pile des retours.
 
 Trace peut-être activé et désactivé n'importe où dans un programme.   
+
+[index](#index)
+<a id="uart-getc"></a>
+### UART_GETC(*channel)
+Cette fonction attend un octet d'un port sériel {2,3}. Le type de donnée retourné est  **#TK_INTGR** et non **TK_CHAR**. Voir aussi [UART_INIT](#uart-init) and [UART_PUTC](#uart-putc).
+```
+REM Branchez ensemble les broches PB10 et PB11.
+READY 
+uart_init 3,115200
+READY
+uart_putc 3,asc(\B) ? char(uart_getc(3))
+B
+READY
+```
+
+[index](#index)
+<a id="uart-init"></a>
+### UART_INIT *channel*,*baudrate*
+Initialise un port sériel. *channel* est {2,3}. *baurate* est la vitesse de communication. Il n'y a pas de contrôle flux matériel seul  **TX* et **RX** sont configurés.
+
+* **UART2**  TX on PA2,  RX on PA3 
+* **UART3**  TX on PB10, RX on PB11
+
+[index](#index)
+<a id="uart-putc"></a>
+### UART_PUTC *channel*,*expr*
+Cette commande envoie un octet à un port sériel. *channel* est {2,3}. *expr* est dans l'intervalle {0..255}. Voir aussi [UART_INIT](#uart-init) and [UART_GETC](#uart_getc).
+```
+REM branchez l'une à l'autre les broches PA2 et PA3.
+READY
+uart_init 2,115200
+READY
+uart_putc 2,67 ? char(uart_getc(2))
+C
+READY
+uart_putc 2,255 ? uart_getc(2)
+255 
+READY
+```
 
 [index](#index)
 <a id="ubound"></a>
