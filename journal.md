@@ -3,6 +3,16 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+#### 2021-03-23
+
+* Ajout de *nvic_enable_irq* et *nvic_disable_iqr* dans [stm32-tbi.s](stm32-tbi.s).
+
+* Ajout de file de réception de 4 octets pour UART2|3. 
+
+#### 2021-03-22
+
+* Corrigé bogue dans [cmd_index.inc](command_index.inc).
+
 #### 2021-03-21
 
 * Mise à jour documentation [tbi_reference.md](docs/tbi_reference.md) et [refman.md](docs/refman.md).

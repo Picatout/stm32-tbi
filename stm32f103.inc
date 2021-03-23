@@ -182,6 +182,69 @@
    .equ NVIC_IABR2, 0x208
    .equ NVIC_IPR_BASE, 0x300 
 
+/* IRQ number */
+   .equ IRQ_WWDG,0
+   .equ IRQ_PVD,1
+   .equ IRQ_TAMPER,2
+   .equ IRQ_RTC,3
+   .equ IRQ_FLASH,4
+   .equ IRQ_RCC,5
+   .equ IRQ_EXTI0,6
+   .equ IRQ_EXIT1,7
+   .equ IRQ_EXTI2,8
+   .equ IRQ_EXIT3,9
+   .equ IRQ_EXIT4,10
+   .equ IRQ_DMA1CH1,11
+   .equ IRQ_DMA1CH2,12
+   .equ IRQ_DAM1CH3,13
+   .equ IRQ_DMA1CH4,14
+   .equ IRQ_DMA1CH5,15
+   .equ IRQ_DMA1CH6,16
+   .equ IRQ_DMA1CH7,17
+   .equ IRQ_ADC1_2,18   
+   .equ IRQ_USB_HP_CAN_TX,19
+   .equ IRQ_USB_LP_CAN_RX0,20
+   .equ IRQ_CAN_RX1,21
+   .equ IRQ_CAN_SCE,22
+   .equ IRQ_EXTI9_5,23
+   .equ IRQ_TIM1_BRK,24
+   .equ IRQ_TIM1_UP,25
+   .equ IRQ_TIM1_TRG_COM,26
+   .equ IRQ_TIM1_CC,27
+   .equ IRQ_TIM2,28
+   .equ IRQ_TIM3,29
+   .equ IRQ_TIM4,30
+   .equ IRQ_I2C1_EV,31
+   .equ IRQ_I2C1_ER,32
+   .equ IRQ_I2C2_EV,33
+   .equ IRQ_I2C2_ER,34
+   .equ IRQ_SPI1,35
+   .equ IRQ_SPI2,36
+   .equ IRQ_USART1,37
+   .equ IRQ_USART2,38
+   .equ IRQ_USART3,39
+   .equ IRQ_EXTI15_10,40
+   .equ IRQ_RTCALARM,41
+   .equ IRQ_USB_WKUP,42
+   .equ IRQ_TIM8_BRK,43
+   .equ IRQ_TIM8_UP,44
+   .equ IRQ_TIM8_TRG_COM,45
+   .equ IRQ_TIM8_CC,46
+   .equ IRQ_ADC3,47
+   .equ IRQ_FSMC,48
+   .equ IRQ_SDIO,49            
+   .equ IRQ_TIM5,50
+   .equ IRQ_SPI3,51
+   .equ IRQ_UART4,52
+   .equ IRQ_UART5,53
+   .equ IRQ_TIM6,54
+   .equ IRQ_TIM7,55
+   .equ IRQ_DMA2CH1,56
+   .equ IRQ_DMA2CH2,57
+   .equ IRQ_DMA2CH3,58
+   .equ IRQ_DMA2CH4_5,59
+
+
 /* system control register */
 .equ SCR_BASE_ADR,0xE000ED10
 .equ SCR_SLEEPONEXIT,(1<<1)

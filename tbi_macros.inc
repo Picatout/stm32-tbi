@@ -133,7 +133,11 @@
   .equ RX_HEAD,TAB_WIDTH+4 // rx_queue head pointer
   .equ RX_TAIL,RX_HEAD+4 // rx1_queue tail pointer  
   .equ RX_QUEUE,RX_TAIL+4 // UART1 receive circular queue 
-  .equ VARS,RX_QUEUE+RX_QUEUE_SIZE // BASIC variables 
+  .equ U2_RX_QUEUE,RX_QUEUE+RX_QUEUE_SIZE
+  .equ U2_COUNT,U2_RX_QUEUE+4 
+  .equ U3_RX_QUEUE,U2_COUNT+4
+  .equ U3_COUNT,U3_RX_QUEUE+4 
+  .equ VARS,U3_COUNT+4 // BASIC variables 
   .equ VARS_SIZE, 4*26 // space used by 26 BASIC variables (A-Z)
   .equ ARRAY_ADR,VARS+VARS_SIZE // array address at bottom of pad  
   .equ TRACE_LEVEL,ARRAY_ADR+4  // debugging level 

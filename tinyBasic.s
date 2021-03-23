@@ -2221,6 +2221,10 @@ uzero:
   .word 0 // RX_HEAD
   .word 0 // RX_TAIL
   .space RX_QUEUE_SIZE,0 // RX_QUEUE
+  .word 0 // U2_RX_QUEUE 
+  .word 0 // U2_COUNT 
+  .word 0 // U3_RX_QUEUE
+  .word 0 // U3_COUNT  
   .space VARS_SIZE,0 // VARS
   .word _pad  // ARRAY_ADR 
   .word 0 // TRACE_LEVEL 
@@ -4643,36 +4647,70 @@ spi_param:
 
 /****************************
   BASIC: UART_GETC(channel)
-  read a character from uart 
+  read a byte from uart 
 ****************************/
     _FUNC ser_getc
+    push {r2,r3,T1}
     mov r0,#1 
     _CALL func_args
-    _POP r2 
-    sub r2,#2 
-    lsl r2,#4
-    ldr r0,=uart_param 
-    add r2,r0
-    ldr r2,[r2] 
-1:  ldr r0,[r2,#USART_SR]
-    tst r0,#(1<<5) // RXNE 
-    beq 1b 
-    ldrb r1,[r2,#USART_DR]
+    _POP r0 
+    _MOV32 T1,USART2_BASE_ADR 
+    mov r1,#U2_RX_QUEUE 
+    mov r2,#U2_COUNT 
+    cmp r0,#2 
+    beq 1f 
+    add r1,#8  // U3_RX_QUEUE
+    add r2,#8  // U3_COUNT  
+    add T1,#0x400 // USART3_BASE_ADR 
+1:  ldr r0,[UPP,r2] // Ux_COUNT , wait for char 
+    cmp r0,#0
+    beq 1b   
+    // disable USART interrupt 
+    ldr r3,[T1,#USART_CR1]
+    mvn r0,#1<<5
+    and r3,r0 
+    str r3,[T1,#USART_CR1]
+    // decrement RX COUNT 
+    ldr r0,[UPP,r2]
+    sub r0,#1 
+    str r0,[UPP,r2]    
+    // extract char from queue 
+    ldr r3,[UPP,r1] //queue 
+    and r0,r3,#255
+    lsr r3,#8 
+    str r3,[UPP,r1]
+    // enable interrupt 
+    ldr r3,[T1,#USART_CR1]
+    orr r3,#(1<<5)
+    str r3,[T1,#USART_CR1]
+    mov r1,r0 
     mov r0,#TK_INTGR 
+    pop {r2,r3,T1}
     _RET 
+
 
 /********************************
   BASIC: UART_INIT channel,baud 
   channel {2,3}
+  use:
+    T1 channel 
+    T2 *parameters 
 ********************************/
     _FUNC ser_init 
     mov r0,#2 
     _CALL arg_list 
     ldmia DP!,{T1,T2} // T1=BAUD,T2=channel 
+    // enable IRQ in NVIC_ISERxx 
+    mov r0,#IRQ_USART2 
+    cmp T2,#2 
+    beq 1f 
+    mov r0,#IRQ_USART3  
+1:  _CALL nvic_enable_irq 
     sub T2,#2 
+    mov r3,T2 // 0|1
     lsl T2,#4
     ldr r0,=uart_param 
-    add T2,r0 
+    add T2,r0  // parameters address 
     // gpio config 
     ldr r0,[T2,#4] //GPIO_BASE_ADR
     ldr r1,[T2,#8] // tx pin 
@@ -4685,8 +4723,7 @@ spi_param:
     // config usart no flow control 1 stop, no parity 
     // first enable clock 
     mov r0,#(1<<17) // USART2EN in APB1ENR 
-    tst T2,#(1<<4)
-    beq 1f  
+    cbz r3,1f
     lsl r0,#1 // USART3EN in APB1ENR 
 1:  _MOV32 r2,RCC_BASE_ADR 
     ldr r1,[r2,#RCC_APB1ENR]
@@ -4698,8 +4735,8 @@ spi_param:
     mov r1,r2 
     _CALL uart_baud 
     // enable usart 
-    mov r0,#(1<<2)+(1<<3)+(1<<13) //RE+TE+UE
-    str r0,[r2,#USART_CR1] 
+    mov r0,#(1<<2)+(1<<3)+(1<<5)+(1<<13) //RE+TE+RXNEIE+UE
+    str r0,[r2,#USART_CR1]
     _RET 
 
 /*************************************

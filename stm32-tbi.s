@@ -110,8 +110,8 @@ isr_vectors:
   .word      default_handler /* IRQ35, SPI1 */                   
   .word      default_handler /* IRQ36, SPI2 */                   
   .word      uart_rx_handler /* IRQ37, USART1 */                   
-  .word      default_handler /* IRQ38, USART2 */                   
-  .word      default_handler /* IRQ39, USART3 */                   
+  .word      uart2_handler /* IRQ38, USART2 */                   
+  .word      uart3_handler /* IRQ39, USART3 */                   
   .word      default_handler /* IRQ40, External Line[15:10]s */                          
   .word      default_handler /* IRQ41, RTC Alarm */                 
   .word      default_handler /* IRQ42, USB Wakeup*/                       
@@ -171,8 +171,65 @@ exception_msg:
 9: 
   _RET 
 
+/*************************
+  UART2_handler 
+  receive character in 
+  4 bytes rshift queue
+  drop char if queue full.  
+*************************/
+    _GBL_FUNC uart2_handler 
+    _MOV32 r0,USART2_BASE_ADR 
+    ldr r1,[r0,#USART_SR]
+    ldrb r0,[r0,#USART_DR]
+    tst r1,#(1<<5) //RXNE 
+    beq 9f // no char in DR 
+    // check if queue full.
+    ldr r2,[UPP,#U2_COUNT]
+    cmp r2,#4
+    beq 9f // queue full drop this char 
+    add r1,r2,#1 
+    str r1,[UPP,#U2_COUNT]
+    lsl r2,#3 //COUNT*8
+    lsl r0,r2 
+    mov r1,#255 
+    lsl r1,r2 
+    mvn r1,r1  
+    ldr r2,[UPP,#U2_RX_QUEUE]
+    and r2,r1 
+    orr r2,r0 
+    str r2,[UPP,#U2_RX_QUEUE]
+9:  _RET 
+
+
+/*************************
+  uart3_handler
+*************************/
+    _GBL_FUNC uart3_handler 
+    _MOV32 r0,USART3_BASE_ADR 
+    ldr r1,[r0,#USART_SR]
+    ldrb r0,[r0,#USART_DR]
+    tst r1,#(1<<5) //RXNE 
+    beq 9f // no char in DR 
+    // check if queue full.
+    ldr r2,[UPP,#U3_COUNT]
+    cmp r2,#4
+    beq 9f // queue full drop this char 
+    add r1,r2,#1 
+    str r1,[UPP,#U3_COUNT]
+    lsl r2,#3 //COUNT*8
+    lsl r0,r2 
+    mov r1,#255 
+    lsl r1,r2 
+    mvn r1,r1  
+    ldr r2,[UPP,#U3_RX_QUEUE]
+    and r2,r1 
+    orr r2,r0 
+    str r2,[UPP,#U3_RX_QUEUE]
+9:  _RET 
+
+
 /**************************
-	UART RX handler
+	UART1 RX handler
 **************************/
     _GBL_FUNC uart_rx_handler
     _MOV32 r0,UART 
@@ -218,6 +275,64 @@ scb_adr:
 user_reboot_msg:
 	  .asciz "\nuser reboot!\n"
 	  .p2align 2 
+
+/******************************
+    nvic_enable_irq 
+    enable irq in NVIC_ISERxx
+    input:
+        r0: irq#
+    output:
+        none 
+    use:
+      r1,r2,r3 
+******************************/
+    _GBL_FUNC nvic_enable_irq 
+    push {r1,r2,r3}
+    _MOV32 r2,NVIC_BASE_ADR 
+    mov r1,#32 
+    udiv r3,r0,r1 
+    lsl r3,#2
+    add r2,r3 // NVIC_ISERxx 
+    lsr r3,#2 
+    mul r3,r1
+    sub r0,r3 
+    mov r1,#1 
+    lsl r1,r0 // irq bit mask
+    ldr r0,[r2]
+    orr r0,r1 
+    str r0,[r2]   
+    pop {r1,r2,r3}
+    _RET 
+
+
+/******************************
+    nvic_disable_irq 
+    disable irq in NVIC_ICERxx
+    input:
+        r0: irq#
+    output:
+        none 
+    use:
+      r1,r2,r3 
+******************************/
+    _GBL_FUNC nvic_disable_irq 
+    push {r1,r2,r3}
+    _MOV32 r2,(NVIC_BASE_ADR+NVIC_ICER0) 
+    mov r1,#32 
+    udiv r3,r0,r1 
+    lsl r3,#2
+    add r2,r3 // NVIC_ICERxx 
+    lsr r3,#2 
+    mul r3,r1
+    sub r0,r3 
+    mov r1,#1 
+    lsl r1,r0 // irq bit mask
+    ldr r0,[r2]
+    orr r0,r1 
+    str r0,[r2]   
+    pop {r1,r2,r3}
+    _RET
+
 
 /**************************************
   reset_handler execute at MCU reset
@@ -375,10 +490,8 @@ wait_sws:
     mov r1,#(3<<2)+(1<<13)+(1<<5) // TE+RE+UE+RXNEIE
     str r1,[r0,#USART_CR1] /*enable usart*/
 /* enable interrupt in NVIC */
-    _MOV32 r0,NVIC_BASE_ADR
-    ldr r1,[r0,#NVIC_ISER1]
-    orr r1,#32   
-    str r1,[r0,#NVIC_ISER1]
+    mov r0,#IRQ_USART1
+    _CALL nvic_enable_irq
     bx lr 
 
 /***************************
