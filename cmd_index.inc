@@ -57,7 +57,9 @@
     .equ INPUT_IDX, IN_IDX+1 // 
     .equ INVERT_IDX, INPUT_IDX+1 // 
     .equ KEY_IDX, INVERT_IDX+1 // 
-    .equ LET_IDX, KEY_IDX+1 // 
+    .equ ISR_INIT_IDX,KEY_IDX+1 //
+    .equ IRET_IDX,ISR_INIT_IDX+1 // 
+    .equ LET_IDX, IRET_IDX+1 // 
     .equ LIST_IDX, LET_IDX+1 // 
     .equ LOAD_IDX, LIST_IDX+1 // 
     .equ LOCATE_IDX,LOAD_IDX+1 //

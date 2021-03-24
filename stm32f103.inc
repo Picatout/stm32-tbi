@@ -162,7 +162,7 @@
    .equ SCB_BFAR,56
    // key to to write in SCB_AIRCR 
    .equ SCB_VECTKEY,0x5fa 
-   
+
    /* NVIC block */
    .equ NVIC_BASE_ADR, 0xE000E100
    .equ NVIC_ISER0, 0
@@ -244,6 +244,16 @@
    .equ IRQ_DMA2CH3,58
    .equ IRQ_DMA2CH4_5,59
 
+
+/* EXTI registers map */
+   .equ EXTI_BASE_ADR, 0x40010400
+   .equ EXTI_IMR,0
+   .equ EXTI_EMR,4
+   .equ EXTI_RTSR,8
+   .equ EXTI_FTSR,12
+   .equ EXTI_SWIER,16
+   .equ EXTI_PR,20
+   
 
 /* system control register */
 .equ SCR_BASE_ADR,0xE000ED10

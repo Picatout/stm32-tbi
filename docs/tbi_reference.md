@@ -231,6 +231,8 @@ nom|abrévation
 [INPUT_PD](#input-xxx)|INPUT_PD
 [INPUT_PU](#input-xxx)|INPUT_PU
 [INVERT](#invert)|INV
+[ISR_INIT](#isr-init)|IS
+[IRET](#iret)|IR 
 [KEY](#key)|KE
 [LET](#let)|LE
 [LIST](#list)|LI
@@ -915,6 +917,108 @@ hex: ? invert(&101)
 $FFFA   
 READY 
 ```
+[index](#index)
+<a id="isr-init"></a>
+### ISR_INIT *irq*,*line_nbr*
+Cette commande est utilisée pour initialiser un vecteur d'interruption. *irq* est le numéro de l'interruption {0..59}. *line_nbr* est le numéro de la ligne BASIC où débute cette interruption. Certains vecteurs ne sont pas utilisés par le MCU stm32f103C8T6 de la blue pill. 
+
+**table des vecteurs**
+
+IRQ#|source
+-|-
+0|WWDG Window watchdog
+1| PVD PVD through EXTI Line detection
+2| TAMPER Tamper
+3| RTC RTC 
+4| FLASH Flash 
+5| RCC RCC 
+6| EXTI0 EXTI Line0
+7| EXTI1 EXTI Line1
+8| EXTI2 EXTI Line2
+9| EXTI3 EXTI Line3
+10| EXTI4 EXTI Line4
+11| DMA1_Channel1 DMA1 Channel1
+12| DMA1_Channel2 DMA1 Channel2
+13| DMA1_Channel3 DMA1 Channel3
+14| DMA1_Channel4 DMA1 Channel4
+15| DMA1_Channel5 DMA1 Channel5
+16| DMA1_Channel6 DMA1 Channel6
+17| DMA1_Channel7 DMA1 Channel7
+18| ADC1_2 ADC1 and ADC2
+19| USB_HP_CAN_TX USB High Priority or CAN TX
+20| USB_LP_CAN_RX0 USB Low Priority or CAN RX0
+21| CAN_RX1 CAN RX1
+22| CAN_SCE CAN SCE
+23| EXTI9_5 EXTI Line[9:5]
+24| TIM1_BRK TIM1 Break
+25| TIM1_UP TIM1 Update
+26| TIM1_TRG_COM TIM1 Trigger and Commutation
+27| TIM1_CC TIM1 Capture Compare
+28| TIM2 TIM2
+29| TIM3 TIM3
+30| TIM4 TIM4
+31| I2C1_EV
+32| I2C1_ER 
+33| I2C2_EV
+34| I2C2_ER 
+35| SPI1 
+36| SPI2
+37| USART1 reserved by tiny BASIC 
+38| USART2 reserved by tiny BASIC
+39| USART3 reserved by tiny BASIC 
+40| EXTI15_10 EXTI Line[15:10]
+41| RTCAlarm RTC alarm through EXTI line
+42| USBWakeup USB wakeup from suspend through EXTI line
+43| not used on stm32f103c8
+44| not used on stm32f103c8
+45| not used on stm32f103c8
+46| not used on stm32f103C8
+47| not used on stm32f103c8
+48| FSMC
+49| SDIO
+50| not used on stm32f103c8
+51| not used on stm32f103c8
+52| not used on stm32f103c8
+53| not used on stm32f103c8
+54| not used on stm32f103c8
+55| not used on stm32f103c8
+56| not used on stm32f103c8
+57| not used on stm32f103c8
+58| DMA2_Channel3 DMA2 Channel3
+59| DMA2_Channel4_5
+
+
+[index](#index)
+<a id="iret"></a>
+### IRET 
+Ce mot réservé termine une routine d'interruption. Le vecteur d'interruption doit-être préalablement initialisé avec la commande [ISR_INIT](#isr-init). De plus le périphérique concerné doit-être configuré et son interruption activée. 
+```
+1 REM  external interrupt 0 tested
+2 REM  in this example the interrupt is software triggered.
+5 CONST EXTIR =1073808384 ,SWIER =EXTIR +16 ,EXTIPR =EXTIR +20 
+10 BSET EXTIR ,1 REM enable EXTI0 interrupt 
+20 ISR_INIT 6 ,100 
+30 A =1 
+40 DO PRINT A ,
+50 A =A +1 
+60 IF NOT (A %10 )THEN BSET SWIER ,1 
+70 PAUSE 100 
+80 UNTIL QKEY :K =ASC (KEY )
+90 END 
+100 PRINT " [EXTI0 interrupt triggered]"
+110 BSET EXTIPR ,1 REM  reset interrupt  
+120 IRET 
+READY
+run
+1 2 3 4 5 6 7 8 9  [EXTI0 interrupt triggered]
+10 11 12 13 14 15 16 17 18 19  [EXTI0 interrupt triggered]
+20 21 22 23 24 25 26 27 28 29  [EXTI0 interrupt triggered]
+30 31 32 
+READY
+```
+Dans cet exemple l'interruption externe **0** *(irq 6)* est initialisée et configurée. Le vecteur doit-être préalablement initialisé avec [ISR_INIT](#isr-init)
+et le périphérique concerné configuré pour déclencher une interruption.
+
 [index](#index)
 <a id="key"></a>
 ### KEY {C,P}

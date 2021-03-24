@@ -1529,21 +1529,10 @@ tk_id: .asciz "last token id: "
   .type cold_start, %function 
   .global cold_start 
 cold_start: 
-    _MOV32 UPP,RAM_ADR 
+    _MOV32 UPP,(RAM_ADR+60*4) 
     ldr r0,src_addr 
     ldr r1,dest_addr
-    ldr r1,[r1] 
-    add UPP,r1 // system variables base address   
-// clear RAM
-    mov r0,UPP  
-    ldr r1,tib 
-    eor r2,r2 
-1:  str r2,[r0],#4 
-    cmp r0,r1 
-    bmi 1b 
 //copy initialized system variables to ram 
-    ldr r0,src_addr 
-    mov r1,UPP 
     ldr r2,sysvar_size
     _CALL cmove
     _CALL prt_version
@@ -1555,7 +1544,7 @@ cold_start:
 src_addr:
   .word uzero
 dest_addr:
-  .word vectors_size
+  .word RAM_ADR 
 sysvar_size: .word ulast-uzero 
 
 /************************************
@@ -1721,6 +1710,8 @@ ready: .asciz "\nREADY"
     _CALL compile // tokenize BASIC text
     beq 1b  // tokens stored in text area 
 // interpret tokenized line 
+    .global interpreter 
+    .type interpreter, %function 
 interpreter:
   _CALL next_token 
   cmp r0,#2
@@ -2200,6 +2191,7 @@ relop_jmp:
 
 // system variables initial value 
 uzero:
+  .space 60*4, 0  // IRQ BASIC vectors 
   .word 0 // IN_SAVED
   .word 0 // COUNT
   .word 0 // BASICPTR
@@ -2308,7 +2300,9 @@ kword_end:
   _dict_entry TK_CMD,LOCATE,LOCATE_IDX // locate 
   _dict_entry TK_CMD,LOAD,LOAD_IDX //load 
   _dict_entry TK_CMD,LIST,LIST_IDX //list
-  _dict_entry TK_CMD,LET,LET_IDX //let 
+  _dict_entry TK_CMD,LET,LET_IDX //let
+  _dict_entry TK_CMD,IRET,IRET_IDX // isr_exit 
+  _dict_entry TK_CMD,ISR_INIT,ISR_INIT_IDX // isr_init 
   _dict_entry TK_CFUNC,KEY,KEY_IDX //key 
   _dict_entry TK_IFUNC,INVERT,INVERT_IDX //invert 
   _dict_entry TK_SCONST,INPUT_PU, 17 
@@ -2368,7 +2362,7 @@ fn_table:
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
 	.word skip_line,dec_base,directory,do_loop,drop,dump
 	.word cmd_end,erase,for,forget,free,get,gosub,goto
-	.word hex_base,if,pin_input,input_var,invert,key
+	.word hex_base,if,pin_input,input_var,invert,key,isr_init,isr_exit 
 	.word let,list,load,locate,lshift,new,next
 	.word func_not,bit_or,out,pad_ref,pause,pin_mode,peek8,peek16,peek32
 	.word poke8,poke16,poke32,fn_pop,print,cmd_push,put  
@@ -2591,7 +2585,7 @@ adc_off:
 
 /*********************************
    BASIC: BSET adr, mask   
-   reset bits [adr]= [adr] & ~mask  
+   set bits [adr]= [adr] | mask  
    input:
       none 
     output;
@@ -3153,6 +3147,40 @@ str_buffer: .word _pad
     mov r1,r0
     mov r0,#TK_CHAR 
     _RET  
+
+/*************************************
+  BASIC: ISR_INIT vector, line# 
+  initialize an interrupt vector 
+*************************************/
+    _FUNC isr_init
+    mov r0,#2 
+    _CALL arg_list
+    _POP r0 // line# 
+    _CALL search_lineno
+    cbz r1, 1f 
+0:  mov r0,#ERR_BAD_VALUE
+    b tb_error 
+1:  ldr r1,[DP] // vector 
+    cmp r1,#60 
+    bpl 0b // bad vector 
+    lsl r1,#2 
+    _MOV32 r2,RAM_ADR 
+    str r0,[r2,r1]
+    _POP r0 
+    _CALL nvic_enable_irq
+    _RET 
+
+/*************************************
+  BASIC: IRET 
+  exit interrupt routine 
+*************************************/
+    _FUNC isr_exit  
+    pop {lr}
+    pop {IN,BPTR}
+    ldrb r0,[BPTR,#2]
+    str r0,[UPP,#COUNT]
+    _RET 
+
 
 /******************************
   BASIC: [LET] var=expr 

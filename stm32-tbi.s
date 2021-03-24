@@ -78,60 +78,60 @@ isr_vectors:
   .word      default_handler /* IRQ3, RTC  */                      
   .word      default_handler /* IRQ4, FLASH */                                          
   .word      default_handler /* IRQ5, RCC */                                            
-  .word      default_handler /* IRQ6, EXTI Line0 */                        
-  .word      default_handler /* IRQ7, EXTI Line1  */                          
-  .word      default_handler /* IRQ8, EXTI Line2 */                          
-  .word      default_handler /* IRQ9, EXTI Line3 */                          
-  .word      default_handler /* IRQ10, EXTI Line4 */                          
-  .word      default_handler /* IRQ11, DMA1 CH1 */                  
-  .word      default_handler /* IRQ12, DMA1 CH2 */                   
-  .word      default_handler /* IRQ13, DMA1 CH3 */                   
-  .word      default_handler /* IRQ14, DMA1 CH4  */                   
-  .word      default_handler /* IRQ15, DMA1 CH5 */                   
-  .word      default_handler /* IRQ16, DMA1 CH6 */                   
-  .word      default_handler /* IRQ17, DMA1 CH7 */                   
-  .word      default_handler /* IRQ18, ADC1, ADC2 global interrupt */                   
-  .word      default_handler /* IRQ19, USB High priority */                         
-  .word      default_handler /* IRQ20, USB low priority */                          
-  .word      default_handler /* IRQ21, CAN_RX1 */                          
-  .word      default_handler /* IRQ22, CAN1_SCE */                          
-  .word      default_handler /* IRQ23, External Line[9:5]s */                          
-  .word      default_handler /* IRQ24, TIM1 Break and TIM15 global */         
-  .word      default_handler /* IRQ25, TIM1 Update and TIM16 global */         
-  .word      default_handler /* IRQ26, TIM1 Trigger and Commutation and TIM17 */
-  .word      default_handler /* IRQ27, TIM1 Capture Compare */                          
-  .word      default_handler /* IRQ28, TIM2 */                   
-  .word      default_handler /* IRQ29, TIM3 */                   
-  .word      default_handler /* IRQ30, TIM4 */                   
-  .word      default_handler /* IRQ31, I2C1 Event and exti line 23 */                          
-  .word      default_handler /* IRQ32, I2C1 Error */                          
-  .word      default_handler /* IRQ33, I2C2 Event and exti line 24 */                          
-  .word      default_handler /* IRQ34, I2C2 Error */                            
-  .word      default_handler /* IRQ35, SPI1 */                   
-  .word      default_handler /* IRQ36, SPI2 */                   
+  .word      basic_isr_handler /* IRQ6, EXTI Line0 */                        
+  .word      basic_isr_handler /* IRQ7, EXTI Line1  */                          
+  .word      basic_isr_handler /* IRQ8, EXTI Line2 */                          
+  .word      basic_isr_handler /* IRQ9, EXTI Line3 */                          
+  .word      basic_isr_handler /* IRQ10, EXTI Line4 */                          
+  .word      basic_isr_handler /* IRQ11, DMA1 CH1 */                  
+  .word      basic_isr_handler /* IRQ12, DMA1 CH2 */                   
+  .word      basic_isr_handler /* IRQ13, DMA1 CH3 */                   
+  .word      basic_isr_handler /* IRQ14, DMA1 CH4  */                   
+  .word      basic_isr_handler /* IRQ15, DMA1 CH5 */                   
+  .word      basic_isr_handler /* IRQ16, DMA1 CH6 */                   
+  .word      basic_isr_handler /* IRQ17, DMA1 CH7 */                   
+  .word      basic_isr_handler /* IRQ18, ADC1, ADC2 global interrupt */                   
+  .word      basic_isr_handler /* IRQ19, USB High priority */                         
+  .word      basic_isr_handler /* IRQ20, USB low priority */                          
+  .word      basic_isr_handler /* IRQ21, CAN_RX1 */                          
+  .word      basic_isr_handler /* IRQ22, CAN1_SCE */                          
+  .word      basic_isr_handler /* IRQ23, External Line[9:5]s */                          
+  .word      basic_isr_handler /* IRQ24, TIM1 Break and TIM15 global */         
+  .word      basic_isr_handler /* IRQ25, TIM1 Update and TIM16 global */         
+  .word      basic_isr_handler /* IRQ26, TIM1 Trigger and Commutation and TIM17 */
+  .word      basic_isr_handler /* IRQ27, TIM1 Capture Compare */                          
+  .word      basic_isr_handler /* IRQ28, TIM2 */                   
+  .word      basic_isr_handler /* IRQ29, TIM3 */                   
+  .word      basic_isr_handler /* IRQ30, TIM4 */                   
+  .word      basic_isr_handler /* IRQ31, I2C1 Event and exti line 23 */                          
+  .word      basic_isr_handler /* IRQ32, I2C1 Error */                          
+  .word      basic_isr_handler /* IRQ33, I2C2 Event and exti line 24 */                          
+  .word      basic_isr_handler /* IRQ34, I2C2 Error */                            
+  .word      basic_isr_handler /* IRQ35, SPI1 */                   
+  .word      basic_isr_handler /* IRQ36, SPI2 */                   
   .word      uart_rx_handler /* IRQ37, USART1 */                   
   .word      uart2_handler /* IRQ38, USART2 */                   
   .word      uart3_handler /* IRQ39, USART3 */                   
-  .word      default_handler /* IRQ40, External Line[15:10]s */                          
-  .word      default_handler /* IRQ41, RTC Alarm */                 
-  .word      default_handler /* IRQ42, USB Wakeup*/                       
-  .word      default_handler /* IRQ43, TIM8 Break */         
-  .word      default_handler /* IRQ44, TIM8 Update*/         
-  .word      default_handler /* IRQ45, TIM8 Trigger and Commutation */
-  .word      default_handler /* IRQ46, TIM8 Capture Compare */                          
-  .word      default_handler /* IRQ47, ADC3 global */                          
-  .word      default_handler /* IRQ48, FSMC */                   
-  .word      default_handler /* IRQ49, SDIO */                   
-  .word      default_handler /* IRQ50, TIM5 */                   
-  .word      default_handler /* IRQ51, SPI3 */                   
-  .word      default_handler /* IRQ52, UART4 */                   
-  .word      default_handler /* IRQ53, UART5 */                   
-  .word      default_handler /* IRQ54, TIM6 */                   
-  .word      default_handler /* IRQ55, TIM7 */
-  .word      default_handler /* IRQ56, DMA2 CH1 */                   
-  .word      default_handler /* IRQ57, DMA2 CH2 */                   
-  .word      default_handler /* IRQ58, DMA2 CH3 */                   
-  .word      default_handler /* IRQ59, DMA2 CH4 & CH5 */                   
+  .word      basic_isr_handler /* IRQ40, External Line[15:10]s */                          
+  .word      basic_isr_handler /* IRQ41, RTC Alarm */                 
+  .word      basic_isr_handler /* IRQ42, USB Wakeup*/                       
+  .word      basic_isr_handler /* IRQ43, TIM8 Break */         
+  .word      basic_isr_handler /* IRQ44, TIM8 Update*/         
+  .word      basic_isr_handler /* IRQ45, TIM8 Trigger and Commutation */
+  .word      basic_isr_handler /* IRQ46, TIM8 Capture Compare */                          
+  .word      basic_isr_handler /* IRQ47, ADC3 global */                          
+  .word      basic_isr_handler /* IRQ48, FSMC */                   
+  .word      basic_isr_handler /* IRQ49, SDIO */                   
+  .word      basic_isr_handler /* IRQ50, TIM5 */                   
+  .word      basic_isr_handler /* IRQ51, SPI3 */                   
+  .word      basic_isr_handler /* IRQ52, UART4 */                   
+  .word      basic_isr_handler /* IRQ53, UART5 */                   
+  .word      basic_isr_handler /* IRQ54, TIM6 */                   
+  .word      basic_isr_handler /* IRQ55, TIM7 */
+  .word      basic_isr_handler /* IRQ56, DMA2 CH1 */                   
+  .word      basic_isr_handler /* IRQ57, DMA2 CH2 */                   
+  .word      basic_isr_handler /* IRQ58, DMA2 CH3 */                   
+  .word      basic_isr_handler /* IRQ59, DMA2 CH4 & CH5 */                   
 isr_end:
   .global vectors_size 
 vectors_size: .word isr_end - isr_vectors 
@@ -145,7 +145,7 @@ vectors_size: .word isr_end - isr_vectors
   default isr handler called on unexpected interrupt
 *****************************************************/
    .section  .text , "ax", %progbits 
-    _GBL_FUNC default_handler 
+    _GBL_FUNC default_handler
     ldr r0,=exception_msg 
     _CALL uart_puts 
 // delay
@@ -156,6 +156,33 @@ vectors_size: .word isr_end - isr_vectors
     .p2align 2 
 exception_msg:
   	.asciz "\nexeption reboot!\n"
+
+/*********************************
+    basic_isr_handler
+    handle interrupts from BASIC 
+*********************************/
+    _GBL_FUNC basic_isr_handler
+    // accepted only in run mode 
+    ldr r0,[UPP,#FLAGS]
+    tst r0,#FRUN
+    beq default_handler  
+    _MOV32 r0,(SCB_BASE_ADR+SCB_ICSR)
+    ldr r1,[r0]
+    and r1,#255 
+    sub r1,#16
+    lsl r1,#2  
+    _MOV32 r0,RAM_ADR 
+    ldr r2,[r0,r1] // BASIC IRQ vector 
+    cbnz r2, 1f 
+    b default_handler // vector not set 
+1:  push {IN,BPTR}
+    mov IN,#3 
+    mov BPTR,r2 
+    ldrb r0,[BPTR,#2]
+    str r0,[UPP,#COUNT]
+    push {lr}
+    b interpreter 
+    
 
 /*********************************
 	system milliseconds counter
@@ -255,6 +282,10 @@ exception_msg:
     str r0,[sp,#0x18]
     _RET 
 
+/******************************
+    user_reboot 
+    user pressed CTRL-C
+******************************/
     _GBL_FUNC user_reboot   
     ldr r0,=user_reboot_msg
     _CALL uart_puts 
@@ -339,43 +370,17 @@ user_reboot_msg:
 ***************************************/
     _GBL_FUNC reset_handler
     _MOV32 r0,RAM_END 
-    mov sp,r0 
-    bl remap  
+    mov sp,r0
+    // zero RAM 
+    _MOV32 r1,RAM_ADR 
+    eor r2,r2 
+1:  str r2,[r1],#4 
+    cmp r1,r0 
+    bmi 1b  
     bl	init_devices	 	/* RCC, GPIOs */
     bl  uart_init
     bl  cold_start  /* initialize BASIC SYSTEM */ 
-    bl  test 
-    b .  
 
-    _FUNC test
-  _MOV32 UPP,RAM_ADR
-  add UPP,#0x130
-  _CALL get_curpos 
-  push {r1} 
-  mov r1,#10 
-  _CALL print_int 
-  mov r0,#','
-  _CALL uart_putc 
-  pop {r0}
-  mov r1,#10  
-  _CALL print_int 
-  _RET 
-
-  tib_addr: 
-    .word _tib
-
-
-// tranfert isr_vector to RAM at 0x20000000
-    _FUNC remap 
-	eor r0,r0 // src 
-	_MOV32 r1,RAM_ADR // dest 
-	mov r2,#(isr_end-isr_vectors) // count 
-  _CALL cmove  
-// set new vector table address
-	_MOV32 r0,SCB_BASE_ADR
-	_MOV32 r1,RAM_ADR 
-	str r1,[r0,#SCB_VTOR]
-  _RET 
 
 // initialize hardware devices 
   _FUNC init_devices

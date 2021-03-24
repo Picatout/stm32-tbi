@@ -5,6 +5,9 @@ https://github.com/picatout/stm32-tbi
 -->
 #### 2021-03-23
 
+* Ajouter support pour les interruptions écrite en BASIC. Annuler le transfert de la table des vecteurs au début de la RAM. À la place réserve 60*4 octets pour les adresses IRQ BASIC.
+
+
 * Ajout de *nvic_enable_irq* et *nvic_disable_iqr* dans [stm32-tbi.s](stm32-tbi.s).
 
 * Ajout de file de réception de 4 octets pour UART2|3. 
