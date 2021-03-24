@@ -3,6 +3,7 @@ Copyright Jacques Deschênes, 2021
 Ce document fait parti du projet stm32-tbi
 https://github.com/picatout/stm32-tbi
 -->
+<a id="top"></a>
 [-&GT;English](readme-en.md)
 #  Blue pill Tiny BASIC 
 
@@ -76,3 +77,18 @@ La communication avec le PC se fait sur les broches
 
 * Utilisation avec le PC
 ![utilisation](docs/montage.jpg)
+
+<a id="sources"></a>
+# code source 
+Le code source est entièrement écris en assembleur et comprend les fichiers suivants.
+* [stm32-tbi.s](../stm32-tbi.s)  Initialisation matérielle et interfaces de bas niveaux.
+* [tinyBasic.s](../tinyBasic.s) L'interpréteur BASIC.
+* [terminal.s](../terminal.s) Communication avec l'émulateur de terminal sur le PC.
+* [stm32f103.inc](../stm32f103.inc) Définitions matérielles spécifiques au MCU de la carte **blue pill**. 
+* [tbi_macros.inc](../tbi_macros.inc) Définitions de macros et constantes.
+* [cmd_index.inc](../cmd_index.inc) Constantes associés aux jetons des commandes et fonctions. 
+* [ascii.inc](../ascii.inc) Constantes du jeu de caractères ASCII.
+* [stm32f103c8t6.ld](../stm32f103c8t6.ld) Script du linker.
+* [Makefile](../Makefile) Script pour la commande make.
+
+[début](#top)

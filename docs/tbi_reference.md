@@ -21,19 +21,8 @@ https://github.com/picatout/stm32-tbi
 
 * [Bases numériques](#bases)
 
-* [Ligne de commande](#cli)
-
-* [Fichiers](#fichiers)
-
 * [Référence des commandes et fonctions](#index)
 
-* [Installation](#install)
-
-* [Utilisation](#utilisation)
-
-* [transfert de fichiers](#xmodem)
-
-* [Code source](#sources)
 
 <a id="data-types"></a>
 ### Type de données 
@@ -149,36 +138,6 @@ examples d'entiers:
     &101   ' entier binaire correspondant à 5 en décimal. 
 
 [index principal](#index-princ)
-<a id="cli"></a>
-## Ligne de commande et programmes 
-
-La communication avec la carte **blue pill** se fait via le périphérique **UART1** et un adapteur de niveau. Du côté PC seul est requis un port sériel RS-232 et un émulateur de terminal VT100. Il n'y a pas d'application à installer sur le PC.
-
-Au démarrage l'information sur Tiny BASIC est affichée. Ensuite viens le texte **READY** sur la ligne suivante. Ce qui signifit que le système est prêt à recevoir des commandes. 
-```
-blue pill tiny BASIC, version 1.0
-READY
-```
-
-À partir de là l'utilisateur doit saisir une commande au clavier. Cette commande est considérée comme complétée lorsque la touche **ENTER** est enfoncée. Le texte est d'abord compilé en *jetons*. Si il y a un numéro de ligne alors cette ligne est inséré dans l'espace mémoire réservé aux programmes sinon elle est exécutée immédiatement. 
-
-* Un numéro de ligne doit-être dans l'intervalle {1...65535}.
-
-* Si une ligne avec le même numéro existe déjà elle est remplacée par la nouvelle. 
-
-* Si la ligne ne contient qu'un numéro sans autre texte et qu'il existe déjà une ligne avec ce numéro la ligne en question est supprimée. Sinon elle est ignorée. 
-
-* Les lignes sont insérée en ordre numérique croissant. 
-
-Certaines commandes ne peuvent-être utilisées qu'à l'intérieur d'un programme et d'autres seulement en mode ligne de commande. L'exécution est interrompue et un message d'erreur est affiché si une commande est utilisée dans un contexte innaproprié. 
-
-Le programme en mémoire RAM est perdu à chaque réinitialiation du processeur sauf s'il a été sauvegardé comme fichier dans la mémoire flash. Les commandes de fichiers sont décrites dans la section [référence des commandes](#reference).
-
-[index principal](#index-princ)
-<a id="fichiers"></a>
-## Système de fichier
-Le microcontrôleur de la carte blue pill possède 64Ko de mémoire flash. Cependant seulement une partie de cette mémoire est utilisée par l'interpréteur BASIC. 1Ko de la mémoire 
-restante est utilisée comme émulation EEPROM et le reste par le système de fichier.
 
 <a id="reference"></a>
 ## Référence des commandes, fonctions et constantes système.
@@ -1917,100 +1876,4 @@ Retourne la ligne sur laquelle se trouve le curseur du terminal.
 [index](#index)
 
 [index principal](#index-princ)
-<hr>
 
-<a id="install"></a>
-## Installation de Tiny BASIC sur la carte **blue pill**
-À partir du répertoire racine du projet
-. Lorsque la carte est branchée au programmeur STLINK-V2 et prête à être programmée faites la commande suivante:
-```
-picatout:~/github/stm32-tbi$ make build && make flash
-arm-none-eabi-as  -a=build/stm32-tbi.lst stm32-tbi.s -g -obuild/stm32-tbi.o 
-arm-none-eabi-as  -a=build/terminal.lst terminal.s -g -obuild/terminal.o 
-arm-none-eabi-as  -a=build/tinyBasic.lst tinyBasic.s -g -obuild/tinyBasic.o 
-arm-none-eabi-ld -T stm32f103c8t6.ld  -g build/stm32-tbi.o build/terminal.o build/tinyBasic.o  -o build/stm32-tbi.elf
-arm-none-eabi-objcopy -O binary build/stm32-tbi.elf build/stm32-tbi.bin 
-arm-none-eabi-objdump -D build/stm32-tbi.elf > build/stm32-tbi.dasm
-st-flash --serial=483f6e066772574857351967 erase 
-st-flash 1.6.0
-2021-03-14T11:15:56 INFO usb.c: -- exit_dfu_mode
-2021-03-14T11:15:56 INFO common.c: Loading device parameters....
-2021-03-14T11:15:56 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
-2021-03-14T11:15:56 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
-Mass erasing
-st-flash  --serial=483f6e066772574857351967  write build/stm32-tbi.bin 0x8000000
-st-flash 1.6.0
-2021-03-14T11:15:56 INFO common.c: Loading device parameters....
-2021-03-14T11:15:56 INFO common.c: Device connected is: F1 Medium-density device, id 0x20036410
-2021-03-14T11:15:56 INFO common.c: SRAM size: 0x5000 bytes (20 KiB), Flash: 0x10000 bytes (64 KiB) in pages of 1024 bytes
-2021-03-14T11:15:56 INFO common.c: Ignoring 1024 bytes of 0xff at end of file
-2021-03-14T11:15:56 INFO common.c: Attempting to write 17408 (0x4400) bytes to stm32 address: 134217728 (0x8000000)
-Flash page at addr: 0x08004000 erased
-2021-03-14T11:15:57 INFO common.c: Finished erasing 17 pages of 1024 (0x400) bytes
-2021-03-14T11:15:57 INFO common.c: Starting Flash write for VL/F0/F3/F1_XL core id
-2021-03-14T11:15:57 INFO flash_loader.c: Successfully loaded flash loader in sram
- 17/17 pages written
-2021-03-14T11:15:58 INFO common.c: Starting verification of write complete
-2021-03-14T11:15:58 INFO common.c: Flash written and verified! jolly good!
-picatout:~/github/stm32-tbi$ 
-```
-Si tout se passe comme prévue le système **blue pill tiny BASIC** est maintenant installé sur la carte et prêt à l'utilisation.
-
-[index principal](#index-princ)
-
-<a id="utilisation"></a>
-# Utilisation de blue pill Tiny BASIC
-Vous trouverez dans le manuel de l'[utilisateur de tiny BASIC](manuel_util_tb.md) des exemples d'utilisation. 
-
-[index principal](#index-princ)
-
-<a id="xmodem"></a>
-# Transfert de fichiers
-Le projet comprend le sous-module **sendFile**. Ansi que le shell script [send](../send) qui permet de transmettre des progammes basic à la carte. Il s'agit d'un utilitaire de ligne de commandes qu'on lance à partir du répertoire racine du projet. le dossier **tb_progs** contient des exemples de programmes. Pour transmettre un programme à la carte il suffit de faire:
-```
-picatout:~/github/stm32-tbi$ ./send gpio-test.bas
-port=/dev/ttyS0, baud=115200,delay=50 
-Sending file tb_progs/gpio-test.bas
-12 lines sent
-```
-L'émulateur de terminal doit-être ouvert et branché à la carte avant de lancer cette commande. On voit alors les lignes du programme défilées sur l'écran du terminal. Une fois la transmission terminée le programme peut-être lancé avec la commande [RUN](#run) ou sauvegardé dans la mémoire flash avec la commande [SAVE](#save).
-
-[index principal](#index-princ)
-
-# Éditeur de texte de Tiny BASIC
-Le système **blue pill tiny BASIC** est conçu pour fonctionner avec n'importe quel PC peut importe le système d'exploitation utilisé. Pour se faire l'édition et la compilation du texte BASIC s'effetuent entièrement sur la carte **blue pill**. 
-
-Chaque ligne saisie au terminal est compilée et stockée en mémoire RAM dès que la touche &lt;ENTER&gt; est enfoncée. Si le texte saisie ne débute pas par un numéro de ligne il est considéré comme une commande immédiate et est exécuté plutôt que stocké. Les lignes de textes déjà saisie peuvent-être examinées à l'aide de la commande [LIST](#list). 
-## Possibilité de l'éditeur de texte
-* Modification d'une ligne déjà compilée, Numéro de ligne suivit de &lt;CTRL-E&gt;
-* Suppression d'une ligne déjà compilée, Numéro de ligne suivit de &lt;ENTER&gt;
-* Insertion d'une nouvelle ligne à n'importe quel point du programme. Les nouvelles lignes sont insérées à la bonne position selon l'ordre croissant des numuros de lignes.
-## Touches de contrôles de l'éditeur
-* **&lt;CTRL-D&gt;** Efface la ligne en cours d'édition au complet.
-* **&lt;CTRL-E&gt;** Après la saisie d'un numéro de ligne affiche cette ligne pour édition. 
-* **&lt;CTRL-I&gt;** L'éditeur passe en mode insertion, le curseur est une ligne verticale clognotante. 
-* **&lt;CTRL-O&gt;** L'éditeur passe en mode écrasement, le curseur est un bloc clignotant. 
-* **&lt;CTRL-R&gt;** Réaffiche la dernière ligne saisie. Permet de réexécuter une commande immédiate rapidement.
-* **&lt;HOME&gt;** Déplace le curseur au début de la ligne de texte.
-* **&lt;END&gt;** Déplace le curseur à la fin de la ligne de texte.
-* **&lt;BS&gt;** Efface le caractère à gauche du curseur.
-* **&lt;DEL&gt;** Efface le caractère sous le curseur.
-* **&lt;LEFT-ARROW&gt;** Déplace le curseur un caractère vers la gauche.
-* **&lt;RIGHT-ARROW&gt;** Déplace le curseur un caractère vers la droite. 
-
-[index principal](#index-princ)
-
-<a id="sources"></a>
-# code source 
-Le code source est entièrement écris en assembleur et comprend les fichiers suivants.
-* [stm32-tbi.s](../stm32-tbi.s)  Initialisation matérielle et interfaces de bas niveaux.
-* [tinyBasic.s](../tinyBasic.s) L'interpréteur BASIC.
-* [terminal.s](../terminal.s) Communication avec l'émulateur de terminal sur le PC.
-* [stm32f103.inc](../stm32f103.inc) Définitions matérielles spécifiques au MCU de la carte **blue pill**. 
-* [tbi_macros.inc](../tbi_macros.inc) Définitions de macros et constantes.
-* [cmd_index.inc](../cmd_index.inc) Constantes associés aux jetons des commandes et fonctions. 
-* [ascii.inc](../ascii.inc) Constantes du jeu de caractères ASCII.
-* [stm32f103c8t6.ld](../stm32f103c8t6.ld) Script du linker.
-* [Makefile](../Makefile) Script pour la commande make.
-
-[index principal](#index-princ)
