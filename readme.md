@@ -15,6 +15,9 @@ Il s'agit de l'implémentation d'un timbre BASIC sur la carte blue pill. Ce BASI
 * Requière seulement un émulateur de terminal VT100 sur le PC et un port sériel rs-232 pour la communication avec la carte **blue pill** .
 * Supporte les routines de service d'interruption écrites en BASIC.
 
+## Documentation
+* [manuel de référence tiny BASIC](docs/tbi_reference.md)
+* [manuel de l'utilisateur](docs/manuel_util_tb.md)
 ## Matériel requis
 
 * Carte blue pill ![blue pill](docs/board-view-2.jpg).

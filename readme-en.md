@@ -14,6 +14,10 @@ This is an implementation of a BASIC stamp on blue pill board. This BASIC is bas
 * On PC require only a RS-232 serial port and VT100 terminal emulator to communicate with the **blue pill**.
 * Support interrupt service routine written in BASIC.
 
+## Documentation
+* [Tiny BASIC language reference](docs/refman.md)
+* [user manual](docs/user-manual.md)
+
 ## Required material
 
 * blue pill board  ![blue pill](docs/board-view-2.jpg).
