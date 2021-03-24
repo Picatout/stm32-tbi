@@ -6,6 +6,8 @@ https://github.com/picatout/stm32-tbi
 #### 2021-03-24
 
 * Travail sur la documentation. 
+  * Complété [manuel_util_tb.md](docs/manuel_util_tb.md)
+  * Complété [user-manual.md](docs/user-manual.md)
 
 * Ajout de la commande **DSTACK** et mise à jour des manuels de références français et anglais. 
 
