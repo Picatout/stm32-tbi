@@ -220,6 +220,7 @@ move_from_end: // move from high address toward low
     _RET 
 
 /************************************
+  BASIC: DSTACK 
   show data stack 
 ************************************/
     _FUNC show_data_stack 
@@ -2325,6 +2326,7 @@ kword_end:
   _dict_entry TK_CMD,ERASE,ERASE_IDX // erase 
   _dict_entry TK_CMD,END,END_IDX //cmd_end  
   _dict_entry TK_CMD,DUMP,DUMP_IDX // dump 
+  _dict_entry TK_CMD,DSTACK,DSTACK_IDX // show_data_stack 
   _dict_entry TK_CMD,DROP,DROP_IDX // drop 
   _dict_entry TK_CMD,DO,DO_IDX //do_loop
   _dict_entry TK_CMD,DIR,DIR_IDX //directory 
@@ -2360,7 +2362,7 @@ kword_dict: // first name field
 fn_table:
 	.word abs,analog_read,adc,bit_and,ascii,autorun,awu,bitmask 
 	.word bit_reset,bit_set,bit_test,bit_toggle,char,cls,const   
-	.word skip_line,dec_base,directory,do_loop,drop,dump
+	.word skip_line,dec_base,directory,do_loop,drop,show_data_stack,dump
 	.word cmd_end,erase,for,forget,free,get,gosub,goto
 	.word hex_base,if,pin_input,input_var,invert,key,isr_init,isr_exit 
 	.word let,list,load,locate,lshift,new,next

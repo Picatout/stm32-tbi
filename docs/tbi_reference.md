@@ -210,6 +210,7 @@ nom|abrévation
 [DIR](#dir)|DI
 [DO](#do)|DO
 [DROP](#drop)|DR
+[DSTACK](#dstack)|DS
 [DUMP](#dump)|DU 
 [END](#end)|EN
 [ERASE](#erase)|ER
@@ -593,6 +594,16 @@ push 1,2,3  ? get(0)+get(1)+get(2) drop 3
 READY
 
 ```
+[index](#index)
+<a id="dstack"></a>
+### DSTACK {C,P}
+Il s'agit d'un outil de dégogage qui permet d'examiner le contenu de la pile des arguments du bas vers le sommet.
+```
+push 1,2,3 dstack drop 3
+dstack: 1 2 3 
+READY
+```
+
 [index](#index)
 <a id="dump"></a>
 ### DUMP adr,n {C,P}

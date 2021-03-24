@@ -12,7 +12,7 @@ Il s'agit de l'implémentation d'un timbre BASIC sur la carte blue pill. Ce BASI
 * Éditeur de texte et compilateur sur la carte. 
 * Système de fichiers simple implémenté dans la mémoire FLASH excédentaire du MCU stm32f103 de la carte blue pill.
 * Requière seulement un émulateur de terminal VT100 sur le PC et un port sériel rs-232 pour la communication avec la carte **blue pill** .
-
+* Supporte les routines de service d'interruption écrites en BASIC.
 
 ## Matériel requis
 

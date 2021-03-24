@@ -42,7 +42,8 @@
     .equ DIR_IDX,DEC_IDX+1 // 
     .equ DO_IDX,DIR_IDX+1 // 
     .equ DROP_IDX,DO_IDX+1
-    .equ DUMP_IDX, DROP_IDX+1 
+    .equ DSTACK_IDX,DROP_IDX+1 //
+    .equ DUMP_IDX, DSTACK_IDX+1 
     .equ END_IDX,DUMP_IDX+1 // 
     .equ ERASE_IDX,END_IDX+1 
     .equ FOR_IDX, ERASE_IDX+1 // 

@@ -209,6 +209,7 @@ name|short form
 [DIR](#dir)|DI
 [DO](#do)|DO
 [DROP](#drop)|DR
+[DSTACK](#dstack)|DS 
 [DUMP](#dump)|DU 
 [END](#end)|EN
 [ERASE](#erase)|ER
@@ -607,6 +608,16 @@ B=56
 A=
 READY
 ```
+[index](#index)
+<a id="dstack"></a>
+### DSTACK {C,P}
+This debugging tool display content of data stack from bottom to top.
+```
+push 1,2,3 dstack drop 3
+dstack: 1 2 3 
+READY
+```
+
 [index](#index)
 <a id="dump"></a>
 ### DUMP adr,count {C}

@@ -12,8 +12,9 @@ This is an implementation of a BASIC stamp on blue pill board. This BASIC is bas
 * Editing source code facility and compiler on stamp. 
 * Simple file system to save programs in FLASH memory.
 * On PC require only a RS-232 serial port and VT100 terminal emulator to communicate with the **blue pill**.
+* Support interrupt service routine written in BASIC.
 
-## material required
+## Required material
 
 * blue pill board  ![blue pill](docs/board-view-2.jpg).
 
